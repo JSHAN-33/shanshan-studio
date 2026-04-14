@@ -1,0 +1,90 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Booking {
+  id         String    @id @default(cuid())
+  name       String
+  phone      String
+  bday       String?
+  lineUserId String?
+  date       String
+  time       String
+  items      String
+  total      Int
+  status     String    @default("待確認")
+  remarks    String?
+  payMethod  String?
+  paidAt     DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@index([date])
+  @@index([phone])
+}
+
+model Member {
+  id         String   @id @default(cuid())
+  phone      String   @unique
+  name       String
+  bday       String?
+  gender     String?
+  note       String?
+  wallet     Int      @default(0)
+  lineUserId String?  @unique
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Service {
+  id        String  @id
+  name      String
+  nameEn    String?
+  cat       String
+  price     Int
+  oldPrice  Int?
+  duration  Int?
+  note      String?
+  isCombo   Boolean @default(false)
+  isActive  Boolean @default(true)
+  sortOrder Int     @default(0)
+}
+
+model Cost {
+  id        String   @id @default(cuid())
+  cat       String
+  desc      String?
+  amount    Int
+  date      String
+  createdAt DateTime @default(now())
+
+  @@index([date])
+}
+
+model Inventory {
+  id        String   @id @default(cuid())
+  name      String
+  qty       Int      @default(0)
+  unit      String   @default("個")
+  minQty    Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model BlockedSlot {
+  id   String @id @default(cuid())
+  date String
+  time String
+
+  @@unique([date, time])
+}
+
+model SlotConfig {
+  id    String @id @default(cuid())
+  slots Json
+}
