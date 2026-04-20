@@ -26,7 +26,18 @@ const tabs: Array<{ value: ServiceCat; label: string }> = [
 ];
 
 const combos = computed(() => services.value.filter((s) => s.cat === tab.value && s.isCombo));
-const singles = computed(() => services.value.filter((s) => s.cat === tab.value && !s.isCombo));
+
+// 「熱蠟後必敷」等 note 拉出來當區塊標題
+const sectionTitleNotes = new Set(['熱蠟後必敷']);
+const singles = computed(() => services.value.filter((s) => s.cat === tab.value && !s.isCombo && !sectionTitleNotes.has(s.note ?? '')));
+const sectionGroups = computed(() => {
+  const map = new Map<string, Service[]>();
+  for (const s of services.value.filter((s) => s.cat === tab.value && !s.isCombo && sectionTitleNotes.has(s.note ?? ''))) {
+    if (!map.has(s.note!)) map.set(s.note!, []);
+    map.get(s.note!)!.push(s);
+  }
+  return Array.from(map.entries());
+});
 
 onMounted(async () => {
   if (!auth.customer?.phone) { router.replace('/login'); return; }
@@ -95,7 +106,20 @@ function proceed() {
           @toggle="booking.toggle"
         />
 
-        <p v-if="!combos.length && !singles.length" class="text-center text-brand-400 py-10 text-xs">本分類尚無服務項目</p>
+        <!-- 區塊標題服務（如「熱蠟後必敷」） -->
+        <template v-for="[title, svcs] in sectionGroups" :key="title">
+          <p class="text-[10px] tracking-[0.15em] font-bold text-brand-400 uppercase mt-4">Post-Waxing Care / {{ title }}</p>
+          <ServiceCard
+            v-for="s in svcs"
+            :key="s.id"
+            :service="s"
+            :selected="booking.has(s.id)"
+            hide-note
+            @toggle="booking.toggle"
+          />
+        </template>
+
+        <p v-if="!combos.length && !singles.length && !sectionGroups.length" class="text-center text-brand-400 py-10 text-xs">本分類尚無服務項目</p>
       </div>
     </main>
 

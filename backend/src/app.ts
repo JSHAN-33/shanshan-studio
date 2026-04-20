@@ -11,6 +11,9 @@ import { financeRoutes } from './routes/finance.js';
 import { inventoryRoutes } from './routes/inventory.js';
 import { adminRoutes } from './routes/admin.js';
 import { authRoutes } from './routes/auth.js';
+import { lineWebhookRoutes } from './routes/lineWebhook.js';
+import { serviceHistoryRoutes } from './routes/serviceHistory.js';
+import { settingsRoutes } from './routes/settings.js';
 
 export async function buildApp(): Promise<FastifyInstance> {
   const app = Fastify({
@@ -32,6 +35,9 @@ export async function buildApp(): Promise<FastifyInstance> {
   // 健康檢查
   app.get('/health', async () => ({ ok: true, ts: new Date().toISOString() }));
 
+  // LINE Webhook（獨立路由，不走 /api prefix）
+  await app.register(lineWebhookRoutes, { prefix: '/line' });
+
   // 所有業務路由掛在 /api
   await app.register(
     async (api) => {
@@ -44,6 +50,8 @@ export async function buildApp(): Promise<FastifyInstance> {
       await api.register(inventoryRoutes, { prefix: '/inventory' });
       await api.register(adminRoutes, { prefix: '/admin' });
       await api.register(authRoutes, { prefix: '/auth' });
+      await api.register(serviceHistoryRoutes, { prefix: '/service-history' });
+      await api.register(settingsRoutes, { prefix: '/settings' });
     },
     { prefix: '/api' }
   );

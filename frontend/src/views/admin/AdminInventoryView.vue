@@ -89,23 +89,23 @@ async function adjustQty(item: InventoryItem, delta: number) {
 
     <p v-if="loading" class="text-center text-brand-400 py-6">載入中…</p>
     <ul v-else class="space-y-2">
-      <li v-for="it in items" :key="it.id" class="card">
-        <div class="flex justify-between items-start">
+      <li v-for="it in items" :key="it.id" class="card !py-2">
+        <div class="flex justify-between items-center">
           <div>
-            <div class="font-bold">{{ it.name }}</div>
-            <div class="text-xs text-brand-500">警戒：{{ it.minQty }} {{ it.unit }}</div>
+            <div class="font-bold text-sm">{{ it.name }}</div>
+            <div class="text-[10px] text-brand-500">警戒：{{ it.minQty }} {{ it.unit }}</div>
           </div>
           <div class="flex items-center gap-2">
-            <button class="btn-outline !px-2 !py-1" @click="adjustQty(it, -1)">−</button>
-            <div class="text-lg font-bold w-12 text-center" :class="it.qty <= it.minQty ? 'text-red-600' : 'text-brand-700'">
+            <button class="btn-outline !px-2 !py-0.5 text-sm" @click="adjustQty(it, -1)">−</button>
+            <div class="text-base font-bold w-8 text-center" :class="it.qty <= it.minQty ? 'text-red-600' : 'text-brand-700'">
               {{ it.qty }}
             </div>
-            <button class="btn-outline !px-2 !py-1" @click="adjustQty(it, 1)">+</button>
+            <button class="btn-outline !px-2 !py-0.5 text-sm" @click="adjustQty(it, 1)">+</button>
           </div>
         </div>
-        <div class="flex gap-2 mt-3">
-          <button class="btn-outline text-xs !py-1 flex-1" @click="openEdit(it)">編輯</button>
-          <button class="btn-outline text-xs !py-1 flex-1 !text-red-600 !border-red-200" @click="remove(it)">刪除</button>
+        <div class="flex gap-2 mt-1.5">
+          <button class="btn-outline text-xs !py-0.5 flex-1" @click="openEdit(it)">編輯</button>
+          <button class="btn-outline text-xs !py-0.5 flex-1 !text-red-600 !border-red-200" @click="remove(it)">刪除</button>
         </div>
       </li>
       <li v-if="!items.length" class="text-center text-brand-400 py-6">尚無庫存品項</li>
@@ -113,7 +113,7 @@ async function adjustQty(item: InventoryItem, delta: number) {
 
     <!-- Modal -->
     <div v-if="showModal" class="fixed inset-0 z-30 flex items-center justify-center p-5" style="background:rgba(0,0,0,0.5);">
-      <div class="bg-white w-full max-w-[320px] max-h-[90vh] overflow-y-auto space-y-3 no-scrollbar" style="border-radius:32px;padding:28px;">
+      <div class="bg-white w-full max-w-[320px] max-h-[90vh] overflow-y-auto space-y-3 no-scrollbar" style="border-radius:24px;padding:28px;">
         <h3 class="font-bold text-lg">{{ editing ? '編輯品項' : '新增品項' }}</h3>
         <div>
           <label class="label">名稱</label>

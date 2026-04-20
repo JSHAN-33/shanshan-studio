@@ -15,17 +15,22 @@ model Booking {
   lineUserId String?
   date       String
   time       String
+  duration   Int?
   items      String
   total      Int
   status     String    @default("待確認")
   remarks    String?
-  payMethod  String?
-  paidAt     DateTime?
+  payMethod      String?
+  walletUsed     Int?
+  paidAt         DateTime?
+  depositAmount  Int?
+  depositStatus  String?
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
 
   @@index([date])
   @@index([phone])
+  @@index([paidAt])
 }
 
 model Member {
@@ -36,9 +41,11 @@ model Member {
   gender     String?
   note       String?
   wallet     Int      @default(0)
-  lineUserId String?  @unique
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  lineUserId  String?  @unique
+  lineOaUserId String? @unique
+  pictureUrl  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model Service {
@@ -76,6 +83,11 @@ model Inventory {
   updatedAt DateTime @updatedAt
 }
 
+model SystemSetting {
+  key   String @id
+  value String
+}
+
 model BlockedSlot {
   id   String @id @default(cuid())
   date String
@@ -87,4 +99,18 @@ model BlockedSlot {
 model SlotConfig {
   id    String @id @default(cuid())
   slots Json
+}
+
+model ServiceHistory {
+  id        String   @id @default(cuid())
+  phone     String
+  date      String
+  items     String
+  total     Int
+  remarks   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([phone])
+  @@index([date])
 }

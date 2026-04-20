@@ -6,6 +6,7 @@ import { authApi } from '@/api/auth';
 const ready = ref(false);
 const isStub = ref(false);
 const liffInited = ref(false);
+const inLineClient = ref(false);
 
 export function useLiff() {
   const auth = useAuthStore();
@@ -30,6 +31,7 @@ export function useLiff() {
     try {
       await liff.init({ liffId });
       liffInited.value = true;
+      inLineClient.value = liff.isInClient();
 
       // 如果已經登入 LINE，直接處理
       if (liff.isLoggedIn()) {
@@ -93,5 +95,5 @@ export function useLiff() {
     }
   }
 
-  return { ready, isStub, liffInited, initLiff, loginWithLine };
+  return { ready, isStub, liffInited, inLineClient, initLiff, loginWithLine };
 }

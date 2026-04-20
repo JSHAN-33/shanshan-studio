@@ -1,5 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { lineLoginSchema, registerSchema, credentialLoginSchema } from '../schemas/auth.js';
+import { pushToOa, buildNewMemberMessage } from '../services/lineNotifyService.js';
 
 const ADMIN_ACCOUNT = 'SHANSHAN.STUDIO';
 const ADMIN_PASSWORD = 'ASdf1127';
@@ -18,13 +19,20 @@ export async function authRoutes(app: FastifyInstance) {
   });
   // POST /auth/line-login — LINE 登入：查詢是否已註冊
   app.post('/line-login', async (req) => {
-    const { lineUserId } = lineLoginSchema.parse(req.body);
+    const { lineUserId, pictureUrl } = lineLoginSchema.parse(req.body);
 
-    const member = await app.prisma.member.findUnique({
+    let member = await app.prisma.member.findUnique({
       where: { lineUserId },
     });
 
     if (member) {
+      // 同步最新 LINE 頭像
+      if (pictureUrl && pictureUrl !== member.pictureUrl) {
+        member = await app.prisma.member.update({
+          where: { lineUserId },
+          data: { pictureUrl },
+        });
+      }
       const bookingCount = await app.prisma.booking.count({
         where: { phone: member.phone, status: { not: '已取消' } },
       });
@@ -61,6 +69,7 @@ export async function authRoutes(app: FastifyInstance) {
           name: input.name,
           gender: input.gender,
           bday: input.bday ?? undefined,
+          pictureUrl: input.pictureUrl ?? undefined,
         },
       });
     } else {
@@ -72,9 +81,12 @@ export async function authRoutes(app: FastifyInstance) {
           gender: input.gender,
           bday: input.bday ?? undefined,
           lineUserId: input.lineUserId,
+          pictureUrl: input.pictureUrl ?? undefined,
         },
       });
     }
+
+    // 通知店家由前端 liff.sendMessages() 發送（客人那邊傳出）
 
     return { registered: true, member };
   });

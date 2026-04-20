@@ -30,4 +30,7 @@ export const membersApi = {
     const res = await http.patch<{ member: Member }>(`/members/${phone}/wallet`, { delta, reason });
     return res.data.member;
   },
+  async remove(phone: string): Promise<void> {
+    await http.delete(`/members/${phone}`);
+  },
 };

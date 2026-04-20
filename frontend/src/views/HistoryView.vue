@@ -2,15 +2,21 @@
 import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { bookingsApi } from '@/api/bookings';
+import { membersApi } from '@/api/members';
+import { serviceHistoryApi } from '@/api/serviceHistory';
 import { useAuthStore } from '@/stores/auth';
-import type { Booking, BookingStatus } from '@/api/types';
+import type { Booking, BookingStatus, Member, ServiceHistory } from '@/api/types';
 
 const auth = useAuthStore();
 const router = useRouter();
 const bookings = ref<Booking[]>([]);
+const serviceHistory = ref<ServiceHistory[]>([]);
+const member = ref<Member | null>(null);
 const loading = ref(true);
+const showTopup = ref(false);
 
 const badgeClass: Record<BookingStatus, string> = {
+  待付訂金: 'badge-deposit',
   待確認: 'badge-pending',
   已確認: 'badge-confirmed',
   已完成: 'badge-done',
@@ -20,7 +26,14 @@ const badgeClass: Record<BookingStatus, string> = {
 async function load() {
   if (!auth.customer?.phone) { router.replace('/login'); return; }
   loading.value = true;
-  bookings.value = await bookingsApi.listByPhone(auth.customer.phone);
+  const [bList, mem, hList] = await Promise.all([
+    bookingsApi.listByPhone(auth.customer.phone),
+    membersApi.getByPhone(auth.customer.phone),
+    serviceHistoryApi.listByPhone(auth.customer.phone).catch(() => []),
+  ]);
+  bookings.value = bList;
+  member.value = mem;
+  serviceHistory.value = hList;
   loading.value = false;
 }
 
@@ -51,7 +64,14 @@ onMounted(load);
           <div style="position:absolute;top:-50px;right:-50px;width:190px;height:190px;border-radius:50%;border:1.5px solid rgba(255,255,255,0.13);pointer-events:none;"></div>
           <p style="font-size:9px;font-weight:800;letter-spacing:0.28em;color:rgba(255,255,255,0.28);margin:0 0 20px;text-transform:uppercase;">SHANSHAN.STUDIO</p>
           <div class="flex items-center gap-3.5 mb-5">
-            <div class="w-[52px] h-[52px] shrink-0 rounded-full flex items-center justify-center" style="background:rgba(255,255,255,0.08);border:1.5px solid rgba(255,255,255,0.18);">
+            <img
+              v-if="member?.pictureUrl"
+              :src="member.pictureUrl"
+              class="w-[52px] h-[52px] shrink-0 rounded-full object-cover"
+              style="border:1.5px solid rgba(255,255,255,0.22);"
+              alt="avatar"
+            />
+            <div v-else class="w-[52px] h-[52px] shrink-0 rounded-full flex items-center justify-center" style="background:rgba(255,255,255,0.08);border:1.5px solid rgba(255,255,255,0.18);">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.55)" stroke-width="1.8"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
             </div>
             <div>
@@ -69,7 +89,109 @@ onMounted(load);
               <p style="font-size:12px;font-weight:700;color:rgba(255,255,255,0.78);margin:0;">{{ auth.customer.bday }}</p>
             </div>
           </div>
+          <!-- 儲值金 -->
+          <div v-if="member && member.wallet > 0" style="margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,0.1);">
+            <div class="flex items-center justify-between">
+              <p style="font-size:8px;font-weight:700;letter-spacing:0.18em;color:rgba(255,255,255,0.28);margin:0;text-transform:uppercase;">Wallet / 儲值金</p>
+              <p style="font-size:18px;font-weight:900;color:rgba(255,255,255,0.88);margin:0;">NT$ {{ member.wallet.toLocaleString() }}</p>
+            </div>
+          </div>
         </div>
+      </div>
+
+      <!-- 儲值優惠按鈕 -->
+      <button type="button" class="topup-btn" @click="showTopup = true">
+        <span class="topup-btn-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 2v20M2 12h20"/></svg>
+        </span>
+        <span class="topup-btn-text">儲值優惠方案</span>
+        <svg class="topup-btn-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+      </button>
+
+      <!-- 儲值優惠 Modal -->
+      <div v-if="showTopup" class="fixed inset-0 z-40 flex items-center justify-center p-5" style="background:rgba(0,0,0,0.5);" @click.self="showTopup = false">
+        <div class="topup-modal">
+          <!-- Close -->
+          <button class="topup-modal-close" @click="showTopup = false">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
+          </button>
+
+          <!-- Decorative circles -->
+          <div class="topup-deco-circle topup-deco-1"></div>
+          <div class="topup-deco-circle topup-deco-2"></div>
+
+          <p class="topup-label">SHANSHAN.STUDIO</p>
+          <h3 class="topup-title">儲值優惠</h3>
+          <p class="topup-subtitle">Top-up Promotion</p>
+
+          <div class="topup-plans">
+            <div class="topup-card">
+              <div class="flex justify-between items-center">
+                <div>
+                  <p class="topup-plan-name">方案一 <span class="topup-plan-eng">PLAN A</span></p>
+                  <p class="topup-amount">儲值 <strong>NT$ 5,000</strong></p>
+                </div>
+                <div class="text-right">
+                  <p class="topup-bonus">贈 <span>NT$ 500</span></p>
+                  <div class="topup-total">實得 5,500</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="topup-card topup-card--highlight">
+              <div class="flex justify-between items-center">
+                <div>
+                  <p class="topup-plan-name">方案二 <span class="topup-plan-eng">PLAN B</span></p>
+                  <p class="topup-amount">儲值 <strong>NT$ 10,000</strong></p>
+                </div>
+                <div class="text-right">
+                  <p class="topup-bonus">贈 <span>NT$ 2,000</span></p>
+                  <div class="topup-total">實得 12,000</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="topup-card">
+              <div class="flex justify-between items-center">
+                <div>
+                  <p class="topup-plan-name">方案三 <span class="topup-plan-eng">PLAN C</span></p>
+                  <p class="topup-amount">儲值 <strong>NT$ 15,000</strong></p>
+                </div>
+                <div class="text-right">
+                  <p class="topup-bonus">贈 <span>NT$ 3,500</span></p>
+                  <div class="topup-total">實得 18,500</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="topup-notes">
+            <p>· 儲值金無使用期限</p>
+            <p>· 限本人使用，不可轉讓</p>
+            <p>· 不可與其他優惠併用</p>
+            <p>· 如需儲值請透過 LINE 聯繫小編</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Service history（歷史消費：由店家手動輸入） -->
+      <div v-if="serviceHistory.length" class="pt-4">
+        <div class="section-label mb-3 ml-2">SERVICE HISTORY / 消費紀錄</div>
+        <ul class="space-y-3">
+          <li v-for="h in serviceHistory" :key="h.id" class="card">
+            <div class="flex justify-between items-start">
+              <div class="min-w-0 flex-1">
+                <div class="text-xs text-brand-400">{{ h.date }}</div>
+                <div class="font-bold text-sm mt-1 text-brand-700">{{ h.items }}</div>
+                <div class="text-brand-600 font-extrabold mt-1">NT$ {{ h.total.toLocaleString() }}</div>
+                <div v-if="h.remarks" class="text-[10px] text-brand-400 mt-2">備註：{{ h.remarks }}</div>
+              </div>
+            </div>
+          </li>
+        </ul>
+        <p class="text-[10px] text-brand-400 text-right mt-2 mr-1">
+          累計 {{ serviceHistory.length }} 次 · NT$ {{ serviceHistory.reduce((s, h) => s + h.total, 0).toLocaleString() }}
+        </p>
       </div>
 
       <!-- Booking history -->
@@ -97,3 +219,189 @@ onMounted(load);
     </main>
   </section>
 </template>
+
+<style scoped>
+.topup-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  background: #3b3530;
+  border: none;
+  border-radius: 18px;
+  padding: 14px 18px;
+  cursor: pointer;
+  transition: background 0.15s;
+  box-shadow: 0 4px 16px rgba(59,53,48,0.18);
+}
+.topup-btn:active {
+  background: #4a423d;
+}
+.topup-btn-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #c8a96e;
+  flex-shrink: 0;
+}
+.topup-btn-text {
+  flex: 1;
+  text-align: left;
+  font-size: 14px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.85);
+  letter-spacing: 0.03em;
+}
+.topup-btn-arrow {
+  color: rgba(255,255,255,0.3);
+  flex-shrink: 0;
+}
+.topup-modal {
+  background: #3b3530;
+  border-radius: 28px;
+  width: 100%;
+  max-width: 340px;
+  padding: 24px 20px 20px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.35);
+  animation: topup-pop 0.2s ease-out;
+}
+@keyframes topup-pop {
+  from { transform: scale(0.92); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+.topup-modal-close {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  z-index: 10;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.1);
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255,255,255,0.5);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.topup-modal-close:hover {
+  background: rgba(255,255,255,0.18);
+}
+.topup-deco-circle {
+  position: absolute;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255,255,255,0.08);
+  pointer-events: none;
+}
+.topup-deco-1 {
+  width: 200px; height: 200px;
+  top: -80px; right: -60px;
+}
+.topup-deco-2 {
+  width: 120px; height: 120px;
+  bottom: -40px; left: -30px;
+}
+.topup-label {
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.28em;
+  color: rgba(255,255,255,0.22);
+  text-transform: uppercase;
+  margin: 0 0 14px;
+}
+.topup-title {
+  font-size: 20px;
+  font-weight: 900;
+  color: white;
+  margin: 0 0 2px;
+  line-height: 1.2;
+}
+.topup-subtitle {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  color: rgba(255,255,255,0.35);
+  text-transform: uppercase;
+  margin: 0 0 20px;
+}
+.topup-plans {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.topup-card {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 14px;
+  padding: 12px 14px;
+}
+.topup-card--highlight {
+  border-color: rgba(255,255,255,0.22);
+  background: rgba(255,255,255,0.1);
+}
+.topup-plan-name {
+  font-size: 11px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.65);
+  margin: 0 0 3px;
+}
+.topup-plan-eng {
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  color: rgba(255,255,255,0.22);
+  text-transform: uppercase;
+  margin-left: 4px;
+}
+.topup-amount {
+  font-size: 12px;
+  color: rgba(255,255,255,0.5);
+  margin: 0;
+}
+.topup-amount strong {
+  color: rgba(255,255,255,0.9);
+  font-weight: 800;
+  font-size: 14px;
+}
+.topup-bonus {
+  font-size: 11px;
+  color: rgba(255,255,255,0.4);
+  margin: 0 0 4px;
+}
+.topup-bonus span {
+  color: #c8a96e;
+  font-weight: 700;
+}
+.topup-total {
+  display: inline-block;
+  background: rgba(255,255,255,0.08);
+  border-radius: 16px;
+  padding: 3px 10px;
+  font-size: 12px;
+  font-weight: 800;
+  color: white;
+}
+.topup-card--highlight .topup-total {
+  background: rgba(200,169,110,0.18);
+  color: #c8a96e;
+}
+.topup-notes {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+}
+.topup-notes p {
+  font-size: 10px;
+  color: rgba(255,255,255,0.3);
+  margin: 0 0 4px;
+  line-height: 1.6;
+}
+</style>

@@ -4,6 +4,7 @@ import {
   createBookingSchema,
   updateBookingSchema,
   availableSlotsQuery,
+  bulkAvailableSlotsQuery,
   listBookingsQuery,
 } from '../schemas/booking.js';
 import { getAvailableSlots, hasConflict } from '../services/bookingService.js';
@@ -11,7 +12,6 @@ import { upsertMemberFromBooking } from '../services/memberService.js';
 import {
   buildBookingCancelledMessage,
   buildBookingConfirmedMessage,
-  buildBookingFlexMessage,
   buildNewBookingMessage,
   pushToOa,
   pushToUser,
@@ -23,6 +23,24 @@ export async function bookingsRoutes(app: FastifyInstance) {
     const { date, duration } = availableSlotsQuery.parse(req.query);
     const slots = await getAvailableSlots(app.prisma, date, duration);
     return { date, slots };
+  });
+
+  // GET /bookings/available-slots/bulk?startDate=...&endDate=...&duration=60  —— 公開
+  // 回傳 { [date]: ['11:00', '13:30', ...] }（只含 available 的時段，不含預約隱私資訊）
+  app.get('/available-slots/bulk', async (req) => {
+    const { startDate, endDate, duration } = bulkAvailableSlotsQuery.parse(req.query);
+    const result: Record<string, string[]> = {};
+
+    // 以 UTC 基準遍歷，避免本地時區偏移造成日期錯位
+    const start = new Date(`${startDate}T00:00:00Z`);
+    const end = new Date(`${endDate}T00:00:00Z`);
+    for (let d = new Date(start); d <= end; d = new Date(d.getTime() + 86400000)) {
+      const dateStr = d.toISOString().slice(0, 10);
+      const slots = await getAvailableSlots(app.prisma, dateStr, duration);
+      result[dateStr] = slots.filter((s) => s.available).map((s) => s.time);
+    }
+
+    return { slotsByDate: result };
   });
 
   // GET /bookings?phone=xxx  顧客查自己的；或 admin 全查
@@ -42,6 +60,14 @@ export async function bookingsRoutes(app: FastifyInstance) {
     if (query.date) where.date = query.date;
     if (query.month) where.date = { startsWith: query.month };
     if (query.status) where.status = query.status;
+    if (query.paid === 'true') where.paidAt = { not: null };
+    if (query.paid === 'false') where.paidAt = null;
+    if (query.paidMonth) {
+      const [y, m] = query.paidMonth.split('-').map(Number);
+      const start = new Date(y, m - 1, 1);
+      const end = new Date(y, m, 1);
+      where.paidAt = { gte: start, lt: end };
+    }
 
     const bookings = await app.prisma.booking.findMany({
       where,
@@ -54,14 +80,39 @@ export async function bookingsRoutes(app: FastifyInstance) {
   app.post('/', async (req, reply) => {
     const input = createBookingSchema.parse(req.body);
 
-    if (await hasConflict(app.prisma, input.date, input.time)) {
+    if (await hasConflict(app.prisma, input.date, input.time, undefined, input.duration ?? undefined)) {
       return reply.status(409).send({
         error: 'SlotConflict',
         message: '此時段已被預約，請選擇其他時段',
       });
     }
 
-    const booking = await app.prisma.booking.create({ data: input });
+    // 預約金邏輯：新客需付預約金
+    const depositEnabled = await app.prisma.systemSetting.findUnique({ where: { key: 'depositEnabled' } });
+    let depositData: { depositAmount?: number; depositStatus?: string } = {};
+    let needsDeposit = false;
+
+    if (depositEnabled?.value === 'true') {
+      // 檢查是否為新客（沒有已完成的預約紀錄）
+      const pastBookings = await app.prisma.booking.count({
+        where: { phone: input.phone, status: '已完成' },
+      });
+      if (pastBookings === 0) {
+        const amountSetting = await app.prisma.systemSetting.findUnique({ where: { key: 'depositAmount' } });
+        depositData = {
+          depositAmount: Number(amountSetting?.value ?? '500'),
+          depositStatus: '待付訂金',
+        };
+        needsDeposit = true;
+      }
+    }
+
+    const booking = await app.prisma.booking.create({
+      data: {
+        ...input,
+        ...(needsDeposit ? { ...depositData, status: '待付訂金' } : {}),
+      },
+    });
 
     // 同步會員資料
     await upsertMemberFromBooking(app.prisma, {
@@ -71,14 +122,25 @@ export async function bookingsRoutes(app: FastifyInstance) {
       lineUserId: input.lineUserId,
     });
 
-    // 推播通知店家
-    await pushToOa(buildNewBookingMessage(booking));
+    // 通知店家由前端 liff.sendMessages() 發送（客人那邊傳出）
 
-    // 推播 Flex Message 確認卡片給客戶
-    if (booking.lineUserId) {
-      await pushToUser(booking.lineUserId, buildBookingFlexMessage(booking));
-    }
+    return reply.status(201).send({ booking });
+  });
 
+  // POST /bookings/admin  —— admin only；手動補建預約（例如補登過往消費，進入「未結帳」列表）
+  // 不做時段衝突檢查、不推播 LINE
+  app.post('/admin', { preHandler: adminAuth }, async (req, reply) => {
+    const input = createBookingSchema.parse(req.body);
+    const booking = await app.prisma.booking.create({
+      data: { ...input, status: '已確認' },
+    });
+    // 同步會員資料（若已存在則更新）
+    await upsertMemberFromBooking(app.prisma, {
+      phone: input.phone,
+      name: input.name,
+      bday: input.bday,
+      lineUserId: input.lineUserId,
+    });
     return reply.status(201).send({ booking });
   });
 
@@ -104,7 +166,7 @@ export async function bookingsRoutes(app: FastifyInstance) {
       where: { id },
       data: { status: '已取消' },
     });
-    await pushToOa(`❌ 顧客取消預約：${updated.name} ${updated.date} ${updated.time}`);
+    // 不推播店家（使用者只要 5 種卡片通知）
     return { booking: updated };
   });
 
@@ -118,13 +180,15 @@ export async function bookingsRoutes(app: FastifyInstance) {
       return reply.status(404).send({ error: 'NotFound' });
     }
 
-    // 若變更日期/時段，檢查衝突
+    // 若變更日期/時段，檢查衝突（考慮 duration）
     if ((input.date && input.date !== existing.date) || (input.time && input.time !== existing.time)) {
+      const dur = input.duration ?? existing.duration ?? undefined;
       const conflict = await hasConflict(
         app.prisma,
         input.date ?? existing.date,
         input.time ?? existing.time,
-        id
+        id,
+        dur ?? undefined
       );
       if (conflict) {
         return reply.status(409).send({ error: 'SlotConflict' });
@@ -138,12 +202,19 @@ export async function bookingsRoutes(app: FastifyInstance) {
 
     const booking = await app.prisma.booking.update({ where: { id }, data });
 
-    // 狀態變更時推播顧客
-    if (input.status && input.status !== existing.status && booking.lineUserId) {
-      if (input.status === '已確認') {
-        await pushToUser(booking.lineUserId, buildBookingConfirmedMessage(booking));
-      } else if (input.status === '已取消') {
-        await pushToUser(booking.lineUserId, buildBookingCancelledMessage(booking));
+    // 狀態變更時推播顧客（用 member.lineOaUserId，由 webhook 頭像配對綁定）
+    if (input.status && input.status !== existing.status) {
+      console.log(`[LINE] Status changed: ${existing.status} → ${input.status}, phone: ${booking.phone}`);
+      const mem = await app.prisma.member.findUnique({ where: { phone: booking.phone } });
+      console.log(`[LINE] Member found: ${mem?.name}, lineOaUserId: ${mem?.lineOaUserId}`);
+      if (mem?.lineOaUserId) {
+        if (input.status === '已確認') {
+          console.log('[LINE] Sending confirmed message...');
+          await pushToUser(mem.lineOaUserId, buildBookingConfirmedMessage(booking));
+        } else if (input.status === '已取消') {
+          console.log('[LINE] Sending cancelled message...');
+          await pushToUser(mem.lineOaUserId, buildBookingCancelledMessage(booking));
+        }
       }
     }
 

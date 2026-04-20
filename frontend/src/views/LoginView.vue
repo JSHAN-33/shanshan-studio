@@ -7,7 +7,7 @@ import { useLiff } from '@/composables/useLiff';
 
 const auth = useAuthStore();
 const router = useRouter();
-const { loginWithLine, liffInited } = useLiff();
+const { loginWithLine, liffInited, inLineClient } = useLiff();
 
 const form = reactive({
   account: '',
@@ -79,27 +79,28 @@ async function submit() {
           以 LINE 帳號登入
         </button>
 
-        <!-- Divider -->
-        <div class="flex items-center gap-2 my-3.5" style="color: #ccc; font-size: 11px; font-weight: 600;">
-          <div class="flex-1 h-px bg-brand-100" />
-          或帳號登入
-          <div class="flex-1 h-px bg-brand-100" />
-        </div>
+        <!-- 帳號密碼登入：僅在外部瀏覽器（非 LINE app）顯示，供管理員使用 -->
+        <template v-if="!inLineClient">
+          <div class="flex items-center gap-2 my-3.5" style="color: #ccc; font-size: 11px; font-weight: 600;">
+            <div class="flex-1 h-px bg-brand-100" />
+            或帳號登入
+            <div class="flex-1 h-px bg-brand-100" />
+          </div>
 
-        <!-- Account/Password form -->
-        <form class="space-y-3" @submit.prevent="submit">
-          <input v-model="form.account" class="input" placeholder="帳號" autocomplete="username" />
-          <input v-model="form.password" type="password" class="input" placeholder="密碼" autocomplete="current-password" />
-          <p v-if="error" class="text-xs text-red-500 font-bold">{{ error }}</p>
-          <button
-            type="submit"
-            class="w-full font-semibold text-sm text-white"
-            style="background: #655b55; border-radius: 14px; padding: 12px; border: none; cursor: pointer;"
-            :disabled="loading"
-          >
-            {{ loading ? '登入中...' : '登入' }}
-          </button>
-        </form>
+          <form class="space-y-3" @submit.prevent="submit">
+            <input v-model="form.account" class="input" placeholder="帳號" autocomplete="username" />
+            <input v-model="form.password" type="password" class="input" placeholder="密碼" autocomplete="current-password" />
+            <p v-if="error" class="text-xs text-red-500 font-bold">{{ error }}</p>
+            <button
+              type="submit"
+              class="w-full font-semibold text-sm text-white"
+              style="background: #655b55; border-radius: 14px; padding: 12px; border: none; cursor: pointer;"
+              :disabled="loading"
+            >
+              {{ loading ? '登入中...' : '登入' }}
+            </button>
+          </form>
+        </template>
       </div>
     </main>
   </section>

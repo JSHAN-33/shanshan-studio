@@ -42,6 +42,19 @@ export async function membersRoutes(app: FastifyInstance) {
     return { member };
   });
 
+  // DELETE /members/:phone  —— admin only
+  app.delete<{ Params: { phone: string } }>(
+    '/:phone',
+    { preHandler: adminAuth },
+    async (req, reply) => {
+      const { phone } = req.params;
+      const existing = await app.prisma.member.findUnique({ where: { phone } });
+      if (!existing) return reply.status(404).send({ error: 'NotFound' });
+      await app.prisma.member.delete({ where: { phone } });
+      return reply.status(204).send();
+    }
+  );
+
   // PATCH /members/:phone/wallet  —— admin only
   app.patch<{ Params: { phone: string } }>(
     '/:phone/wallet',

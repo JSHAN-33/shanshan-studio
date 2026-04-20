@@ -3,7 +3,7 @@ import type { PrismaClient, Prisma } from '@prisma/client';
 export interface AvailableSlot {
   time: string;
   available: boolean;
-  reason?: 'booked' | 'blocked';
+  reason?: 'booked' | 'blocked' | 'past';
 }
 
 /**
@@ -12,6 +12,39 @@ export interface AvailableSlot {
 function timeToMinutes(t: string): number {
   const [h, m] = t.split(':').map(Number);
   return h * 60 + m;
+}
+
+/** 當日預約需提前 2 小時 — 14:30 時，14:30~16:30 的時段皆視為已過 */
+const BOOKING_BUFFER_MINUTES = 120;
+
+/**
+ * 以 Asia/Taipei 時區取得「現在」的日期字串（YYYY-MM-DD）與當日分鐘數。
+ */
+function getTaipeiNow(): { date: string; minutes: number } {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Taipei',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).formatToParts(new Date());
+  const get = (t: string) => parts.find((p) => p.type === t)?.value ?? '00';
+  const date = `${get('year')}-${get('month')}-${get('day')}`;
+  const hour = Number(get('hour'));
+  const minute = Number(get('minute'));
+  return { date, minutes: hour * 60 + minute };
+}
+
+/**
+ * 判斷某日某時段是否已過（含 2 小時預約緩衝）。
+ */
+function isPastTime(date: string, time: string): boolean {
+  const now = getTaipeiNow();
+  if (date > now.date) return false;
+  if (date < now.date) return true;
+  return timeToMinutes(time) <= now.minutes + BOOKING_BUFFER_MINUTES;
 }
 
 /**
@@ -35,15 +68,31 @@ export async function getAvailableSlots(
     prisma.blockedSlot.findMany({ where: { date } }),
     prisma.booking.findMany({
       where: { date, status: { not: '已取消' } },
-      select: { time: true },
+      select: { time: true, duration: true },
     }),
   ]);
 
   const blockedSet = new Set(blocked.map((b) => b.time));
-  const bookedSet = new Set(bookings.map((b) => b.time));
 
-  // 先標記每個時段本身是否可用
+  // 根據每筆預約的 duration 擴展封鎖時段（例：10:00 預約 60 分鐘 → 封鎖 10:00、10:30）
+  const bookedSet = new Set<string>();
+  for (const b of bookings) {
+    bookedSet.add(b.time);
+    const dur = b.duration ?? 30;
+    if (dur > 30) {
+      const startMin = timeToMinutes(b.time);
+      const slotsNeeded = Math.ceil(dur / 30);
+      for (let i = 1; i < slotsNeeded; i++) {
+        const min = startMin + i * 30;
+        const t = `${String(Math.floor(min / 60)).padStart(2, '0')}:${String(min % 60).padStart(2, '0')}`;
+        bookedSet.add(t);
+      }
+    }
+  }
+
+  // 先標記每個時段本身是否可用（過去 / 2 小時內 → 已過；再依序判斷 blocked / booked）
   const baseSlots = allSlots.map((time) => {
+    if (isPastTime(date, time)) return { time, available: false, reason: 'past' as const };
     if (blockedSet.has(time)) return { time, available: false, reason: 'blocked' as const };
     if (bookedSet.has(time)) return { time, available: false, reason: 'booked' as const };
     return { time, available: true };
@@ -73,20 +122,31 @@ export async function getAvailableSlots(
 }
 
 /**
- * 檢查同日期同時段是否已有非取消預約。
+ * 檢查新預約是否與同日的既有預約時段重疊（考慮 duration）。
  */
 export async function hasConflict(
   prisma: PrismaClient,
   date: string,
   time: string,
-  excludeId?: string
+  excludeId?: string,
+  duration?: number
 ): Promise<boolean> {
   const where: Prisma.BookingWhereInput = {
     date,
-    time,
     status: { not: '已取消' },
   };
   if (excludeId) where.id = { not: excludeId };
-  const existing = await prisma.booking.findFirst({ where });
-  return !!existing;
+
+  const existing = await prisma.booking.findMany({ where, select: { time: true, duration: true } });
+
+  const newStart = timeToMinutes(time);
+  const newEnd = newStart + (duration || 30);
+
+  for (const b of existing) {
+    const bStart = timeToMinutes(b.time);
+    const bEnd = bStart + (b.duration ?? 30);
+    // 兩區間重疊判定
+    if (newStart < bEnd && newEnd > bStart) return true;
+  }
+  return false;
 }

@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
+import SharedCalendar from '@/components/SharedCalendar.vue';
 import { useAuthStore } from '@/stores/auth';
 import { authApi } from '@/api/auth';
+import { buildNewMemberFlex, sendFlexToChat } from '@/composables/liffMessages';
 
 const auth = useAuthStore();
 const router = useRouter();
@@ -21,6 +23,23 @@ const form = reactive({
 
 const error = ref('');
 const loading = ref(false);
+const showBdayPicker = ref(false);
+const bdayCalendarValue = ref<string | null>(null);
+
+function formatBday(d: string) {
+  const dt = new Date(d + 'T00:00:00');
+  return `${dt.getFullYear()}年${dt.getMonth() + 1}月${dt.getDate()}日`;
+}
+
+function openBdayPicker() {
+  bdayCalendarValue.value = form.bday || null;
+  showBdayPicker.value = true;
+}
+
+function selectBday(d: string) {
+  form.bday = d;
+  showBdayPicker.value = false;
+}
 
 async function submit() {
   error.value = '';
@@ -40,6 +59,14 @@ async function submit() {
       gender: form.gender,
       bday: form.bday || null,
     });
+
+    // 透過 liff.sendMessages 把註冊通知發到 OA 聊天室（顯示在左邊，客人發的）
+    sendFlexToChat(buildNewMemberFlex({
+      name: form.name.trim(),
+      phone: form.phone.trim(),
+      gender: form.gender,
+      bday: form.bday || null,
+    }));
 
     auth.setProfile({ ...auth.profile!, needsRegister: false });
     auth.setCustomer({
@@ -123,8 +150,12 @@ async function submit() {
 
           <div>
             <label class="label">生日（選填）</label>
-            <input v-model="form.bday" type="date" class="input"
-              :style="{ color: form.bday ? '#655b55' : '#b0aba7' }" />
+            <button type="button" class="bday-btn" @click="openBdayPicker">
+              <span :class="form.bday ? 'text-brand-600 font-bold' : 'text-brand-300'">
+                {{ form.bday ? formatBday(form.bday) : '選擇生日' }}
+              </span>
+              <svg class="w-4 h-4 text-brand-300 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+            </button>
           </div>
 
           <p v-if="error" class="text-xs text-red-500 font-bold text-center">{{ error }}</p>
@@ -140,5 +171,47 @@ async function submit() {
         </form>
       </div>
     </main>
+    <!-- Birthday Calendar Modal -->
+    <div v-if="showBdayPicker" class="fixed inset-0 z-40 flex items-center justify-center p-4" style="background:rgba(0,0,0,0.5);" @click.self="showBdayPicker = false">
+      <div class="bg-white w-full max-w-[360px]" style="border-radius:28px; overflow:hidden; box-shadow:0 16px 48px rgba(0,0,0,0.2); animation: bday-pop 0.2s ease-out;">
+        <div class="flex justify-between items-center" style="padding: 22px 22px 10px;">
+          <h3 class="font-bold text-base text-brand-700">選擇生日</h3>
+          <button class="w-8 h-8 rounded-full bg-brand-50 flex items-center justify-center text-brand-400 hover:bg-brand-100 transition" @click="showBdayPicker = false">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+        <div style="padding: 0 16px 22px;">
+          <SharedCalendar
+            v-model="bdayCalendarValue"
+            @update:model-value="selectBday"
+          />
+        </div>
+      </div>
+    </div>
   </section>
 </template>
+
+<style scoped>
+.bday-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  background: #f5f3f1;
+  border: none;
+  border-radius: 14px;
+  padding: 12px 16px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.15s;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.bday-btn:active {
+  background: #ebe8e5;
+}
+@keyframes bday-pop {
+  from { transform: scale(0.92); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+</style>

@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { computed, ref, watch, nextTick } from 'vue';
 
 const props = defineProps<{
   modelValue: string | null;
   minDate?: string;
   markedDates?: string[];
+  grayedDates?: string[];
+  grayedDisabled?: boolean;
 }>();
 const emit = defineEmits<{
   (e: 'update:modelValue', value: string): void;
@@ -18,12 +20,42 @@ const viewMonth = ref(today.getMonth());
 
 const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
 
+// Custom dropdowns
+const showYearPicker = ref(false);
+const showMonthPicker = ref(false);
+
 const yearOptions = computed(() => {
   const current = today.getFullYear();
   const years: number[] = [];
-  for (let y = 1950; y <= current + 5; y++) years.push(y);
+  for (let y = current - 80; y <= current + 30; y++) years.push(y);
   return years;
 });
+
+function selectYear(y: number) {
+  viewYear.value = y;
+  showYearPicker.value = false;
+}
+
+function selectMonth(m: number) {
+  viewMonth.value = m;
+  showMonthPicker.value = false;
+}
+
+function toggleYearPicker() {
+  showMonthPicker.value = false;
+  showYearPicker.value = !showYearPicker.value;
+  if (showYearPicker.value) {
+    nextTick(() => {
+      const el = document.querySelector('.year-picker .year-active');
+      el?.scrollIntoView({ block: 'center' });
+    });
+  }
+}
+
+function toggleMonthPicker() {
+  showYearPicker.value = false;
+  showMonthPicker.value = !showMonthPicker.value;
+}
 
 const daysInMonth = computed(() => {
   const first = new Date(viewYear.value, viewMonth.value, 1);
@@ -41,12 +73,14 @@ const daysInMonth = computed(() => {
 const minDateStr = computed(() => props.minDate ?? '');
 
 function isDisabled(date: string) {
-  if (!minDateStr.value) return false;
-  return date < minDateStr.value;
+  if (minDateStr.value && date < minDateStr.value) return true;
+  if (props.grayedDisabled && (props.grayedDates?.includes(date) ?? false)) return true;
+  return false;
 }
 
 function isToday(date: string) { return date === todayStr; }
 function isMarked(date: string) { return props.markedDates?.includes(date) ?? false; }
+function isGrayed(date: string) { return props.grayedDates?.includes(date) ?? false; }
 
 function prev() {
   if (viewMonth.value === 0) { viewMonth.value = 11; viewYear.value -= 1; }
@@ -74,14 +108,47 @@ function select(date: string) {
     <div class="cal-nav">
       <button type="button" class="cal-arrow" @click="prev">&lt;</button>
       <div class="cal-title">
-        <select v-model="viewYear" class="cal-select cal-select-year">
-          <option v-for="y in yearOptions" :key="y" :value="y">{{ y }} 年</option>
-        </select>
+        <!-- Year picker -->
+        <div class="cal-picker-wrap">
+          <button type="button" class="cal-picker-btn" @click="toggleYearPicker">
+            {{ viewYear }} 年
+            <svg class="cal-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <div v-if="showYearPicker" class="cal-dropdown year-picker">
+            <button
+              v-for="y in yearOptions"
+              :key="y"
+              type="button"
+              class="cal-dropdown-item"
+              :class="{ 'cal-dropdown-active year-active': y === viewYear }"
+              @click="selectYear(y)"
+            >
+              {{ y }} 年
+            </button>
+          </div>
+        </div>
+
         <span class="cal-dot">·</span>
-        <select v-model="viewMonth" class="cal-select cal-select-month">
-          <option v-for="m in 12" :key="m" :value="m - 1">{{ m }}月</option>
-        </select>
-        <span class="cal-dot">·</span>
+
+        <!-- Month picker -->
+        <div class="cal-picker-wrap">
+          <button type="button" class="cal-picker-btn" @click="toggleMonthPicker">
+            {{ viewMonth + 1 }}月
+            <svg class="cal-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <div v-if="showMonthPicker" class="cal-dropdown">
+            <button
+              v-for="m in 12"
+              :key="m"
+              type="button"
+              class="cal-dropdown-item"
+              :class="{ 'cal-dropdown-active': m - 1 === viewMonth }"
+              @click="selectMonth(m - 1)"
+            >
+              {{ m }}月
+            </button>
+          </div>
+        </div>
       </div>
       <button type="button" class="cal-arrow" @click="next">&gt;</button>
     </div>
@@ -103,6 +170,7 @@ function select(date: string) {
             'cal-day--selected': modelValue === cell.date,
             'cal-day--disabled': isDisabled(cell.date),
             'cal-day--today': isToday(cell.date),
+            'cal-day--grayed': isGrayed(cell.date) && modelValue !== cell.date,
           }"
           @click="select(cell.date)"
         >
@@ -122,6 +190,7 @@ function select(date: string) {
   border: 1px solid #f0efed;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
   padding: 22px 18px 18px;
+  position: relative;
 }
 
 .cal-nav {
@@ -162,22 +231,75 @@ function select(date: string) {
   user-select: none;
 }
 
-.cal-select {
+/* Custom picker */
+.cal-picker-wrap {
+  position: relative;
+}
+
+.cal-picker-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
   background: none;
   border: none;
   font-size: 15px;
   font-weight: 700;
   color: #4a423d;
-  outline: none;
   cursor: pointer;
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  appearance: none;
-  padding: 0;
-  text-align: center;
+  padding: 4px 8px;
+  border-radius: 10px;
+  transition: background 0.15s;
 }
-.cal-select-year { width: 62px; }
-.cal-select-month { width: 38px; }
+.cal-picker-btn:hover {
+  background: #f5f3f1;
+}
+
+.cal-chevron {
+  color: #b0aba7;
+}
+
+.cal-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: 6px;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+  border: 1px solid #f0efed;
+  padding: 6px;
+  z-index: 50;
+  max-height: 240px;
+  overflow-y: auto;
+  min-width: 100px;
+}
+.cal-dropdown::-webkit-scrollbar { display: none; }
+.cal-dropdown { -ms-overflow-style: none; scrollbar-width: none; }
+
+.cal-dropdown-item {
+  display: block;
+  width: 100%;
+  text-align: center;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #4a423d;
+  border: none;
+  background: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+.cal-dropdown-item:hover {
+  background: #f5f3f1;
+}
+.cal-dropdown-active {
+  font-weight: 700;
+  color: #655b55;
+  background: #f5f3f1;
+}
 
 .cal-weekdays {
   display: grid;
@@ -238,6 +360,11 @@ function select(date: string) {
 .cal-day--today {
   font-weight: 800;
 }
+
+.cal-day--grayed {
+  color: #d4d0cd;
+}
+.cal-day--grayed:hover { background: #f5f3f1; }
 
 .cal-dot-mark {
   position: absolute;
