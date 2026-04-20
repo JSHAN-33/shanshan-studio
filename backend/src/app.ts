@@ -1,5 +1,8 @@
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import Fastify, { FastifyInstance } from 'fastify';
 import cors from '@fastify/cors';
+import fastifyStatic from '@fastify/static';
 import { ZodError } from 'zod';
 import { prismaPlugin } from './plugins/prisma.js';
 import { bookingsRoutes } from './routes/bookings.js';
@@ -55,6 +58,17 @@ export async function buildApp(): Promise<FastifyInstance> {
     },
     { prefix: '/api' }
   );
+
+  // Production: serve frontend static files
+  if (process.env.NODE_ENV === 'production') {
+    const __dirname = path.dirname(fileURLToPath(import.meta.url));
+    const frontendDist = path.join(__dirname, '..', '..', 'frontend', 'dist');
+    await app.register(fastifyStatic, { root: frontendDist, wildcard: false });
+    // SPA fallback: serve index.html for non-API routes
+    app.setNotFoundHandler((_req, reply) => {
+      return reply.sendFile('index.html');
+    });
+  }
 
   app.setErrorHandler((err, _req, reply) => {
     if (err instanceof ZodError) {
