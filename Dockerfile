@@ -30,13 +30,11 @@ WORKDIR /app
 COPY --from=build /app/backend/package.json /app/backend/package-lock.json ./backend/
 RUN cd backend && npm ci --omit=dev
 
-COPY --from=build /app/backend/dist ./backend/dist/
+# Copy Prisma schema & generate client in production image
 COPY --from=build /app/backend/prisma ./backend/prisma/
-COPY --from=build /app/backend/node_modules/.prisma ./backend/node_modules/.prisma/
-COPY --from=build /app/backend/node_modules/@prisma ./backend/node_modules/@prisma/
-# Copy prisma CLI for migrate deploy
-COPY --from=build /app/backend/node_modules/prisma ./backend/node_modules/prisma/
-COPY --from=build /app/backend/node_modules/.bin/prisma ./backend/node_modules/.bin/prisma
+RUN cd backend && npx prisma generate
+
+COPY --from=build /app/backend/dist ./backend/dist/
 COPY --from=build /app/frontend/dist ./frontend/dist/
 
 WORKDIR /app/backend
