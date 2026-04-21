@@ -17,8 +17,7 @@ COPY backend/ ./backend/
 COPY frontend/ ./frontend/
 
 # Build frontend
-ARG VITE_LIFF_ID
-ENV VITE_LIFF_ID=$VITE_LIFF_ID
+ENV VITE_LIFF_ID=2009682315-3j8aqE0E
 RUN cd frontend && npm run build
 
 # Generate Prisma client & build backend
