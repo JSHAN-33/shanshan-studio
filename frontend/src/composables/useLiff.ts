@@ -7,6 +7,7 @@ const ready = ref(false);
 const isStub = ref(false);
 const liffInited = ref(false);
 const inLineClient = ref(false);
+const liffError = ref('');
 
 export function useLiff() {
   const auth = useAuthStore();
@@ -47,7 +48,8 @@ export function useLiff() {
 
       // 外部瀏覽器：不自動跳轉，等使用者點按鈕
       ready.value = true;
-    } catch (err) {
+    } catch (err: any) {
+      liffError.value = `LIFF init error: ${err?.message || err}`;
       console.error('[useLiff] LIFF init failed，降級為手動模式', err);
       auth.setProfile({
         userId: null,
@@ -95,5 +97,5 @@ export function useLiff() {
     }
   }
 
-  return { ready, isStub, liffInited, inLineClient, initLiff, loginWithLine };
+  return { ready, isStub, liffInited, inLineClient, liffError, initLiff, loginWithLine };
 }

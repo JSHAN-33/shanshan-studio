@@ -7,7 +7,7 @@ import { useLiff } from '@/composables/useLiff';
 
 const auth = useAuthStore();
 const router = useRouter();
-const { loginWithLine, liffInited, inLineClient } = useLiff();
+const { loginWithLine, liffInited, inLineClient, liffError } = useLiff();
 
 const form = reactive({
   account: '',
@@ -65,6 +65,10 @@ async function submit() {
         <div v-if="auth.profile?.isStub"
           class="text-[10px] text-brand-400 bg-brand-50 border border-brand-100 rounded-xl p-3 mb-4 text-left">
           尚未設定 LINE LIFF ID，目前為手動填單模式。
+        </div>
+        <div v-if="liffError"
+          class="text-[10px] text-red-500 bg-red-50 border border-red-200 rounded-xl p-3 mb-4 text-left break-all">
+          {{ liffError }}
         </div>
 
         <!-- LINE login button -->
