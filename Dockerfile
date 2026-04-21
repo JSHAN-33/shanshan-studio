@@ -34,6 +34,9 @@ COPY --from=build /app/backend/dist ./backend/dist/
 COPY --from=build /app/backend/prisma ./backend/prisma/
 COPY --from=build /app/backend/node_modules/.prisma ./backend/node_modules/.prisma/
 COPY --from=build /app/backend/node_modules/@prisma ./backend/node_modules/@prisma/
+# Copy prisma CLI for migrate deploy
+COPY --from=build /app/backend/node_modules/prisma ./backend/node_modules/prisma/
+COPY --from=build /app/backend/node_modules/.bin/prisma ./backend/node_modules/.bin/prisma
 COPY --from=build /app/frontend/dist ./frontend/dist/
 
 WORKDIR /app/backend
