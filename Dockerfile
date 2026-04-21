@@ -1,5 +1,7 @@
 FROM node:20-alpine AS build
 
+RUN apk add --no-cache openssl
+
 WORKDIR /app
 
 # Install backend dependencies
@@ -24,6 +26,8 @@ RUN cd backend && npx prisma generate && npm run build
 
 # --- Production image ---
 FROM node:20-alpine
+
+RUN apk add --no-cache openssl
 
 WORKDIR /app
 
