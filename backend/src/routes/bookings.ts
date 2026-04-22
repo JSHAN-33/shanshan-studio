@@ -122,7 +122,15 @@ export async function bookingsRoutes(app: FastifyInstance) {
       lineUserId: input.lineUserId,
     });
 
-    // 通知店家由前端 liff.sendMessages() 發送（客人那邊傳出）
+    // 推播通知店家（server-side，確保不論 LIFF 環境都能收到）
+    pushToOa(buildNewBookingMessage({
+      name: input.name,
+      phone: input.phone,
+      date: input.date,
+      time: input.time,
+      items: input.items,
+      total: input.total,
+    })).catch((err) => console.error('[LINE] pushToOa failed', err));
 
     return reply.status(201).send({ booking });
   });
