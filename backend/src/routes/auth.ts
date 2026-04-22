@@ -44,7 +44,9 @@ export async function authRoutes(app: FastifyInstance) {
 
   // POST /auth/register — 新客完善資料後建立會員
   app.post('/register', async (req, reply) => {
-    const input = registerSchema.parse(req.body);
+    const body = req.body as Record<string, unknown>;
+    const inLiff = body.inLiff === true;
+    const input = registerSchema.parse(body);
 
     // 檢查 LINE ID 是否已被綁定
     const existingLine = await app.prisma.member.findUnique({
@@ -86,13 +88,16 @@ export async function authRoutes(app: FastifyInstance) {
       });
     }
 
-    // 推播通知店家（server-side）
-    pushToOa(buildNewMemberMessage({
-      name: member.name,
-      phone: member.phone,
-      gender: member.gender,
-      bday: member.bday,
-    })).catch((err) => console.error('[LINE] pushToOa (new member) failed', err));
+    // 在 LIFF 內由前端 liff.sendMessages() 以客人身份發送；
+    // 非 LIFF 環境才由後端 pushToOa 作為備案
+    if (!inLiff) {
+      pushToOa(buildNewMemberMessage({
+        name: member.name,
+        phone: member.phone,
+        gender: member.gender,
+        bday: member.bday,
+      })).catch((err) => console.error('[LINE] pushToOa (new member) failed', err));
+    }
 
     return { registered: true, member };
   });

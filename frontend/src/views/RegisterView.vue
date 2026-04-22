@@ -2,6 +2,7 @@
 import { reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import SharedCalendar from '@/components/SharedCalendar.vue';
+import liff from '@line/liff';
 import { useAuthStore } from '@/stores/auth';
 import { authApi } from '@/api/auth';
 import { buildNewMemberFlex, sendFlexToChat } from '@/composables/liffMessages';
@@ -58,6 +59,7 @@ async function submit() {
       phone: form.phone.trim(),
       gender: form.gender,
       bday: form.bday || null,
+      inLiff: liff.isInClient(),
     });
 
     // 透過 liff.sendMessages 把註冊通知發到 OA 聊天室（顯示在左邊，客人發的）

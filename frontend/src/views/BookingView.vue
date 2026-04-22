@@ -8,6 +8,7 @@ import { settingsApi } from '@/api/settings';
 import { useBookingStore } from '@/stores/booking';
 import { useAuthStore } from '@/stores/auth';
 import type { AvailableSlot, Booking } from '@/api/types';
+import liff from '@line/liff';
 import { buildNewBookingFlex, sendFlexToChat } from '@/composables/liffMessages';
 
 const booking = useBookingStore();
@@ -97,6 +98,7 @@ async function submit() {
       items: booking.itemsLabel,
       total: booking.total,
       remarks: booking.remarks || null,
+      inLiff: liff.isInClient(),
     });
     createdBooking.value = result;
     // 透過 liff.sendMessages 把通知卡片發到 OA 聊天室（顯示在左邊，客人發的）

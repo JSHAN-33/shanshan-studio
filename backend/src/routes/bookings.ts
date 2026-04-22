@@ -78,7 +78,9 @@ export async function bookingsRoutes(app: FastifyInstance) {
 
   // POST /bookings  —— 公開（顧客送出預約）
   app.post('/', async (req, reply) => {
-    const input = createBookingSchema.parse(req.body);
+    const body = req.body as Record<string, unknown>;
+    const inLiff = body.inLiff === true;
+    const input = createBookingSchema.parse(body);
 
     if (await hasConflict(app.prisma, input.date, input.time, undefined, input.duration ?? undefined)) {
       return reply.status(409).send({
@@ -122,15 +124,18 @@ export async function bookingsRoutes(app: FastifyInstance) {
       lineUserId: input.lineUserId,
     });
 
-    // 推播通知店家（server-side，確保不論 LIFF 環境都能收到）
-    pushToOa(buildNewBookingMessage({
-      name: input.name,
-      phone: input.phone,
-      date: input.date,
-      time: input.time,
-      items: input.items,
-      total: input.total,
-    })).catch((err) => console.error('[LINE] pushToOa failed', err));
+    // 在 LIFF 內由前端 liff.sendMessages() 以客人身份發送（右邊）；
+    // 非 LIFF 環境才由後端 pushToOa 作為備案（左邊，bot 發的）
+    if (!inLiff) {
+      pushToOa(buildNewBookingMessage({
+        name: input.name,
+        phone: input.phone,
+        date: input.date,
+        time: input.time,
+        items: input.items,
+        total: input.total,
+      })).catch((err) => console.error('[LINE] pushToOa failed', err));
+    }
 
     return reply.status(201).send({ booking });
   });

@@ -31,6 +31,7 @@ export const authApi = {
     phone: string;
     gender: '男' | '女';
     bday?: string | null;
+    inLiff?: boolean;
   }): Promise<{ registered: boolean; member: Member }> {
     const res = await http.post<{ registered: boolean; member: Member }>('/auth/register', data);
     return res.data;

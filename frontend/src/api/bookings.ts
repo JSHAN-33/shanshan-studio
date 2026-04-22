@@ -51,6 +51,7 @@ export const bookingsApi = {
     items: string;
     total: number;
     remarks?: string | null;
+    inLiff?: boolean;
   }): Promise<Booking> {
     const res = await http.post<{ booking: Booking }>('/bookings', data);
     return res.data.booking;
