@@ -103,11 +103,18 @@ const comboTotal = computed(() => {
     .reduce((sum, i) => sum + i.price, 0);
 });
 
+// 已付訂金金額
+const depositPaid = computed(() => {
+  if (target.value?.depositStatus === '已付訂金') return target.value.depositAmount ?? 0;
+  return 0;
+});
+
 const autoTotal = computed(() => {
   let amount = Math.round(originalTotal.value * discountRate.value);
   if (newCustomerDiscount.value) {
     amount -= newCustomerAmount.value;
   }
+  amount -= depositPaid.value;
   return Math.max(0, amount);
 });
 
@@ -454,6 +461,20 @@ const payMethodOptions: { value: PayMethod; icon: string; label: string }[] = [
               </div>
               <span v-if="newCustomerDiscount" class="text-sm font-extrabold text-amber-600">-NT$ {{ newCustomerAmount }}</span>
             </button>
+          </div>
+
+          <!-- 已付訂金提示 -->
+          <div v-if="depositPaid > 0" class="mb-4">
+            <div class="w-full flex items-center justify-between px-4 py-3 rounded-2xl bg-amber-50 border-[1.5px] border-amber-300">
+              <div class="flex items-center gap-2">
+                <span class="text-sm">💰</span>
+                <span class="text-xs font-bold text-amber-700">已付預約金</span>
+                <span class="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><path d="M20 6 9 17l-5-5"/></svg>
+                </span>
+              </div>
+              <span class="text-sm font-extrabold text-amber-600">-NT$ {{ depositPaid }}</span>
+            </div>
           </div>
 
           <!-- 儲值金 -->
