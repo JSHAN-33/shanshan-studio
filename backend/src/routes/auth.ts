@@ -86,7 +86,13 @@ export async function authRoutes(app: FastifyInstance) {
       });
     }
 
-    // 通知店家由前端 liff.sendMessages() 發送（客人那邊傳出）
+    // 推播通知店家（server-side）
+    pushToOa(buildNewMemberMessage({
+      name: member.name,
+      phone: member.phone,
+      gender: member.gender,
+      bday: member.bday,
+    })).catch((err) => console.error('[LINE] pushToOa (new member) failed', err));
 
     return { registered: true, member };
   });
