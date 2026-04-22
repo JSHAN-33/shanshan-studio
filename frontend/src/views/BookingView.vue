@@ -339,7 +339,7 @@ function goHistory() {
       </div>
     </div>
     <!-- 預約須知 Modal -->
-    <div v-if="showNotice" class="fixed inset-0 z-40 flex items-center justify-center p-4" style="background:rgba(0,0,0,0.5);" @click.self="showNotice = false">
+    <div v-if="showNotice" class="fixed inset-0 z-[60] flex items-center justify-center p-3" style="background:rgba(0,0,0,0.5);" @click.self="showNotice = false">
       <div class="notice-modal">
         <div class="notice-modal-header">
           <h3 class="notice-modal-title">預約須知與注意事項</h3>
@@ -425,7 +425,8 @@ function goHistory() {
   border-radius: 28px;
   width: 100%;
   max-width: 360px;
-  max-height: 80vh;
+  max-height: calc(100vh - 24px);
+  max-height: calc(100dvh - 24px);
   display: flex;
   flex-direction: column;
   overflow: hidden;
