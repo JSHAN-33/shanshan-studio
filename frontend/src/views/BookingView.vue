@@ -422,9 +422,9 @@ function goHistory() {
 /* 須知 Modal */
 .notice-modal {
   background: #fff;
-  border-radius: 28px;
+  border-radius: 22px;
   width: 100%;
-  max-width: 360px;
+  max-width: 340px;
   max-height: calc(100vh - 24px);
   max-height: calc(100dvh - 24px);
   display: flex;
@@ -441,18 +441,18 @@ function goHistory() {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 22px 22px 14px;
+  padding: 16px 18px 10px;
   flex-shrink: 0;
 }
 .notice-modal-title {
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 800;
   color: #3b3530;
   margin: 0;
 }
 .notice-modal-close {
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   background: #f5f3f1;
   border: none;
@@ -464,26 +464,26 @@ function goHistory() {
   flex-shrink: 0;
 }
 .notice-modal-body {
-  padding: 0 22px;
+  padding: 0 18px;
   overflow-y: auto;
   flex: 1;
 }
 .notice-modal-body::-webkit-scrollbar { display: none; }
 .notice-modal-body { -ms-overflow-style: none; scrollbar-width: none; }
 .notice-intro {
-  font-size: 12px;
+  font-size: 11px;
   color: #7a726d;
-  line-height: 1.7;
-  margin: 0 0 16px;
+  line-height: 1.6;
+  margin: 0 0 12px;
 }
 .notice-section {
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 .notice-section-title {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 800;
   color: #4a423d;
-  margin: 0 0 8px;
+  margin: 0 0 6px;
 }
 .notice-list {
   list-style: none;
@@ -491,10 +491,10 @@ function goHistory() {
   margin: 0;
 }
 .notice-list li {
-  font-size: 12px;
+  font-size: 11px;
   color: #6b635e;
-  line-height: 1.7;
-  padding: 4px 0 4px 14px;
+  line-height: 1.6;
+  padding: 2px 0 2px 12px;
   position: relative;
 }
 .notice-list li::before {
@@ -509,14 +509,14 @@ function goHistory() {
   font-weight: 700;
 }
 .notice-modal-footer {
-  padding: 16px 22px 22px;
+  padding: 12px 18px 18px;
   flex-shrink: 0;
 }
 .notice-agree-btn {
   width: 100%;
   background: #655b55;
   color: white;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 700;
   border: none;
   border-radius: 14px;
