@@ -20,8 +20,8 @@ COPY frontend/ ./frontend/
 ENV VITE_LIFF_ID=2009682315-3j8aqE0E
 RUN cd frontend && npm run build
 
-# Generate Prisma client & build backend
-RUN cd backend && npx prisma generate && npm run build
+# Generate Prisma client & build backend & compile seed
+RUN cd backend && npx prisma generate && npm run build && npx tsc --esModuleInterop --module ESNext --moduleResolution Bundler --target ES2022 --skipLibCheck --outDir prisma prisma/seed.ts
 
 # --- Production image ---
 FROM node:20-alpine
@@ -43,4 +43,4 @@ COPY --from=build /app/frontend/dist ./frontend/dist/
 WORKDIR /app/backend
 
 EXPOSE 3000
-CMD ["sh", "-c", "npx prisma migrate deploy && NODE_ENV=production node dist/server.js"]
+CMD ["sh", "-c", "npx prisma migrate deploy && node prisma/seed.js && NODE_ENV=production node dist/server.js"]
