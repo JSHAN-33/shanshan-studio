@@ -138,21 +138,18 @@ function goHistory() {
 <template>
   <section class="min-h-screen bg-white p-4 pb-24">
     <!-- 預約成功確認頁 -->
-    <div v-if="submitted" class="max-w-[300px] mx-auto text-center pt-4">
-      <div class="w-10 h-10 rounded-full bg-brand-50 flex items-center justify-center mx-auto mb-2">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#655b55" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>
-      </div>
-      <h2 class="text-base font-extrabold text-brand-700 mb-1">
+    <div v-if="submitted" class="max-w-[260px] mx-auto text-center pt-2">
+      <h2 class="text-sm font-extrabold text-brand-700 mb-0.5">
         {{ createdBooking?.depositStatus === '待付訂金' ? '預約已送出' : '預約成功！' }}
       </h2>
-      <p class="text-[11px] text-brand-400 mb-3">
+      <p class="text-[10px] text-brand-400 mb-2">
         {{ createdBooking?.depositStatus === '待付訂金' ? '請先完成預約金轉帳，確認後即完成預約' : '我們已收到您的預約，將盡快為您確認' }}
       </p>
 
       <!-- 確認單 -->
-      <div class="text-left px-4 py-3 mb-3" style="background: #f8f7f5; border-radius: 14px;">
-        <p class="text-[9px] font-bold text-brand-400 tracking-wider uppercase mb-2">Booking Confirmation</p>
-        <div class="space-y-1 text-xs">
+      <div class="text-left px-3 py-2.5 mb-2" style="background: #f8f7f5; border-radius: 12px;">
+        <p class="text-[8px] font-bold text-brand-400 tracking-wider uppercase mb-1.5">Booking Confirmation</p>
+        <div class="space-y-0.5 text-[11px]">
           <div class="flex justify-between">
             <span class="text-brand-400">姓名</span>
             <span class="font-bold text-brand-700">{{ auth.customer?.name }}</span>
@@ -181,59 +178,59 @@ function goHistory() {
             <span>新客折價</span>
             <span class="font-bold">-NT$ {{ booking.discount }}</span>
           </div>
-          <div class="border-t border-brand-100 pt-1.5 mt-1.5 flex justify-between">
+          <div class="border-t border-brand-100 pt-1 mt-1 flex justify-between">
             <span class="font-bold text-brand-600">合計</span>
-            <span class="font-extrabold text-brand-700 text-sm">NT$ {{ booking.total }}</span>
+            <span class="font-extrabold text-brand-700 text-xs">NT$ {{ booking.total }}</span>
           </div>
         </div>
       </div>
 
       <!-- 預約金付款提示 -->
-      <div v-if="createdBooking?.depositStatus === '待付訂金'" class="text-left mb-3 overflow-hidden" style="border-radius: 16px; border: 1.5px solid #e8dfd4;">
+      <div v-if="createdBooking?.depositStatus === '待付訂金'" class="text-left mb-2 overflow-hidden" style="border-radius: 12px; border: 1.5px solid #e8dfd4;">
         <!-- 醒目標頭 -->
-        <div style="background: #3b3530; padding: 10px 14px;" class="flex items-center gap-2.5">
-          <span class="w-7 h-7 rounded-full flex items-center justify-center shrink-0" style="background: rgba(200,169,110,0.2);">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#c8a96e" stroke-width="2.2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        <div style="background: #3b3530; padding: 8px 12px;" class="flex items-center gap-2">
+          <span class="w-6 h-6 rounded-full flex items-center justify-center shrink-0" style="background: rgba(200,169,110,0.2);">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#c8a96e" stroke-width="2.2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
           </span>
           <div>
-            <p style="font-size:9px;font-weight:800;letter-spacing:0.14em;color:rgba(255,255,255,0.4);margin:0;text-transform:uppercase;">Deposit Required</p>
-            <p style="font-size:15px;font-weight:900;color:#c8a96e;margin:1px 0 0;">NT$ {{ createdBooking.depositAmount }}</p>
+            <p style="font-size:8px;font-weight:800;letter-spacing:0.12em;color:rgba(255,255,255,0.4);margin:0;text-transform:uppercase;">Deposit Required</p>
+            <p style="font-size:13px;font-weight:900;color:#c8a96e;margin:0;">NT$ {{ createdBooking.depositAmount }}</p>
           </div>
         </div>
         <!-- 內容 -->
-        <div style="background: #faf8f5; padding: 12px 14px;">
-          <p class="text-xs font-bold text-brand-700 mb-2">
+        <div style="background: #faf8f5; padding: 10px 12px;">
+          <p class="text-[11px] font-bold text-brand-700 mb-1.5">
             請於 <span style="color:#8b6914;font-weight:900;">24 小時內</span> 完成預約金轉帳
           </p>
-          <div v-if="depositBankInfo" class="p-2.5 mb-2" style="background: white; border-radius: 10px; border: 1px solid #ede9e5;">
-            <p style="font-size:8px;font-weight:700;letter-spacing:0.12em;color:#b0aba7;margin:0 0 4px;text-transform:uppercase;">匯款資訊</p>
-            <p class="text-[11px] text-brand-600 leading-relaxed whitespace-pre-line font-bold">{{ depositBankInfo }}</p>
+          <div v-if="depositBankInfo" class="p-2 mb-1.5" style="background: white; border-radius: 8px; border: 1px solid #ede9e5;">
+            <p style="font-size:7px;font-weight:700;letter-spacing:0.1em;color:#b0aba7;margin:0 0 2px;text-transform:uppercase;">匯款資訊</p>
+            <p class="text-[10px] text-brand-600 leading-snug whitespace-pre-line font-bold">{{ depositBankInfo }}</p>
           </div>
-          <div class="space-y-0.5">
-            <p class="text-[10px] text-brand-500 leading-snug flex items-start gap-1.5">
-              <span class="shrink-0 mt-0.5" style="color:#c8a96e;">●</span>
+          <div class="space-y-0">
+            <p class="text-[9px] text-brand-500 leading-normal flex items-start gap-1">
+              <span class="shrink-0" style="color:#c8a96e;">●</span>
               轉帳完成後請截圖傳至 LINE 告知小編
             </p>
-            <p class="text-[10px] text-brand-500 leading-snug flex items-start gap-1.5">
-              <span class="shrink-0 mt-0.5" style="color:#c8a96e;">●</span>
+            <p class="text-[9px] text-brand-500 leading-normal flex items-start gap-1">
+              <span class="shrink-0" style="color:#c8a96e;">●</span>
               確認收款後將為您正式登記預約
             </p>
-            <p class="text-[10px] text-brand-400 leading-snug flex items-start gap-1.5">
-              <span class="shrink-0 mt-0.5" style="color:#d5d0cc;">●</span>
+            <p class="text-[9px] text-brand-400 leading-normal flex items-start gap-1">
+              <span class="shrink-0" style="color:#d5d0cc;">●</span>
               逾時未付款，預約將自動取消
             </p>
-            <p class="text-[10px] text-brand-400 leading-snug flex items-start gap-1.5">
-              <span class="shrink-0 mt-0.5" style="color:#d5d0cc;">●</span>
+            <p class="text-[9px] text-brand-400 leading-normal flex items-start gap-1">
+              <span class="shrink-0" style="color:#d5d0cc;">●</span>
               臨時取消或未到場者，預約金恕不退還
             </p>
           </div>
         </div>
       </div>
 
-      <p v-if="booking.hasCombo" class="text-[10px] text-amber-600 font-bold mb-1 text-center">
+      <p v-if="booking.hasCombo" class="text-[9px] text-amber-600 font-bold mb-0.5 text-center">
         ※ 套餐活動皆不適用任何優惠活動
       </p>
-      <p class="text-[10px] text-brand-400 mb-3">
+      <p class="text-[9px] text-brand-400 mb-2">
         如需異動預約，請透過 LINE 私訊小編人工處理
       </p>
 
@@ -243,19 +240,19 @@ function goHistory() {
         target="_blank"
         rel="noopener"
         class="map-link"
-        style="padding: 10px 14px;"
+        style="padding: 8px 12px;"
       >
-        <span class="map-link-icon" style="width:28px;height:28px;">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        <span class="map-link-icon" style="width:24px;height:24px;">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
         </span>
-        <span class="map-link-text" style="font-size:12px;">查看店面位置</span>
-        <svg class="map-link-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+        <span class="map-link-text" style="font-size:11px;">查看店面位置</span>
+        <svg class="map-link-arrow" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
       </a>
 
-      <div class="flex gap-2 mt-2">
-        <button type="button" class="btn-outline flex-1 text-[11px]" @click="goHistory">查看紀錄</button>
-        <button type="button" class="flex-1 text-white font-semibold text-[11px]"
-          style="background: #655b55; border-radius: 12px; padding: 10px; border: none; cursor: pointer;"
+      <div class="flex gap-2 mt-1.5">
+        <button type="button" class="btn-outline flex-1 text-[10px]" style="padding:8px;border-radius:10px;" @click="goHistory">查看紀錄</button>
+        <button type="button" class="flex-1 text-white font-semibold text-[10px]"
+          style="background: #655b55; border-radius: 10px; padding: 8px; border: none; cursor: pointer;"
           @click="goHome">返回首頁</button>
       </div>
     </div>
