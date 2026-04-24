@@ -644,22 +644,22 @@ const { refreshing } = usePullRefresh(() => loadMonth(month.value));
 <template>
   <div class="space-y-4">
     <!-- KPI -->
-    <div class="grid grid-cols-2 gap-3">
-      <div class="card !py-2 relative cursor-pointer" @click="newBookingCount > 0 ? (showNotifyModal = true) : undefined">
-        <p class="section-label mb-1">今日預約</p>
-        <p class="text-lg font-extrabold text-brand-600 leading-none">{{ summary?.today.bookings ?? 0 }}</p>
+    <div class="grid grid-cols-2 gap-2">
+      <div class="card !p-2.5 !rounded-xl relative cursor-pointer" @click="newBookingCount > 0 ? (showNotifyModal = true) : undefined">
+        <p class="section-label mb-0.5">今日預約</p>
+        <p class="text-base font-extrabold text-brand-600 leading-none">{{ summary?.today.bookings ?? 0 }}</p>
         <p class="section-label mt-0.5">筆</p>
         <!-- 新預約通知 badge -->
         <span
           v-if="newBookingCount > 0"
-          class="absolute -top-1.5 -right-1.5 min-w-[20px] h-[20px] flex items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-extrabold px-1.5 animate-bounce"
+          class="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-red-500 text-white text-[9px] font-extrabold px-1 animate-bounce"
         >
           +{{ newBookingCount }}
         </span>
       </div>
-      <div class="card !py-2">
-        <p class="section-label mb-1">今日營收</p>
-        <p class="text-sm font-extrabold text-brand-600 leading-none tracking-tight">NT$ {{ summary?.today.revenue ?? 0 }}</p>
+      <div class="card !p-2.5 !rounded-xl">
+        <p class="section-label mb-0.5">今日營收</p>
+        <p class="text-xs font-extrabold text-brand-600 leading-none tracking-tight">NT$ {{ summary?.today.revenue ?? 0 }}</p>
         <p class="section-label mt-0.5">已結帳</p>
       </div>
     </div>
@@ -710,28 +710,28 @@ const { refreshing } = usePullRefresh(() => loadMonth(month.value));
       </div>
       <p v-if="loading" class="text-center text-brand-400 py-6">載入中…</p>
       <p v-else-if="!dayBookings.length" class="text-center text-brand-400 py-6">本日無預約</p>
-      <ul v-else class="space-y-2">
-        <li v-for="b in dayBookings" :key="b.id" class="card !py-2">
+      <ul v-else class="space-y-1.5">
+        <li v-for="b in dayBookings" :key="b.id" class="card !p-2.5 !rounded-xl">
           <div class="flex justify-between items-start">
             <div>
-              <div class="text-xs text-brand-500">{{ b.time }}</div>
-              <div class="font-bold text-sm">{{ b.name }} · {{ b.phone }}</div>
-              <div class="text-[11px] text-brand-500">{{ b.items }}</div>
-              <div class="text-sm text-brand-600 mt-0.5">${{ b.total }}</div>
+              <div class="text-[11px] text-brand-500">{{ b.time }}</div>
+              <div class="font-bold text-xs">{{ b.name }} · {{ b.phone }}</div>
+              <div class="text-[10px] text-brand-500">{{ b.items }}</div>
+              <div class="text-xs text-brand-600 font-bold mt-0.5">${{ b.total }}</div>
             </div>
             <span class="badge" :class="statusClass[b.status]">{{ b.status }}</span>
           </div>
           <!-- 預約金提示 -->
-          <div v-if="b.status === '待付訂金'" class="flex items-center justify-between mt-1.5 px-2 py-1.5 rounded-lg" style="background:#fef3e2;">
+          <div v-if="b.status === '待付訂金'" class="flex items-center justify-between mt-1 px-2 py-1 rounded-lg" style="background:#fef3e2;">
             <span class="text-[10px] font-bold" style="color:#8b6914;">待付預約金 ${{ b.depositAmount ?? depositSetting.amount }}</span>
-            <button class="text-[10px] font-bold px-3 py-1 rounded-full bg-brand-600 text-white active:scale-95" @click="confirmDeposit(b)">確認收款</button>
+            <button class="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-brand-600 text-white active:scale-95" @click="confirmDeposit(b)">確認收款</button>
           </div>
-          <div class="flex gap-1.5 mt-2 flex-wrap">
+          <div class="flex gap-1 mt-1.5 flex-wrap">
             <button
               v-for="s in statuses.filter(st => st !== '待付訂金')"
               :key="s"
               type="button"
-              class="text-[10px] font-bold px-2.5 py-1 rounded-full transition-all"
+              class="text-[10px] font-bold px-2 py-0.5 rounded-full transition-all"
               :class="b.status === s
                 ? statusClass[s] + ' ring-1 ring-offset-1 ring-brand-300'
                 : 'bg-brand-50 text-brand-400'"
@@ -739,21 +739,21 @@ const { refreshing } = usePullRefresh(() => loadMonth(month.value));
             >
               {{ s }}
             </button>
-            <button class="btn-outline text-xs !py-1 ml-auto" @click="openEdit(b)">編輯</button>
-            <button class="btn-outline text-xs !py-1 !text-red-600 !border-red-200" @click="remove(b)">刪除</button>
+            <button class="btn-outline !text-[10px] !py-0.5 !px-2 ml-auto" @click="openEdit(b)">編輯</button>
+            <button class="btn-outline !text-[10px] !py-0.5 !px-2 !text-red-600 !border-red-200" @click="remove(b)">刪除</button>
           </div>
         </li>
       </ul>
     </section>
 
     <!-- 下月預估 -->
-    <div v-if="summary" class="card !py-2">
-      <h3 class="font-bold text-sm mb-1">下月業績預估</h3>
-      <div class="flex justify-between text-xs">
+    <div v-if="summary" class="card !p-2.5 !rounded-xl">
+      <h3 class="font-bold text-xs mb-1">下月業績預估</h3>
+      <div class="flex justify-between text-[11px]">
         <span class="text-brand-500">預約筆數</span>
         <span class="font-bold">{{ summary.nextMonthEstimate.bookings }}</span>
       </div>
-      <div class="flex justify-between text-xs mt-0.5">
+      <div class="flex justify-between text-[11px] mt-0.5">
         <span class="text-brand-500">預估營收</span>
         <span class="font-bold text-brand-600">${{ summary.nextMonthEstimate.revenue }}</span>
       </div>

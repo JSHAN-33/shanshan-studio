@@ -297,15 +297,15 @@ const payMethodOptions: { value: PayMethod; icon: string; label: string }[] = [
 
 <template>
   <div class="space-y-4">
-    <div class="grid grid-cols-2 gap-3">
-      <div class="card !py-2">
-        <p class="section-label mb-1">本月結帳</p>
-        <p class="text-lg font-extrabold text-brand-600 leading-none">{{ summary?.month.bookings ?? 0 }}</p>
+    <div class="grid grid-cols-2 gap-2">
+      <div class="card !p-2.5 !rounded-xl">
+        <p class="section-label mb-0.5">本月結帳</p>
+        <p class="text-base font-extrabold text-brand-600 leading-none">{{ summary?.month.bookings ?? 0 }}</p>
         <p class="section-label mt-0.5">筆</p>
       </div>
-      <div class="card !py-2">
-        <p class="section-label mb-1">本月營收</p>
-        <p class="text-sm font-extrabold text-brand-600 leading-none tracking-tight">NT$ {{ summary?.month.revenue ?? 0 }}</p>
+      <div class="card !p-2.5 !rounded-xl">
+        <p class="section-label mb-0.5">本月營收</p>
+        <p class="text-xs font-extrabold text-brand-600 leading-none tracking-tight">NT$ {{ summary?.month.revenue ?? 0 }}</p>
       </div>
     </div>
 
@@ -313,21 +313,21 @@ const payMethodOptions: { value: PayMethod; icon: string; label: string }[] = [
       <h2 class="font-bold mb-2">待結帳</h2>
       <p v-if="loading" class="text-center text-brand-400 py-4">載入中…</p>
       <p v-else-if="!pending.length" class="text-center text-brand-400 py-4">目前沒有待結帳項目</p>
-      <ul v-else class="space-y-2">
-        <li v-for="b in pending" :key="b.id" class="card flex justify-between items-center">
+      <ul v-else class="space-y-1.5">
+        <li v-for="b in pending" :key="b.id" class="card !p-2.5 !rounded-xl flex justify-between items-center">
           <div>
-            <div class="font-bold">{{ b.name }}</div>
-            <div class="text-xs text-brand-500">{{ b.date }} {{ b.time }}</div>
-            <div class="text-xs text-brand-400 mt-0.5">{{ b.items }}</div>
+            <div class="font-bold text-xs">{{ b.name }}</div>
+            <div class="text-[11px] text-brand-500">{{ b.date }} {{ b.time }}</div>
+            <div class="text-[10px] text-brand-400 mt-0.5">{{ b.items }}</div>
           </div>
           <div class="text-right">
-            <div class="text-brand-600 font-bold">${{ b.total }}</div>
-            <span class="badge text-[9px] mt-1" :class="{
+            <div class="text-brand-600 font-bold text-xs">${{ b.total }}</div>
+            <span class="badge text-[9px] mt-0.5" :class="{
               'badge-pending': b.status === '待確認',
               'badge-confirmed': b.status === '已確認',
               'badge-done': b.status === '已完成',
             }">{{ b.status }}</span>
-            <button class="btn-primary text-xs !py-1 mt-1 block ml-auto" @click="openCheckout(b)">結帳</button>
+            <button class="btn-primary !text-[11px] !py-0.5 mt-0.5 block ml-auto" @click="openCheckout(b)">結帳</button>
           </div>
         </li>
       </ul>
@@ -335,30 +335,30 @@ const payMethodOptions: { value: PayMethod; icon: string; label: string }[] = [
 
     <section>
       <h2 class="font-bold mb-2">已結帳（本月）</h2>
-      <ul v-if="paid.length" class="space-y-2">
-        <li v-for="b in paid" :key="b.id" class="card">
+      <ul v-if="paid.length" class="space-y-1.5">
+        <li v-for="b in paid" :key="b.id" class="card !p-2.5 !rounded-xl">
           <div class="flex justify-between items-start gap-2">
             <div class="min-w-0 flex-1">
-              <div class="font-bold">{{ b.name }}</div>
-              <div class="text-xs text-brand-500">{{ b.date }} {{ b.time }} · {{ b.items }}</div>
+              <div class="font-bold text-xs">{{ b.name }}</div>
+              <div class="text-[11px] text-brand-500">{{ b.date }} {{ b.time }} · {{ b.items }}</div>
             </div>
             <div class="text-right shrink-0">
-              <div class="text-brand-600 font-bold">${{ b.total }}</div>
-              <div class="text-xs text-brand-500">{{ b.payMethod }}</div>
-              <div class="flex items-center gap-1.5 mt-1 justify-end">
+              <div class="text-brand-600 font-bold text-xs">${{ b.total }}</div>
+              <div class="text-[11px] text-brand-500">{{ b.payMethod }}</div>
+              <div class="flex items-center gap-1 mt-0.5 justify-end">
                 <button
-                  class="w-6 h-6 rounded-full bg-brand-50 flex items-center justify-center text-brand-400 hover:bg-brand-100 transition"
+                  class="w-5 h-5 rounded-full bg-brand-50 flex items-center justify-center text-brand-400 hover:bg-brand-100 transition"
                   title="編輯此筆結帳紀錄"
                   @click="openEditPaid(b)"
                 >
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                 </button>
                 <button
-                  class="w-6 h-6 rounded-full bg-red-50 flex items-center justify-center text-red-400 hover:bg-red-100 transition"
+                  class="w-5 h-5 rounded-full bg-red-50 flex items-center justify-center text-red-400 hover:bg-red-100 transition"
                   title="刪除此筆結帳紀錄"
                   @click="removePaid(b)"
                 >
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
                 </button>
               </div>
             </div>
