@@ -10,7 +10,6 @@ import { useAuthStore } from '@/stores/auth';
 import type { AvailableSlot, Booking } from '@/api/types';
 import liff from '@line/liff';
 import { buildNewBookingFlex, sendFlexToChat } from '@/composables/liffMessages';
-import { useToast } from '@/composables/useToast';
 
 const booking = useBookingStore();
 const auth = useAuthStore();
@@ -133,20 +132,6 @@ function goHome() {
 function goHistory() {
   booking.reset();
   router.push('/history');
-}
-
-const toast = useToast();
-
-async function shareBooking() {
-  const text = `SHANSHAN.STUDIO 預約確認\n日期：${selectedDate.value}\n時段：${selectedTime.value}\n項目：${booking.itemsLabel}\n合計：NT$ ${booking.total}\n\n店面位置：https://maps.app.goo.gl/itw3jVbvuNajf2kp8?g_st=ic`;
-  if (navigator.share) {
-    try {
-      await navigator.share({ title: 'SHANSHAN.STUDIO 預約確認', text });
-    } catch { /* user cancelled */ }
-  } else {
-    await navigator.clipboard.writeText(text);
-    toast.show('已複製預約資訊', 'success');
-  }
 }
 </script>
 
@@ -276,15 +261,6 @@ async function shareBooking() {
         <svg class="map-link-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
       </a>
 
-      <!-- 分享預約 -->
-      <button type="button" class="share-btn mt-3" @click="shareBooking">
-        <span class="share-btn-icon">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.59 13.51 6.83 3.98M15.41 6.51l-6.82 3.98"/></svg>
-        </span>
-        <span class="share-btn-text">分享預約資訊給朋友</span>
-        <svg class="share-btn-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
-      </button>
-
       <div class="flex gap-3 mt-3">
         <button type="button" class="btn-outline flex-1 text-xs" @click="goHistory">查看紀錄</button>
         <button type="button" class="flex-1 text-white font-semibold text-xs"
@@ -331,9 +307,7 @@ async function shareBooking() {
         <!-- Time slots -->
         <div>
           <label class="label">選擇時段</label>
-          <div v-if="loadingSlots" class="grid grid-cols-4 gap-2">
-            <div v-for="i in 8" :key="i" class="h-9 rounded-xl bg-brand-50 animate-pulse"></div>
-          </div>
+          <p v-if="loadingSlots" class="text-[11px] text-brand-400 text-center py-3">載入中…</p>
           <TimeSlotGrid v-else :slots="slots" :selected="selectedTime" @select="(t) => (selectedTime = t)" />
         </div>
 
@@ -599,45 +573,6 @@ async function shareBooking() {
   color: #4a423d;
 }
 .map-link-arrow {
-  color: #b0aba7;
-  flex-shrink: 0;
-}
-
-/* 分享按鈕 */
-.share-btn {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-  background: #f8f7f5;
-  border: 1.5px solid #ede9e5;
-  border-radius: 14px;
-  padding: 12px 16px;
-  cursor: pointer;
-  transition: background 0.15s;
-}
-.share-btn:active {
-  background: #f0efed;
-}
-.share-btn-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: #655b55;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  flex-shrink: 0;
-}
-.share-btn-text {
-  flex: 1;
-  text-align: left;
-  font-size: 13px;
-  font-weight: 700;
-  color: #4a423d;
-}
-.share-btn-arrow {
   color: #b0aba7;
   flex-shrink: 0;
 }

@@ -25,23 +25,14 @@ const tabs: Array<{ value: ServiceCat; label: string }> = [
   { value: 'products', label: '產品購買' },
 ];
 
-const searchQuery = ref('');
-
-const filtered = computed(() => {
-  const q = searchQuery.value.trim().toLowerCase();
-  let list = services.value.filter((s) => s.cat === tab.value);
-  if (q) list = list.filter((s) => s.name.toLowerCase().includes(q) || (s.nameEn ?? '').toLowerCase().includes(q));
-  return list;
-});
-
-const combos = computed(() => filtered.value.filter((s) => s.isCombo));
+const combos = computed(() => services.value.filter((s) => s.cat === tab.value && s.isCombo));
 
 // 「熱蠟後必敷」等 note 拉出來當區塊標題
 const sectionTitleNotes = new Set(['熱蠟後必敷']);
-const singles = computed(() => filtered.value.filter((s) => !s.isCombo && !sectionTitleNotes.has(s.note ?? '')));
+const singles = computed(() => services.value.filter((s) => s.cat === tab.value && !s.isCombo && !sectionTitleNotes.has(s.note ?? '')));
 const sectionGroups = computed(() => {
   const map = new Map<string, Service[]>();
-  for (const s of filtered.value.filter((s) => !s.isCombo && sectionTitleNotes.has(s.note ?? ''))) {
+  for (const s of services.value.filter((s) => s.cat === tab.value && !s.isCombo && sectionTitleNotes.has(s.note ?? ''))) {
     if (!map.has(s.note!)) map.set(s.note!, []);
     map.get(s.note!)!.push(s);
   }
@@ -88,19 +79,6 @@ function proceed() {
       >
         {{ t.label }}
       </button>
-    </div>
-
-    <!-- 搜尋框 -->
-    <div class="px-4 pt-3 pb-1 shrink-0">
-      <div class="relative">
-        <svg class="absolute left-3 top-1/2 -translate-y-1/2 text-brand-300" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-        <input
-          v-model="searchQuery"
-          type="text"
-          class="w-full bg-brand-50 text-xs text-brand-600 placeholder:text-brand-300 rounded-full py-2.5 pl-9 pr-4 border-none outline-none focus:ring-2 focus:ring-brand-200 transition"
-          placeholder="搜尋服務項目..."
-        />
-      </div>
     </div>
 
     <!-- 可滾動的內容區域 -->

@@ -1,21 +1,17 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { bookingsApi } from '@/api/bookings';
 import { membersApi } from '@/api/members';
 import { serviceHistoryApi } from '@/api/serviceHistory';
 import { useAuthStore } from '@/stores/auth';
-import { useBookingStore } from '@/stores/booking';
-import { servicesApi } from '@/api/services';
-import type { Booking, BookingStatus, Member, Service, ServiceHistory } from '@/api/types';
+import type { Booking, BookingStatus, Member, ServiceHistory } from '@/api/types';
 
 const auth = useAuthStore();
-const booking = useBookingStore();
 const router = useRouter();
 const bookings = ref<Booking[]>([]);
 const serviceHistory = ref<ServiceHistory[]>([]);
 const member = ref<Member | null>(null);
-const allServices = ref<Service[]>([]);
 const loading = ref(true);
 const showTopup = ref(false);
 
@@ -27,59 +23,17 @@ const badgeClass: Record<BookingStatus, string> = {
   已取消: 'badge-cancelled',
 };
 
-// 分區：即將到來 vs 過往紀錄
-const upcomingStatuses = new Set<BookingStatus>(['待付訂金', '待確認', '已確認']);
-const upcomingBookings = computed(() =>
-  bookings.value.filter((b) => upcomingStatuses.has(b.status)).sort((a, b) => {
-    const da = `${a.date} ${a.time}`;
-    const db = `${b.date} ${b.time}`;
-    return da < db ? -1 : da > db ? 1 : 0;
-  })
-);
-const pastBookings = computed(() =>
-  bookings.value.filter((b) => !upcomingStatuses.has(b.status))
-);
-
-// 最近一筆即將到來
-const nextBooking = computed(() => upcomingBookings.value[0] ?? null);
-
-// 倒數天數
-function daysUntil(dateStr: string): number {
-  const now = new Date();
-  now.setHours(0, 0, 0, 0);
-  const target = new Date(dateStr + 'T00:00:00');
-  return Math.ceil((target.getTime() - now.getTime()) / 86400000);
-}
-
-// 累積消費統計
-const totalSpend = computed(() => serviceHistory.value.reduce((s, h) => s + h.total, 0));
-const visitCount = computed(() => serviceHistory.value.length);
-
-// 快速重新預約
-function rebook(b: Booking) {
-  booking.reset();
-  // 嘗試匹配服務名稱到現有服務
-  const itemNames = b.items.split('、');
-  for (const name of itemNames) {
-    const svc = allServices.value.find((s) => s.name === name.trim() && s.isActive);
-    if (svc) booking.toggle(svc);
-  }
-  router.push(booking.count > 0 ? '/booking' : '/services');
-}
-
 async function load() {
   if (!auth.customer?.phone) { router.replace('/login'); return; }
   loading.value = true;
-  const [bList, mem, hList, svcs] = await Promise.all([
+  const [bList, mem, hList] = await Promise.all([
     bookingsApi.listByPhone(auth.customer.phone),
     membersApi.getByPhone(auth.customer.phone),
     serviceHistoryApi.listByPhone(auth.customer.phone).catch(() => []),
-    servicesApi.list().catch(() => []),
   ]);
   bookings.value = bList;
   member.value = mem;
   serviceHistory.value = hList;
-  allServices.value = svcs;
   loading.value = false;
 }
 
@@ -105,15 +59,6 @@ onMounted(load);
 
     <!-- 可滾動的內容區域 -->
     <main class="flex-1 overflow-y-auto px-4 pt-4 pb-24 space-y-4">
-      <!-- Skeleton loading -->
-      <template v-if="loading">
-        <div class="animate-pulse" style="border-radius: 28px; overflow: hidden; height: 220px; background: #e8e5e2;"></div>
-        <div class="animate-pulse" style="border-radius: 18px; height: 56px; background: #e8e5e2;"></div>
-        <div class="animate-pulse" style="border-radius: 16px; height: 80px; background: #f0efed;"></div>
-        <div class="animate-pulse" style="border-radius: 16px; height: 80px; background: #f0efed;"></div>
-      </template>
-
-      <template v-else>
       <!-- Member card (dark style) -->
       <div style="border-radius: 28px; overflow: hidden; box-shadow: 0 8px 32px rgba(59,53,48,0.28);">
         <div style="background: #3b3530; padding: 24px 24px 26px; position: relative; overflow: hidden;">
@@ -145,23 +90,11 @@ onMounted(load);
               <p style="font-size:12px;font-weight:700;color:rgba(255,255,255,0.78);margin:0;">{{ auth.customer.bday }}</p>
             </div>
           </div>
-          <!-- 累積消費/來店次數 -->
-          <div v-if="visitCount > 0 || (member && member.wallet > 0)" style="margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,0.1);">
-            <div class="flex items-center justify-between flex-wrap gap-y-2">
-              <div v-if="visitCount > 0" class="flex gap-5">
-                <div>
-                  <p style="font-size:8px;font-weight:700;letter-spacing:0.18em;color:rgba(255,255,255,0.28);margin:0 0 3px;text-transform:uppercase;">Visits / 來店</p>
-                  <p style="font-size:16px;font-weight:900;color:rgba(255,255,255,0.88);margin:0;">{{ visitCount }} 次</p>
-                </div>
-                <div>
-                  <p style="font-size:8px;font-weight:700;letter-spacing:0.18em;color:rgba(255,255,255,0.28);margin:0 0 3px;text-transform:uppercase;">Total / 累計</p>
-                  <p style="font-size:16px;font-weight:900;color:rgba(255,255,255,0.88);margin:0;">NT$ {{ totalSpend.toLocaleString() }}</p>
-                </div>
-              </div>
-              <div v-if="member && member.wallet > 0">
-                <p style="font-size:8px;font-weight:700;letter-spacing:0.18em;color:rgba(255,255,255,0.28);margin:0 0 3px;text-transform:uppercase;">Wallet / 儲值金</p>
-                <p style="font-size:16px;font-weight:900;color:rgba(255,255,255,0.88);margin:0;">NT$ {{ member.wallet.toLocaleString() }}</p>
-              </div>
+          <!-- 儲值金 -->
+          <div v-if="member && member.wallet > 0" style="margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,0.1);">
+            <div class="flex items-center justify-between">
+              <p style="font-size:8px;font-weight:700;letter-spacing:0.18em;color:rgba(255,255,255,0.28);margin:0;text-transform:uppercase;">Wallet / 儲值金</p>
+              <p style="font-size:18px;font-weight:900;color:rgba(255,255,255,0.88);margin:0;">NT$ {{ member.wallet.toLocaleString() }}</p>
             </div>
           </div>
         </div>
@@ -242,26 +175,6 @@ onMounted(load);
         </div>
       </div>
 
-      <!-- 即將到來的預約（置頂醒目卡片） -->
-      <div v-if="nextBooking" class="next-booking-card">
-        <div class="flex items-center gap-2 mb-2">
-          <span class="next-booking-dot"></span>
-          <span class="text-[9px] font-bold tracking-[0.15em] uppercase" style="color:rgba(255,255,255,0.45);">Next Appointment</span>
-        </div>
-        <div class="flex justify-between items-start">
-          <div>
-            <p class="text-white font-extrabold text-base mb-0.5">{{ nextBooking.date }} {{ nextBooking.time }}</p>
-            <p class="text-xs" style="color:rgba(255,255,255,0.65);">{{ nextBooking.items }}</p>
-          </div>
-          <div class="text-right shrink-0 ml-3">
-            <p class="next-booking-countdown">
-              {{ daysUntil(nextBooking.date) === 0 ? '今天' : daysUntil(nextBooking.date) === 1 ? '明天' : `${daysUntil(nextBooking.date)} 天後` }}
-            </p>
-            <span class="badge mt-1" :class="badgeClass[nextBooking.status]">{{ nextBooking.status }}</span>
-          </div>
-        </div>
-      </div>
-
       <!-- Service history（歷史消費：由店家手動輸入） -->
       <div v-if="serviceHistory.length" class="pt-4">
         <div class="section-label mb-3 ml-2">SERVICE HISTORY / 消費紀錄</div>
@@ -282,50 +195,20 @@ onMounted(load);
         </p>
       </div>
 
-      <!-- 即將到來的預約 -->
-      <div v-if="upcomingBookings.length" class="pt-4">
-        <div class="section-label mb-3 ml-2">UPCOMING / 即將到來</div>
-        <ul class="space-y-3">
-          <li v-for="b in upcomingBookings" :key="b.id" class="card">
+      <!-- Booking history -->
+      <div class="pt-4">
+        <div class="section-label mb-3 ml-2">BOOKING HISTORY / 預約紀錄</div>
+        <p v-if="loading" class="text-center text-brand-400 py-6 text-xs">載入中…</p>
+        <p v-else-if="!bookings.length" class="text-center text-brand-400 py-6 text-xs">尚無預約紀錄</p>
+        <ul v-else class="space-y-3">
+          <li v-for="b in bookings" :key="b.id" class="card">
             <div class="flex justify-between items-start">
               <div>
                 <div class="text-xs text-brand-400">{{ b.date }} {{ b.time }}</div>
                 <div class="font-bold text-sm mt-1 text-brand-700">{{ b.items }}</div>
                 <div class="text-brand-600 font-extrabold mt-1">NT$ {{ b.total }}</div>
               </div>
-              <div class="text-right shrink-0 ml-3">
-                <span class="badge" :class="badgeClass[b.status]">{{ b.status }}</span>
-                <p class="text-[10px] font-bold mt-1" :class="daysUntil(b.date) <= 1 ? 'text-amber-600' : 'text-brand-400'">
-                  {{ daysUntil(b.date) === 0 ? '今天' : daysUntil(b.date) === 1 ? '明天' : `${daysUntil(b.date)} 天後` }}
-                </p>
-              </div>
-            </div>
-            <div v-if="b.remarks" class="text-[10px] text-brand-400 mt-2">備註：{{ b.remarks }}</div>
-          </li>
-        </ul>
-      </div>
-
-      <!-- 過往紀錄 -->
-      <div class="pt-4">
-        <div class="section-label mb-3 ml-2">PAST BOOKINGS / 過往預約</div>
-        <p v-if="!pastBookings.length" class="text-center text-brand-400 py-6 text-xs">尚無過往預約</p>
-        <ul v-else class="space-y-3">
-          <li v-for="b in pastBookings" :key="b.id" class="card">
-            <div class="flex justify-between items-start">
-              <div class="min-w-0 flex-1">
-                <div class="text-xs text-brand-400">{{ b.date }} {{ b.time }}</div>
-                <div class="font-bold text-sm mt-1 text-brand-700">{{ b.items }}</div>
-                <div class="text-brand-600 font-extrabold mt-1">NT$ {{ b.total }}</div>
-              </div>
-              <div class="text-right shrink-0 ml-3">
-                <span class="badge" :class="badgeClass[b.status]">{{ b.status }}</span>
-                <button
-                  v-if="b.status === '已完成'"
-                  type="button"
-                  class="rebook-btn mt-1.5"
-                  @click="rebook(b)"
-                >再次預約</button>
-              </div>
+              <span class="badge" :class="badgeClass[b.status]">{{ b.status }}</span>
             </div>
             <div v-if="b.remarks" class="text-[10px] text-brand-400 mt-2">備註：{{ b.remarks }}</div>
           </li>
@@ -334,7 +217,6 @@ onMounted(load);
           如需取消或異動預約，請透過 LINE 私訊小編人工處理
         </p>
       </div>
-      </template>
     </main>
   </section>
 </template>
@@ -522,50 +404,5 @@ onMounted(load);
   color: rgba(255,255,255,0.3);
   margin: 0 0 4px;
   line-height: 1.6;
-}
-
-/* 即將到來置頂卡片 */
-.next-booking-card {
-  background: linear-gradient(135deg, #655b55, #4a423d);
-  border-radius: 20px;
-  padding: 18px 20px;
-  box-shadow: 0 6px 24px rgba(59,53,48,0.22);
-}
-.next-booking-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #4ade80;
-  display: inline-block;
-  animation: dot-pulse 2s ease-in-out infinite;
-}
-@keyframes dot-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
-}
-.next-booking-countdown {
-  font-size: 18px;
-  font-weight: 900;
-  color: #c8a96e;
-  margin: 0;
-  line-height: 1.2;
-}
-
-/* 再次預約按鈕 */
-.rebook-btn {
-  display: block;
-  font-size: 10px;
-  font-weight: 700;
-  color: #655b55;
-  background: #f5f3f1;
-  border: 1px solid #ede9e5;
-  border-radius: 10px;
-  padding: 5px 10px;
-  cursor: pointer;
-  transition: background 0.15s;
-  white-space: nowrap;
-}
-.rebook-btn:active {
-  background: #ebe8e5;
 }
 </style>
