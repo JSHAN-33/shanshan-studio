@@ -72,11 +72,37 @@ const paid = computed(() =>
 );
 
 // 解析項目名稱，從 services 中找到對應價格和是否為套餐
+// 同名服務可能在不同分類有不同價格（如女生小腿 vs 男士小腿），
+// 透過比對預約總金額來選出正確的服務組合
 const parsedItems = computed(() => {
   if (!target.value) return [];
   const names = target.value.items.split('、').map((n) => n.trim()).filter(Boolean);
-  const original = names.map((name) => {
-    const svc = services.value.find((s) => s.name === name);
+  const bookingTotal = target.value.total;
+
+  // 每個名稱找出所有候選服務
+  const allCandidates = names.map((name) => services.value.filter((s) => s.name === name));
+
+  // 嘗試找出總價符合預約金額的組合（考慮新客折 $200）
+  function solve(idx: number, sum: number, chosen: (Service | undefined)[]): (Service | undefined)[] | null {
+    if (idx === names.length) {
+      if (sum === bookingTotal || sum === bookingTotal + 200) return chosen;
+      return null;
+    }
+    const candidates = allCandidates[idx];
+    if (candidates.length === 0) {
+      return solve(idx + 1, sum, [...chosen, undefined]);
+    }
+    for (const svc of candidates) {
+      const result = solve(idx + 1, sum + svc.price, [...chosen, svc]);
+      if (result) return result;
+    }
+    return null;
+  }
+
+  const bestMatch = solve(0, 0, []);
+
+  const original = names.map((name, i) => {
+    const svc = bestMatch?.[i] ?? services.value.find((s) => s.name === name);
     return { name, price: svc?.price ?? 0, isCombo: svc?.isCombo ?? false, isExtra: false };
   });
   // 加上臨時加選的項目
