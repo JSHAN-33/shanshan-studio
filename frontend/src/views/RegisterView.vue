@@ -26,6 +26,7 @@ const error = ref('');
 const loading = ref(false);
 const showBdayPicker = ref(false);
 const bdayCalendarValue = ref<string | null>(null);
+const showNotifyGuide = ref(false);
 
 function formatBday(d: string) {
   const dt = new Date(d + 'T00:00:00');
@@ -76,7 +77,8 @@ async function submit() {
       phone: result.member.phone,
       bday: result.member.bday ?? null,
     });
-    router.push('/services');
+
+    showNotifyGuide.value = true;
   } catch (err: any) {
     if (err?.response?.status === 409) {
       error.value = '此 LINE 帳號已綁定其他會員';
@@ -173,6 +175,57 @@ async function submit() {
         </form>
       </div>
     </main>
+    <!-- 通知綁定引導 Modal -->
+    <div v-if="showNotifyGuide" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="background:rgba(0,0,0,0.5);">
+      <div class="bg-white w-full max-w-[320px]" style="border-radius:24px; overflow:hidden; box-shadow:0 16px 48px rgba(0,0,0,0.2); animation: bday-pop 0.2s ease-out;">
+        <!-- Header -->
+        <div style="background:#3b3530; padding:20px 22px;" class="text-center">
+          <p style="font-size:8px;font-weight:800;letter-spacing:0.28em;color:rgba(255,255,255,0.3);text-transform:uppercase;margin:0 0 8px;">SHANSHAN.STUDIO</p>
+          <div class="w-12 h-12 rounded-full mx-auto mb-3 flex items-center justify-center" style="background:rgba(255,255,255,0.1);">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#c8a96e" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          </div>
+          <h3 style="font-size:16px;font-weight:900;color:white;margin:0 0 4px;">開啟預約通知</h3>
+          <p style="font-size:11px;color:rgba(255,255,255,0.5);margin:0;">Enable Booking Notifications</p>
+        </div>
+        <!-- Body -->
+        <div style="padding:20px 22px;">
+          <p class="text-xs text-brand-500 mb-4 leading-relaxed">
+            完成以下步驟，即可在預約被確認或異動時收到 LINE 通知：
+          </p>
+          <div class="space-y-3 mb-5">
+            <div class="flex gap-3 items-start">
+              <span class="shrink-0 w-6 h-6 rounded-full bg-brand-600 text-white text-[11px] font-extrabold flex items-center justify-center">1</span>
+              <p class="text-xs text-brand-600 leading-relaxed"><strong>加入好友</strong><br/>在 LINE 搜尋並加入 SHANSHAN.STUDIO 官方帳號為好友</p>
+            </div>
+            <div class="flex gap-3 items-start">
+              <span class="shrink-0 w-6 h-6 rounded-full bg-brand-600 text-white text-[11px] font-extrabold flex items-center justify-center">2</span>
+              <p class="text-xs text-brand-600 leading-relaxed"><strong>傳送手機號碼</strong><br/>在官方帳號聊天室中直接輸入你的手機號碼<br/><span class="text-brand-400">例如：{{ auth.customer?.phone ?? '0912345678' }}</span></p>
+            </div>
+            <div class="flex gap-3 items-start">
+              <span class="shrink-0 w-6 h-6 rounded-full bg-brand-600 text-white text-[11px] font-extrabold flex items-center justify-center">3</span>
+              <p class="text-xs text-brand-600 leading-relaxed"><strong>綁定成功</strong><br/>系統會回覆確認訊息，之後所有預約通知都會從這裡發送給你</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            class="w-full text-white font-bold text-sm"
+            style="background:#655b55; border-radius:14px; padding:13px; border:none; cursor:pointer;"
+            @click="showNotifyGuide = false; router.push('/services')"
+          >
+            我知道了，開始預約
+          </button>
+          <button
+            type="button"
+            class="w-full text-xs text-brand-400 font-bold mt-2 py-2"
+            style="background:none; border:none; cursor:pointer;"
+            @click="showNotifyGuide = false; router.push('/services')"
+          >
+            稍後再設定
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Birthday Calendar Modal -->
     <div v-if="showBdayPicker" class="fixed inset-0 z-40 flex items-center justify-center p-4" style="background:rgba(0,0,0,0.5);" @click.self="showBdayPicker = false">
       <div class="bg-white w-full max-w-[360px]" style="border-radius:28px; overflow:hidden; box-shadow:0 16px 48px rgba(0,0,0,0.2); animation: bday-pop 0.2s ease-out;">

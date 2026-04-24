@@ -68,7 +68,6 @@ export async function authRoutes(app: FastifyInstance) {
         where: { phone: input.phone },
         data: {
           lineUserId: input.lineUserId,
-          lineOaUserId: input.lineUserId,
           name: input.name,
           gender: input.gender,
           bday: input.bday ?? undefined,
@@ -84,7 +83,6 @@ export async function authRoutes(app: FastifyInstance) {
           gender: input.gender,
           bday: input.bday ?? undefined,
           lineUserId: input.lineUserId,
-          lineOaUserId: input.lineUserId,
           pictureUrl: input.pictureUrl ?? undefined,
         },
       });
