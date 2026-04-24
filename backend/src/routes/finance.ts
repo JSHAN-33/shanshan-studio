@@ -6,6 +6,7 @@ import {
   getYearSummary,
   getMonthSummary,
 } from '../services/financeService.js';
+import { getAnalytics } from '../services/analyticsService.js';
 
 const yearQuery = z.object({ year: z.coerce.number().int().min(2000).max(2100) });
 const monthQuery = z.object({ month: z.string().regex(/^\d{4}-\d{2}$/) });
@@ -25,5 +26,10 @@ export async function financeRoutes(app: FastifyInstance) {
   app.get('/month', { preHandler: adminAuth }, async (req) => {
     const { month } = monthQuery.parse(req.query);
     return getMonthSummary(app.prisma, month);
+  });
+
+  // 數據分析：本月總預約數、熱門時段、熱門服務
+  app.get('/analytics', { preHandler: adminAuth }, async () => {
+    return getAnalytics(app.prisma);
   });
 }

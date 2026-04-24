@@ -82,7 +82,19 @@ function proceed() {
         </button>
       </div>
 
-      <p v-if="loading" class="text-center text-brand-400 py-10 text-xs">載入中…</p>
+      <!-- Skeleton Loading -->
+      <div v-if="loading" class="flex flex-col gap-3">
+        <div v-for="i in 4" :key="i" class="card animate-pulse">
+          <div class="flex justify-between items-start">
+            <div class="flex-1">
+              <div class="h-3 bg-brand-100 rounded-full w-24 mb-2"></div>
+              <div class="h-2.5 bg-brand-100 rounded-full w-16 mb-1"></div>
+              <div class="h-2 bg-brand-50 rounded-full w-32 mt-2"></div>
+            </div>
+            <div class="h-4 bg-brand-100 rounded-full w-16"></div>
+          </div>
+        </div>
+      </div>
       <div v-else class="flex flex-col gap-3">
         <!-- 優惠組合 -->
         <template v-if="combos.length">

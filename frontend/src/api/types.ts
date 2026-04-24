@@ -149,3 +149,9 @@ export interface MonthSummary {
   bookings: number;
   byPayMethod: PayMethodBreakdown;
 }
+
+export interface AnalyticsSummary {
+  monthlyBookings: number;
+  popularTimeSlots: Array<{ time: string; count: number }>;
+  popularServices: Array<{ name: string; count: number }>;
+}
