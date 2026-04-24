@@ -59,7 +59,11 @@ watch(ready, (isReady) => {
   </div>
 
   <div v-else class="min-h-full flex flex-col" :class="{ 'pb-20': needsPadding }">
-    <RouterView />
+    <RouterView v-slot="{ Component }">
+      <Transition name="page-fade" mode="out-in">
+        <component :is="Component" />
+      </Transition>
+    </RouterView>
     <BottomNav />
   </div>
 
@@ -98,5 +102,21 @@ watch(ready, (isReady) => {
 @keyframes splash-fade {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+/* 頁面切換動畫 */
+.page-fade-enter-active {
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+.page-fade-leave-active {
+  transition: opacity 0.12s ease, transform 0.12s ease;
+}
+.page-fade-enter-from {
+  opacity: 0;
+  transform: translateY(6px);
+}
+.page-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
 }
 </style>
