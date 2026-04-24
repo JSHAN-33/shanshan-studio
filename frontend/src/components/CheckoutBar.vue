@@ -16,34 +16,34 @@ defineEmits<{
     <div
       v-if="count > 0"
       class="fixed left-1/2 -translate-x-1/2 z-50"
-      style="bottom: 85px; width: 92%; max-width: 340px;"
+      style="bottom: 100px; width: 92%; max-width: 340px;"
     >
       <div
         class="flex justify-between items-center shadow-2xl"
-        style="background: rgba(101,91,85,0.95); backdrop-filter: blur(12px); padding: 10px 16px; border-radius: 22px; color: white;"
+        style="background: rgba(101,91,85,0.95); backdrop-filter: blur(12px); padding: 14px 20px; border-radius: 28px; color: white;"
       >
         <div class="flex flex-col">
-          <p class="text-[7px] tracking-[0.15em] opacity-50 font-bold uppercase mb-0.5">Booking Selection</p>
-          <div class="flex items-center gap-2.5">
-            <div class="flex items-baseline gap-0.5">
-              <span class="text-base font-bold leading-none">{{ count }}</span>
-              <span class="text-[9px] font-bold tracking-widest">項目</span>
+          <p class="text-[8px] tracking-[0.15em] opacity-50 font-bold uppercase mb-0.5">Booking Selection</p>
+          <div class="flex items-center gap-3">
+            <div class="flex items-baseline gap-1">
+              <span class="text-xl font-bold leading-none">{{ count }}</span>
+              <span class="text-[10px] font-bold tracking-widest">項目</span>
             </div>
-            <div class="w-[1px] h-5 bg-white/20 self-center" />
+            <div class="w-[1px] h-6 bg-white/20 self-center" />
             <div class="flex flex-col">
-              <span class="text-sm font-bold leading-none tracking-tight">NT$ {{ total }}</span>
-              <span v-if="oldTotal" class="text-[8px] opacity-40 line-through mt-0.5">NT$ {{ oldTotal }}</span>
+              <span class="text-base font-bold leading-none tracking-tight">NT$ {{ total }}</span>
+              <span v-if="oldTotal" class="text-[9px] opacity-40 line-through mt-0.5">NT$ {{ oldTotal }}</span>
             </div>
           </div>
         </div>
         <button
           type="button"
-          class="bg-white text-brand-600 px-4 py-2 rounded-full font-bold flex items-center gap-1.5 shadow-xl active:scale-95 transition"
+          class="bg-white text-brand-600 px-5 py-2.5 rounded-full font-bold flex items-center gap-2 shadow-xl active:scale-95 transition"
           :disabled="disabled"
           @click="$emit('proceed')"
         >
-          <span class="text-[12px] leading-tight tracking-widest">{{ ctaLabel ?? '下一步' }}</span>
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+          <span class="text-[13px] leading-tight tracking-widest">{{ ctaLabel ?? '下一步' }}</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
             <path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>
           </svg>
         </button>
