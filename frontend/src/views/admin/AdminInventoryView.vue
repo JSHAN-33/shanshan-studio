@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
 import { inventoryApi } from '@/api/inventory';
-import type { InventoryItem } from '@/api/types';
+import { financeApi } from '@/api/finance';
+import type { InventoryItem, AnalyticsSummary } from '@/api/types';
 
 const items = ref<InventoryItem[]>([]);
 const lowStock = ref<InventoryItem[]>([]);
 const loading = ref(false);
+const analytics = ref<AnalyticsSummary | null>(null);
 
 const showModal = ref(false);
 const editing = ref<InventoryItem | null>(null);
@@ -27,7 +29,10 @@ async function load() {
   }
 }
 
-onMounted(load);
+onMounted(() => {
+  load();
+  financeApi.analytics().then((res) => { analytics.value = res; }).catch(() => {});
+});
 
 function openCreate() {
   editing.value = null;
@@ -75,6 +80,53 @@ async function adjustQty(item: InventoryItem, delta: number) {
 
 <template>
   <div class="space-y-4">
+    <!-- 數據分析 -->
+    <div v-if="analytics" class="card !py-3">
+      <p class="section-label mb-2">本月數據分析</p>
+      <div class="grid grid-cols-3 gap-2 mb-3">
+        <div class="text-center">
+          <p class="text-lg font-extrabold text-brand-600 leading-none">{{ analytics.monthlyBookings }}</p>
+          <p class="text-[9px] text-brand-400 font-bold mt-1">總預約數</p>
+        </div>
+        <div class="text-center">
+          <p class="text-sm font-extrabold text-brand-600 leading-none">{{ analytics.popularTimeSlots[0]?.time ?? '-' }}</p>
+          <p class="text-[9px] text-brand-400 font-bold mt-1">最熱門時段</p>
+        </div>
+        <div class="text-center">
+          <p class="text-sm font-extrabold text-brand-600 leading-none truncate px-1">{{ analytics.popularServices[0]?.name ?? '-' }}</p>
+          <p class="text-[9px] text-brand-400 font-bold mt-1">最熱門服務</p>
+        </div>
+      </div>
+      <div v-if="analytics.popularTimeSlots.length > 1 || analytics.popularServices.length > 1" class="space-y-2 pt-2" style="border-top: 1px dashed #e5e2df;">
+        <div v-if="analytics.popularTimeSlots.length > 1">
+          <p class="text-[9px] text-brand-400 font-bold mb-1">熱門時段 TOP {{ analytics.popularTimeSlots.length }}</p>
+          <div class="flex flex-wrap gap-1.5">
+            <span
+              v-for="(slot, i) in analytics.popularTimeSlots"
+              :key="slot.time"
+              class="text-[10px] font-bold px-2 py-0.5 rounded-full"
+              :class="i === 0 ? 'bg-brand-600 text-white' : 'bg-brand-50 text-brand-500'"
+            >
+              {{ slot.time }} ({{ slot.count }})
+            </span>
+          </div>
+        </div>
+        <div v-if="analytics.popularServices.length > 1">
+          <p class="text-[9px] text-brand-400 font-bold mb-1">熱門服務 TOP {{ analytics.popularServices.length }}</p>
+          <div class="flex flex-wrap gap-1.5">
+            <span
+              v-for="(svc, i) in analytics.popularServices"
+              :key="svc.name"
+              class="text-[10px] font-bold px-2 py-0.5 rounded-full"
+              :class="i === 0 ? 'bg-brand-600 text-white' : 'bg-brand-50 text-brand-500'"
+            >
+              {{ svc.name }} ({{ svc.count }})
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div v-if="lowStock.length" class="card bg-red-50 border-red-200">
       <div class="font-bold text-red-700 mb-1">⚠️ 不足警示</div>
       <div class="text-sm text-red-600">
