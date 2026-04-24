@@ -64,7 +64,7 @@ export function useLiff() {
 
   async function handleLineProfile() {
     const profile = await liff.getProfile();
-    const result = await authApi.lineLogin(profile.userId);
+    const result = await authApi.lineLogin(profile.userId, profile.pictureUrl ?? null);
 
     if (result.registered && result.member) {
       auth.setProfile({

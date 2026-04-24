@@ -13,8 +13,8 @@ export interface CredentialLoginResponse {
 }
 
 export const authApi = {
-  async lineLogin(lineUserId: string): Promise<LineLoginResponse> {
-    const res = await http.post<LineLoginResponse>('/auth/line-login', { lineUserId });
+  async lineLogin(lineUserId: string, pictureUrl?: string | null): Promise<LineLoginResponse> {
+    const res = await http.post<LineLoginResponse>('/auth/line-login', { lineUserId, pictureUrl });
     return res.data;
   },
 
