@@ -55,6 +55,6 @@ const items = [
 
 <style scoped>
 .bottom-nav {
-  padding: 8px 0 calc(8px + env(safe-area-inset-bottom, 0px));
+  padding: 10px 0 calc(14px + env(safe-area-inset-bottom, 0px));
 }
 </style>
