@@ -219,14 +219,15 @@ export async function bookingsRoutes(app: FastifyInstance) {
     if (input.status && input.status !== existing.status) {
       console.log(`[LINE] Status changed: ${existing.status} → ${input.status}, phone: ${booking.phone}`);
       const mem = await app.prisma.member.findUnique({ where: { phone: booking.phone } });
-      console.log(`[LINE] Member found: ${mem?.name}, lineOaUserId: ${mem?.lineOaUserId}`);
-      if (mem?.lineOaUserId) {
+      const pushUserId = mem?.lineOaUserId ?? mem?.lineUserId;
+      console.log(`[LINE] Member found: ${mem?.name}, lineOaUserId: ${mem?.lineOaUserId}, lineUserId: ${mem?.lineUserId}, using: ${pushUserId}`);
+      if (pushUserId) {
         if (input.status === '已確認') {
           console.log('[LINE] Sending confirmed message...');
-          await pushToUser(mem.lineOaUserId, buildBookingConfirmedMessage(booking));
+          await pushToUser(pushUserId, buildBookingConfirmedMessage(booking));
         } else if (input.status === '已取消') {
           console.log('[LINE] Sending cancelled message...');
-          await pushToUser(mem.lineOaUserId, buildBookingCancelledMessage(booking));
+          await pushToUser(pushUserId, buildBookingCancelledMessage(booking));
         }
       }
     }
