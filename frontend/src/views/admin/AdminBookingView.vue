@@ -836,7 +836,7 @@ async function copyExportText() {
 
     <!-- 預約 Modal -->
     <div v-if="showModal" class="fixed inset-0 z-30 flex items-center justify-center p-4" style="background:rgba(0,0,0,0.5);">
-      <div class="bg-white w-full max-w-[360px] flex flex-col" style="border-radius:24px; max-height: 88vh; overflow: hidden;">
+      <div class="bg-white w-full max-w-[360px] flex flex-col" style="border-radius:24px; max-height: 88dvh; overflow: hidden;">
         <!-- Header -->
         <div class="flex justify-between items-start shrink-0" style="padding: 24px 24px 12px;">
           <h3 class="font-bold text-lg">{{ editing ? '編輯預約' : '新增預約' }}</h3>
@@ -948,7 +948,7 @@ async function copyExportText() {
 
     <!-- Form Date Picker Modal -->
     <div v-if="showFormDatePicker" class="fixed inset-0 z-40 flex items-center justify-center p-4" style="background:rgba(0,0,0,0.5);">
-      <div class="bg-white w-full max-w-[360px] flex flex-col" style="border-radius:24px; max-height: 88vh; overflow: hidden;">
+      <div class="bg-white w-full max-w-[360px] flex flex-col" style="border-radius:24px; max-height: 88dvh; overflow: hidden;">
         <div class="flex justify-between items-start shrink-0" style="padding: 24px 24px 12px;">
           <h3 class="font-bold text-lg">選擇預約時間</h3>
           <button class="w-8 h-8 rounded-full bg-brand-50 flex items-center justify-center text-brand-400 hover:bg-brand-100 transition" @click="showFormDatePicker = false">
@@ -1048,7 +1048,7 @@ async function copyExportText() {
 
     <!-- 新預約通知 Modal -->
     <div v-if="showNotifyModal" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="background:rgba(0,0,0,0.5);" @click.self="closeNotifyModal">
-      <div class="bg-white w-full max-w-[340px] flex flex-col" style="border-radius:28px; max-height: 75vh; overflow: hidden; animation: notify-pop 0.25s ease-out;">
+      <div class="bg-white w-full max-w-[340px] flex flex-col" style="border-radius:28px; max-height: 75dvh; overflow: hidden; animation: notify-pop 0.25s ease-out;">
         <div class="flex justify-between items-center shrink-0" style="padding: 22px 22px 10px;">
           <div class="flex items-center gap-2">
             <span class="w-8 h-8 rounded-full bg-red-500 flex items-center justify-center text-white text-sm font-extrabold">{{ pendingNotifyBookings.length }}</span>

@@ -424,7 +424,7 @@ function toggleCostMonth(m: string) {
 
     <!-- Revenue Breakdown Modal -->
     <div v-if="showRevenueModal" class="fixed inset-0 z-40 flex items-center justify-center p-4" style="background:rgba(0,0,0,0.5);" @click.self="showRevenueModal = false">
-      <div class="bg-white w-full max-w-[360px] flex flex-col" style="border-radius:24px; max-height: 88vh; overflow: hidden;">
+      <div class="bg-white w-full max-w-[360px] flex flex-col" style="border-radius:24px; max-height: 88dvh; overflow: hidden;">
         <div class="flex justify-between items-start shrink-0" style="padding: 24px 24px 12px;">
           <div>
             <h3 class="font-bold text-lg">{{ revenueScope === 'today' ? '今日' : '月份' }}收款明細</h3>
@@ -523,7 +523,7 @@ function toggleCostMonth(m: string) {
 
     <!-- Year Revenue Modal -->
     <div v-if="showYearModal" class="fixed inset-0 z-40 flex items-center justify-center p-4" style="background:rgba(0,0,0,0.5);" @click.self="showYearModal = false">
-      <div class="bg-white w-full max-w-[360px] flex flex-col" style="border-radius:24px; max-height: 88vh; overflow: hidden;">
+      <div class="bg-white w-full max-w-[360px] flex flex-col" style="border-radius:24px; max-height: 88dvh; overflow: hidden;">
         <div class="flex justify-between items-start shrink-0" style="padding: 24px 24px 12px;">
           <div>
             <h3 class="font-bold text-lg">年營收</h3>

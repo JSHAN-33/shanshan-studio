@@ -527,7 +527,7 @@ function formatDateLabel(date: string) {
 
     <!-- Member Modal -->
     <div v-if="showModal" class="fixed inset-0 z-30 flex items-center justify-center p-4" style="background:rgba(0,0,0,0.5);">
-      <div class="bg-white w-full max-w-[360px] flex flex-col" style="border-radius:24px; max-height: 88vh; overflow: hidden;">
+      <div class="bg-white w-full max-w-[360px] flex flex-col" style="border-radius:24px; max-height: 88dvh; overflow: hidden;">
         <!-- Header (固定) -->
         <div class="flex justify-between items-start shrink-0" style="padding: 24px 24px 12px;">
           <h3 class="font-bold text-lg">{{ editing ? '編輯會員' : '新增會員' }}</h3>
@@ -649,12 +649,13 @@ function formatDateLabel(date: string) {
             </button>
           </div>
 
-          <!-- 按鈕 -->
-          <div class="flex gap-2 mt-4">
-            <button class="btn-outline flex-1" @click="showModal = false">取消</button>
-            <button class="btn-primary flex-1" @click="save">儲存</button>
-          </div>
         </div><!-- 滾動區域結束 -->
+
+        <!-- 固定底部按鈕 -->
+        <div class="shrink-0 flex gap-2 border-t border-brand-100" style="padding: 16px 24px calc(16px + env(safe-area-inset-bottom, 0px));">
+          <button class="btn-outline flex-1" @click="showModal = false">取消</button>
+          <button class="btn-primary flex-1" @click="save">儲存</button>
+        </div>
       </div>
     </div>
 
@@ -678,7 +679,7 @@ function formatDateLabel(date: string) {
 
     <!-- Booking Picker Modal -->
     <div v-if="showBookingPicker" class="fixed inset-0 z-40 flex items-center justify-center p-4" style="background:rgba(0,0,0,0.5);">
-      <div class="bg-white w-full max-w-[360px] flex flex-col" style="border-radius:24px; max-height: 88vh; overflow: hidden;">
+      <div class="bg-white w-full max-w-[360px] flex flex-col" style="border-radius:24px; max-height: 88dvh; overflow: hidden;">
         <div class="flex justify-between items-start shrink-0" style="padding: 24px 24px 12px;">
           <h3 class="font-bold text-lg">選擇預約時間</h3>
           <button class="w-8 h-8 rounded-full bg-brand-50 flex items-center justify-center text-brand-400 hover:bg-brand-100 transition" @click="showBookingPicker = false">
@@ -744,7 +745,7 @@ function formatDateLabel(date: string) {
 
     <!-- Wallet Modal -->
     <div v-if="showWalletModal" class="fixed inset-0 z-30 flex items-center justify-center p-4" style="background:rgba(0,0,0,0.5);">
-      <div class="bg-white w-full max-w-[360px] flex flex-col" style="border-radius:24px; max-height: 88vh; overflow: hidden;">
+      <div class="bg-white w-full max-w-[360px] flex flex-col" style="border-radius:24px; max-height: 88dvh; overflow: hidden;">
         <div class="flex justify-between items-start shrink-0" style="padding: 24px 24px 12px;">
           <h3 class="font-bold text-lg">儲值金 — {{ walletTarget?.name }}</h3>
           <button class="w-8 h-8 rounded-full bg-brand-50 flex items-center justify-center text-brand-400 hover:bg-brand-100 transition" @click="showWalletModal = false">
@@ -804,18 +805,19 @@ function formatDateLabel(date: string) {
             </div>
           </div>
 
-          <!-- 按鈕 -->
-          <div class="flex gap-2 mt-4">
-            <button class="btn-outline flex-1" @click="showWalletModal = false">取消</button>
-            <button class="btn-primary flex-1" @click="saveWallet">確認</button>
-          </div>
+        </div>
+
+        <!-- 固定底部按鈕 -->
+        <div class="shrink-0 flex gap-2 border-t border-brand-100" style="padding: 16px 24px calc(16px + env(safe-area-inset-bottom, 0px));">
+          <button class="btn-outline flex-1" @click="showWalletModal = false">取消</button>
+          <button class="btn-primary flex-1" @click="saveWallet">確認</button>
         </div>
       </div>
     </div>
 
     <!-- 消費紀錄 Modal -->
     <div v-if="showHistoryModal" class="fixed inset-0 z-30 flex items-center justify-center p-4" style="background:rgba(0,0,0,0.5);">
-      <div class="bg-white w-full max-w-[380px] flex flex-col" style="border-radius:24px; max-height: 88vh; overflow: hidden;">
+      <div class="bg-white w-full max-w-[380px] flex flex-col" style="border-radius:24px; max-height: 88dvh; overflow: hidden;">
         <div class="flex justify-between items-start shrink-0" style="padding: 24px 24px 12px;">
           <h3 class="font-bold text-lg">消費紀錄 — {{ historyTarget?.name }}</h3>
           <button class="w-8 h-8 rounded-full bg-brand-50 flex items-center justify-center text-brand-400 hover:bg-brand-100 transition" @click="showHistoryModal = false">
