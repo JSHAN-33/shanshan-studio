@@ -32,8 +32,8 @@ const items = [
 <template>
   <nav
     v-if="visible"
-    class="fixed bottom-0 inset-x-0 bg-white z-50 pb-safe"
-    style="border-top: 1px solid #f0f0f0; padding: 8px 0 8px;"
+    class="fixed bottom-0 inset-x-0 bg-white z-50 bottom-nav"
+    style="border-top: 1px solid #f0f0f0;"
   >
     <div class="flex justify-around items-center max-w-md mx-auto">
       <RouterLink
@@ -52,3 +52,9 @@ const items = [
     </div>
   </nav>
 </template>
+
+<style scoped>
+.bottom-nav {
+  padding: 8px 0 calc(8px + env(safe-area-inset-bottom, 0px));
+}
+</style>
