@@ -32,8 +32,8 @@ const items = [
 <template>
   <nav
     v-if="visible"
-    class="fixed bottom-0 inset-x-0 bg-white z-50"
-    style="border-top: 1px solid #f0f0f0; padding: 8px 0 22px;"
+    class="fixed bottom-0 inset-x-0 bg-white z-50 pb-safe"
+    style="border-top: 1px solid #f0f0f0; padding: 8px 0 8px;"
   >
     <div class="flex justify-around items-center max-w-md mx-auto">
       <RouterLink

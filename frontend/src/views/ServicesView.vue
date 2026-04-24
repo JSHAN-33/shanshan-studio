@@ -58,30 +58,31 @@ function proceed() {
 </script>
 
 <template>
-  <section class="min-h-screen pb-40">
-    <!-- Header -->
-    <header class="bg-white px-5 py-4 sticky top-0 z-50 flex justify-between items-center" style="border-bottom: 1px solid #f5f4f2;">
+  <section class="h-screen flex flex-col">
+    <!-- Header (固定頂部) -->
+    <header class="bg-white px-5 py-4 shrink-0 flex justify-between items-center" style="border-bottom: 1px solid #f5f4f2;">
       <div>
         <h1 class="text-base font-bold tracking-tight text-brand-700">SHANSHAN.STUDIO</h1>
         <p class="text-[8px] tracking-[0.2em] text-brand-300 uppercase font-bold">HOTWAXING</p>
       </div>
     </header>
 
-    <main class="px-4 pt-4">
-      <!-- Category tabs -->
-      <div class="flex gap-4 mb-6 px-1" style="border-bottom: 1px solid #f0f0f0;">
-        <button
-          v-for="t in tabs"
-          :key="t.value"
-          type="button"
-          class="text-xs font-bold pb-2 transition-colors"
-          :class="tab === t.value ? 'text-brand-600 border-b-2 border-brand-600' : 'text-brand-300'"
-          @click="tab = t.value"
-        >
-          {{ t.label }}
-        </button>
-      </div>
+    <!-- Category tabs (固定在 header 下方) -->
+    <div class="flex gap-4 px-5 pt-4 shrink-0" style="border-bottom: 1px solid #f0f0f0;">
+      <button
+        v-for="t in tabs"
+        :key="t.value"
+        type="button"
+        class="text-xs font-bold pb-2 transition-colors"
+        :class="tab === t.value ? 'text-brand-600 border-b-2 border-brand-600' : 'text-brand-300'"
+        @click="tab = t.value"
+      >
+        {{ t.label }}
+      </button>
+    </div>
 
+    <!-- 可滾動的內容區域 -->
+    <main class="flex-1 overflow-y-auto px-4 pt-4 pb-48">
       <!-- Skeleton Loading -->
       <div v-if="loading" class="flex flex-col gap-3">
         <div v-for="i in 4" :key="i" class="card animate-pulse">
