@@ -186,10 +186,10 @@ function select(date: string) {
 <style scoped>
 .cal-container {
   background: #fff;
-  border-radius: 20px;
+  border-radius: 16px;
   border: 1px solid #f0efed;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
-  padding: 22px 18px 18px;
+  padding: 14px 12px 12px;
   position: relative;
 }
 
@@ -197,16 +197,16 @@ function select(date: string) {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 18px;
+  margin-bottom: 10px;
 }
 
 .cal-arrow {
-  width: 36px;
-  height: 36px;
+  width: 28px;
+  height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 18px;
+  font-size: 14px;
   font-weight: 300;
   color: #b0aba7;
   background: none;
@@ -239,15 +239,15 @@ function select(date: string) {
 .cal-picker-btn {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
   background: none;
   border: none;
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 700;
   color: #4a423d;
   cursor: pointer;
-  padding: 4px 8px;
-  border-radius: 10px;
+  padding: 3px 6px;
+  border-radius: 8px;
   transition: background 0.15s;
 }
 .cal-picker-btn:hover {
@@ -304,38 +304,38 @@ function select(date: string) {
 .cal-weekdays {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  margin-bottom: 6px;
+  margin-bottom: 2px;
 }
 .cal-weekdays span {
   text-align: center;
-  font-size: 12px;
+  font-size: 10px;
   font-weight: 500;
   color: #b0aba7;
-  padding-bottom: 8px;
+  padding-bottom: 4px;
 }
 
 .cal-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  row-gap: 4px;
+  row-gap: 1px;
 }
 
 .cal-cell {
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 42px;
+  height: 32px;
 }
 
 .cal-day {
   position: relative;
-  width: 36px;
-  height: 36px;
+  width: 30px;
+  height: 30px;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 400;
   color: #4a423d;
   background: none;
