@@ -40,6 +40,7 @@ model Member {
   bday       String?
   gender     String?
   note       String?
+  vip        Boolean  @default(false)
   wallet     Int      @default(0)
   lineUserId  String?  @unique
   lineOaUserId String? @unique

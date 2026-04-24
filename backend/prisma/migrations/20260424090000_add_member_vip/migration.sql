@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "Member" ADD COLUMN "vip" BOOLEAN NOT NULL DEFAULT false;

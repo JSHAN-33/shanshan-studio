@@ -8,6 +8,7 @@ export const upsertMemberSchema = z.object({
   bday: z.string().optional().nullable(),
   gender: genderEnum.optional().nullable(),
   note: z.string().optional().nullable(),
+  vip: z.boolean().optional(),
   lineUserId: z.string().optional().nullable(),
 });
 

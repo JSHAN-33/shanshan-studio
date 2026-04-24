@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
+import { useToast } from '@/composables/useToast';
+import { usePullRefresh } from '@/composables/usePullRefresh';
 import SharedCalendar from '@/components/SharedCalendar.vue';
 import { membersApi } from '@/api/members';
 import { servicesApi } from '@/api/services';
@@ -8,9 +10,14 @@ import { slotsApi } from '@/api/slots';
 import { serviceHistoryApi } from '@/api/serviceHistory';
 import type { Member, Service, ServiceCat, AvailableSlot, BlockedSlot, Booking, ServiceHistory } from '@/api/types';
 
+const toast = useToast();
 const members = ref<Member[]>([]);
 const search = ref('');
 const loading = ref(false);
+const tagFilter = ref<'all' | 'vip' | 'new' | 'returning' | 'inactive'>('all');
+
+// 回訪提醒天數
+const INACTIVE_DAYS = 30;
 
 const showModal = ref(false);
 const editing = ref<Member | null>(null);
@@ -20,6 +27,7 @@ const form = ref({
   bday: '',
   gender: '' as '' | '男' | '女',
   note: '',
+  vip: false,
   wallet: 0,
 });
 
@@ -217,10 +225,33 @@ const walletDelta = ref(0);
 const walletMode = ref<'adjust' | 'set'>('adjust');
 const walletSetValue = ref(0);
 
+function daysSinceVisit(m: Member): number | null {
+  if (!m.lastVisitAt) return null;
+  const last = new Date(m.lastVisitAt + 'T00:00:00');
+  const now = new Date();
+  return Math.floor((now.getTime() - last.getTime()) / 86400000);
+}
+
+function getMemberTag(m: Member): '新客' | '回頭客' {
+  return (m.bookingCount ?? 0) > 0 ? '回頭客' : '新客';
+}
+
 const filtered = computed(() => {
+  let list = members.value;
+
+  // 標籤篩選
+  if (tagFilter.value === 'vip') list = list.filter((m) => m.vip);
+  else if (tagFilter.value === 'new') list = list.filter((m) => (m.bookingCount ?? 0) === 0);
+  else if (tagFilter.value === 'returning') list = list.filter((m) => (m.bookingCount ?? 0) > 0);
+  else if (tagFilter.value === 'inactive') list = list.filter((m) => {
+    const days = daysSinceVisit(m);
+    return days !== null && days >= INACTIVE_DAYS;
+  });
+
+  // 搜尋
   const q = search.value.trim();
-  if (!q) return members.value;
-  return members.value.filter((m) => m.name.includes(q) || m.phone.includes(q));
+  if (q) list = list.filter((m) => m.name.includes(q) || m.phone.includes(q));
+  return list;
 });
 
 async function load() {
@@ -239,7 +270,7 @@ onMounted(async () => {
 
 function openCreate() {
   editing.value = null;
-  form.value = { phone: '', name: '', bday: '', gender: '', note: '', wallet: 0 };
+  form.value = { phone: '', name: '', bday: '', gender: '', note: '', vip: false, wallet: 0 };
   withBooking.value = false;
   bookingDate.value = '';
   bookingTime.value = '';
@@ -255,6 +286,7 @@ function openEdit(m: Member) {
     bday: m.bday ?? '',
     gender: (m.gender ?? '') as '' | '男' | '女',
     note: m.note ?? '',
+    vip: m.vip,
     wallet: m.wallet,
   };
   withBooking.value = false;
@@ -272,6 +304,7 @@ async function save() {
     bday: form.value.bday || null,
     gender: form.value.gender || null,
     note: form.value.note || null,
+    vip: form.value.vip,
   });
 
   // 同步建立預約
@@ -287,6 +320,7 @@ async function save() {
   }
 
   showModal.value = false;
+  toast.show(editing.value ? '會員已更新' : '會員已新增');
   await load();
 }
 
@@ -311,6 +345,7 @@ async function saveWallet() {
   }
 
   showWalletModal.value = false;
+  toast.show('儲值金已更新');
   await load();
 }
 
@@ -479,13 +514,40 @@ function formatDateLabel(date: string) {
   const d = new Date(date + 'T00:00:00');
   return `${d.getFullYear()} 年 ${d.getMonth() + 1}月 ${d.getDate()} 日`;
 }
+
+const { refreshing } = usePullRefresh(load);
 </script>
 
 <template>
   <div class="space-y-4">
+    <!-- 下拉刷新提示 -->
+    <p v-if="refreshing" class="text-center text-brand-400 text-xs py-1">刷新中…</p>
+
     <div class="flex gap-2">
       <input v-model="search" class="input flex-1" placeholder="搜尋姓名 / 手機" />
       <button class="btn-pill text-[10px]" @click="openCreate">+ 新增</button>
+    </div>
+
+    <!-- 標籤篩選 -->
+    <div class="flex gap-1.5 flex-wrap">
+      <button
+        v-for="t in [
+          { value: 'all' as const, label: '全部' },
+          { value: 'vip' as const, label: 'VIP' },
+          { value: 'new' as const, label: '新客' },
+          { value: 'returning' as const, label: '回頭客' },
+          { value: 'inactive' as const, label: '待回訪' },
+        ]"
+        :key="t.value"
+        type="button"
+        class="px-3 py-1.5 text-[10px] font-bold rounded-full transition-all"
+        :class="tagFilter === t.value
+          ? 'bg-brand-600 text-white'
+          : 'bg-brand-50 text-brand-400'"
+        @click="tagFilter = t.value"
+      >
+        {{ t.label }}
+      </button>
     </div>
 
     <p v-if="loading" class="text-center text-brand-400 py-6">載入中…</p>
@@ -502,7 +564,14 @@ function formatDateLabel(date: string) {
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#b0aba7" stroke-width="1.8"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
           </div>
           <div class="min-w-0 flex-1">
-            <div class="font-bold text-sm truncate leading-tight">{{ m.name }}</div>
+            <div class="flex items-center gap-1.5">
+              <span class="font-bold text-sm truncate leading-tight">{{ m.name }}</span>
+              <span v-if="m.vip" class="text-[8px] font-extrabold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded-full border border-amber-200">VIP</span>
+              <span
+                class="text-[8px] font-bold px-1.5 py-0.5 rounded-full"
+                :class="getMemberTag(m) === '新客' ? 'text-blue-600 bg-blue-50' : 'text-green-600 bg-green-50'"
+              >{{ getMemberTag(m) }}</span>
+            </div>
             <div class="text-[11px] text-brand-500">{{ m.phone }}</div>
           </div>
           <div class="text-right shrink-0">
@@ -512,6 +581,10 @@ function formatDateLabel(date: string) {
         <div class="flex items-center gap-3 text-[10px] text-brand-400 pl-[42px]">
           <span v-if="m.bday">🎂 {{ m.bday }}</span>
           <span v-if="m.gender">{{ m.gender === '女' ? '♀' : '♂' }} {{ m.gender }}</span>
+          <span v-if="daysSinceVisit(m) !== null" :class="daysSinceVisit(m)! >= INACTIVE_DAYS ? 'text-red-500 font-bold' : ''">
+            {{ daysSinceVisit(m)! >= INACTIVE_DAYS ? '⚠️ ' : '' }}{{ daysSinceVisit(m) }} 天前到訪
+          </span>
+          <span v-else-if="(m.bookingCount ?? 0) > 0" class="text-brand-300">無到訪紀錄</span>
         </div>
         <div class="flex gap-1.5 pt-0.5">
           <button class="btn-outline text-xs !py-0.5 flex-1" @click="openEdit(m)">編輯</button>
@@ -583,7 +656,23 @@ function formatDateLabel(date: string) {
               </div>
             </div>
 
-            <textarea v-model="form.note" class="member-field w-full resize-none text-xs" rows="2" placeholder="備註：VIP 等級、特殊膚質、偏好項目..." />
+            <!-- VIP 開關 -->
+            <button
+              type="button"
+              class="member-field w-full flex items-center justify-between"
+              @click="form.vip = !form.vip"
+            >
+              <span class="text-brand-400 text-xs font-bold">VIP 會員</span>
+              <div class="shrink-0 w-[40px] h-[24px] rounded-full transition-colors relative"
+                :class="form.vip ? 'bg-amber-500' : 'bg-brand-200'"
+              >
+                <span class="absolute top-[2px] left-[2px] w-5 h-5 bg-white rounded-full shadow transition-transform duration-200"
+                  :style="form.vip ? 'transform: translateX(16px)' : ''"
+                ></span>
+              </div>
+            </button>
+
+            <textarea v-model="form.note" class="member-field w-full resize-none text-xs" rows="2" placeholder="備註：特殊膚質、偏好項目..." />
           </div>
 
           <!-- 項目選擇 -->

@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
+import { useToast } from '@/composables/useToast';
+import { usePullRefresh } from '@/composables/usePullRefresh';
 import SharedCalendar from '@/components/SharedCalendar.vue';
 import { financeApi } from '@/api/finance';
 import { bookingsApi } from '@/api/bookings';
@@ -15,6 +17,7 @@ import type {
   YearSummary,
 } from '@/api/types';
 
+const toast = useToast();
 const summary = ref<FinanceSummary | null>(null);
 const costs = ref<Cost[]>([]);
 const loading = ref(false);
@@ -121,6 +124,7 @@ async function save() {
     amount: 0,
     date: new Date().toISOString().slice(0, 10),
   };
+  toast.show('成本已記錄');
   await load();
 }
 
@@ -275,6 +279,77 @@ function toggleCostMonth(m: string) {
   else s.add(m);
   expandedCostMonths.value = s;
 }
+
+// --- 成本 vs 營收趨勢圖 ---
+const trendData = computed(() => {
+  if (!summary.value) return [];
+  const byMonth = summary.value.year.byMonth;
+  // 計算每月成本
+  const costByMonth = new Map<string, number>();
+  for (const c of costs.value) {
+    const m = c.date.slice(0, 7);
+    costByMonth.set(m, (costByMonth.get(m) ?? 0) + c.amount);
+  }
+  return byMonth.map((e) => ({
+    month: e.month,
+    label: e.month.split('-')[1].replace(/^0/, '') + '月',
+    revenue: e.revenue,
+    cost: costByMonth.get(e.month) ?? 0,
+  }));
+});
+
+const trendMax = computed(() => {
+  let max = 0;
+  for (const d of trendData.value) {
+    if (d.revenue > max) max = d.revenue;
+    if (d.cost > max) max = d.cost;
+  }
+  return max || 1;
+});
+
+// --- 月報表匯出 CSV ---
+async function exportMonthCSV() {
+  if (!summary.value) return;
+  const month = summary.value.month;
+  const monthStr = new Date().toISOString().slice(0, 7);
+  const [y, m] = monthStr.split('-');
+
+  // 取得本月已結帳預約
+  const bookings = await bookingsApi.listAll({ paidMonth: monthStr });
+  const monthCosts = costs.value.filter((c) => c.date.startsWith(monthStr));
+
+  const lines: string[] = [];
+  lines.push(`SHANSHAN.STUDIO 月報表 — ${y} 年 ${parseInt(m)} 月`);
+  lines.push('');
+  lines.push(`營收,NT$ ${month.revenue}`);
+  lines.push(`成本,NT$ ${month.cost}`);
+  lines.push(`淨利,NT$ ${month.net}`);
+  lines.push(`結帳筆數,${month.bookings}`);
+  lines.push('');
+  lines.push('--- 結帳明細 ---');
+  lines.push('日期,時段,客戶,項目,金額,付款方式');
+  for (const b of bookings) {
+    lines.push(`${b.date},${b.time},${b.name},${b.items.replace(/,/g, '/')},${b.total},${b.payMethod ?? ''}`);
+  }
+  lines.push('');
+  lines.push('--- 成本明細 ---');
+  lines.push('日期,分類,說明,金額');
+  for (const c of monthCosts) {
+    lines.push(`${c.date},${c.cat},${(c.desc ?? '').replace(/,/g, '/')},${c.amount}`);
+  }
+
+  const bom = '\uFEFF';
+  const blob = new Blob([bom + lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `shanshan_月報表_${monthStr}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast.show('月報表已下載');
+}
+
+const { refreshing } = usePullRefresh(load);
 </script>
 
 <template>
@@ -367,6 +442,45 @@ function toggleCostMonth(m: string) {
         <svg class="w-3.5 h-3.5 text-brand-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
       </div>
     </button>
+
+    <!-- 月報表匯出 + 下拉刷新提示 -->
+    <div class="flex gap-2">
+      <button
+        type="button"
+        class="flex-1 flex items-center justify-center gap-2 py-2 rounded-xl bg-brand-600 text-white text-xs font-bold shadow-sm active:scale-[0.98] transition-transform"
+        @click="exportMonthCSV"
+      >
+        <span>📊</span>
+        <span>匯出本月報表 CSV</span>
+      </button>
+    </div>
+    <p v-if="refreshing" class="text-center text-brand-400 text-xs py-1">刷新中…</p>
+
+    <!-- 營收 vs 成本趨勢圖 -->
+    <div v-if="trendData.length" class="card !py-3">
+      <p class="section-label mb-3">營收 vs 成本趨勢</p>
+      <div class="flex items-end gap-1" style="height: 120px;">
+        <div v-for="d in trendData" :key="d.month" class="flex-1 flex flex-col items-center gap-0.5 h-full justify-end">
+          <!-- 營收柱 -->
+          <div
+            class="w-full rounded-t-md"
+            style="background: #655b55; min-height: 2px;"
+            :style="{ height: (d.revenue / trendMax * 100) + '%' }"
+          ></div>
+          <!-- 成本柱 -->
+          <div
+            class="w-full rounded-t-md"
+            style="background: #e8c4c4; min-height: 2px;"
+            :style="{ height: (d.cost / trendMax * 100) + '%' }"
+          ></div>
+          <span class="text-[8px] text-brand-400 font-bold mt-0.5">{{ d.label }}</span>
+        </div>
+      </div>
+      <div class="flex items-center justify-center gap-4 mt-2 text-[9px] text-brand-400 font-bold">
+        <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm" style="background:#655b55;"></span> 營收</span>
+        <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-sm" style="background:#e8c4c4;"></span> 成本</span>
+      </div>
+    </div>
 
     <!-- 成本記帳本 -->
     <section>

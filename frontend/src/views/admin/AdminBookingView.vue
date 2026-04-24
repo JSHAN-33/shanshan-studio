@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
+import { useToast } from '@/composables/useToast';
+import { usePullRefresh } from '@/composables/usePullRefresh';
 import SharedCalendar from '@/components/SharedCalendar.vue';
 import { bookingsApi } from '@/api/bookings';
 import { financeApi } from '@/api/finance';
@@ -280,6 +282,7 @@ function selectFormSlot(time: string) {
   showFormDatePicker.value = false;
 }
 
+const toast = useToast();
 const statuses: BookingStatus[] = ['待付訂金', '待確認', '已確認', '已完成', '已取消'];
 const showStatusPicker = ref(false);
 
@@ -471,6 +474,7 @@ function onDateSelect(date: string) {
 
 async function changeStatus(b: Booking, next: BookingStatus) {
   await bookingsApi.update(b.id, { status: next });
+  toast.show(`已更新為「${next}」`);
   await loadMonth(month.value);
 }
 
@@ -544,12 +548,14 @@ async function save() {
     });
   }
   showModal.value = false;
+  toast.show(editing.value ? '預約已更新' : '預約已新增');
   await loadMonth(month.value);
 }
 
 async function remove(b: Booking) {
   if (!window.confirm('確定要刪除這筆預約？')) return;
   await bookingsApi.remove(b.id);
+  toast.show('預約已刪除');
   await loadMonth(month.value);
 }
 
@@ -631,6 +637,8 @@ async function copyExportText() {
     exportCopied.value = false;
   }
 }
+
+const { refreshing } = usePullRefresh(() => loadMonth(month.value));
 </script>
 
 <template>

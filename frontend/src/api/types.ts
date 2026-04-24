@@ -38,12 +38,14 @@ export interface Member {
   bday?: string | null;
   gender?: '男' | '女' | null;
   note?: string | null;
+  vip: boolean;
   wallet: number;
   lineUserId?: string | null;
   pictureUrl?: string | null;
   createdAt: string;
   updatedAt: string;
   bookingCount?: number;
+  lastVisitAt?: string | null;
 }
 
 export interface Service {

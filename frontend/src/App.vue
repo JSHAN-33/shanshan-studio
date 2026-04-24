@@ -4,6 +4,7 @@ import { computed, onMounted, watch } from 'vue';
 import { useAuthStore } from '@/stores/auth';
 import { useLiff } from '@/composables/useLiff';
 import BottomNav from '@/components/BottomNav.vue';
+import ToastContainer from '@/components/ToastContainer.vue';
 
 const auth = useAuthStore();
 const router = useRouter();
@@ -61,6 +62,8 @@ watch(ready, (isReady) => {
     <RouterView />
     <BottomNav />
   </div>
+
+  <ToastContainer />
 </template>
 
 <style scoped>

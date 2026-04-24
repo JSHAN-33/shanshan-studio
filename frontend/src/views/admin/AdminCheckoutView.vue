@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
+import { useToast } from '@/composables/useToast';
 import { bookingsApi } from '@/api/bookings';
 import { financeApi } from '@/api/finance';
 import { servicesApi } from '@/api/services';
 import { membersApi } from '@/api/members';
 import type { Booking, FinanceSummary, PayMethod, Service, ServiceCat, Member } from '@/api/types';
 
+const toast = useToast();
 const loading = ref(false);
 const summary = ref<FinanceSummary | null>(null);
 const services = ref<Service[]>([]);
@@ -240,6 +242,7 @@ async function confirmCheckout() {
     total: finalTotal.value,
   });
   showModal.value = false;
+  toast.show(isEditingPaid.value ? '結帳已修改' : '結帳完成');
   await load();
 }
 

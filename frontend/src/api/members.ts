@@ -21,6 +21,7 @@ export const membersApi = {
     bday?: string | null;
     gender?: '男' | '女' | null;
     note?: string | null;
+    vip?: boolean;
     lineUserId?: string | null;
   }): Promise<Member> {
     const res = await http.post<{ member: Member }>('/members', data);

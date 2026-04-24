@@ -8,7 +8,30 @@ export async function membersRoutes(app: FastifyInstance) {
     const members = await app.prisma.member.findMany({
       orderBy: { updatedAt: 'desc' },
     });
-    return { members };
+
+    // 批量取得每位會員的預約次數和最後到訪日期
+    const phones = members.map((m) => m.phone);
+    const bookingStats = await app.prisma.booking.groupBy({
+      by: ['phone'],
+      where: { phone: { in: phones }, status: { not: '已取消' } },
+      _count: true,
+    });
+    const lastVisits = await app.prisma.booking.groupBy({
+      by: ['phone'],
+      where: { phone: { in: phones }, status: '已完成' },
+      _max: { date: true },
+    });
+
+    const countMap = new Map(bookingStats.map((s) => [s.phone, s._count]));
+    const visitMap = new Map(lastVisits.map((s) => [s.phone, s._max.date]));
+
+    const enriched = members.map((m) => ({
+      ...m,
+      bookingCount: countMap.get(m.phone) ?? 0,
+      lastVisitAt: visitMap.get(m.phone) ?? null,
+    }));
+
+    return { members: enriched };
   });
 
   // GET /members/:phone  —— 公開（顧客端判斷新客折扣用）
@@ -35,6 +58,7 @@ export async function membersRoutes(app: FastifyInstance) {
         bday: input.bday ?? undefined,
         gender: input.gender ?? undefined,
         note: input.note ?? undefined,
+        vip: input.vip ?? undefined,
         lineUserId: input.lineUserId ?? undefined,
       },
       create: input,
