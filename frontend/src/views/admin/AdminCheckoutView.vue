@@ -341,7 +341,7 @@ const payMethodOptions: { value: PayMethod; icon: string; label: string }[] = [
 
     <!-- Checkout Modal -->
     <div v-if="showModal && target" class="fixed inset-0 z-30 flex items-center justify-center p-4" style="background:rgba(0,0,0,0.5);">
-      <div class="bg-white w-full max-w-[360px] flex flex-col" style="border-radius:24px; max-height: 88vh; overflow: hidden;">
+      <div class="bg-white w-full max-w-[360px] flex flex-col" style="border-radius:24px; max-height: 88dvh; overflow: hidden;">
         <!-- Header -->
         <div class="flex justify-between items-start shrink-0" style="padding: 24px 24px 12px;">
           <h3 class="font-bold text-lg">{{ isEditingPaid ? '編輯結帳' : '結帳' }}</h3>
@@ -532,7 +532,7 @@ const payMethodOptions: { value: PayMethod; icon: string; label: string }[] = [
 
           <!-- 付款方式 -->
           <p class="text-xs text-brand-400 font-bold mb-2">付款方式{{ useWallet && remainAfterWallet > 0 ? '（剩餘金額）' : '' }}</p>
-          <div class="grid grid-cols-3 gap-2 mb-4">
+          <div class="grid grid-cols-3 gap-2">
             <button
               v-for="m in payMethodOptions"
               :key="m.value"
@@ -547,12 +547,12 @@ const payMethodOptions: { value: PayMethod; icon: string; label: string }[] = [
               <span>{{ m.label }}</span>
             </button>
           </div>
+        </div>
 
-          <!-- 按鈕 -->
-          <div class="flex gap-2">
-            <button class="btn-outline flex-1" @click="showModal = false">取消</button>
-            <button class="btn-primary flex-1" @click="confirmCheckout">{{ isEditingPaid ? '儲存修改' : '確認結帳' }}</button>
-          </div>
+        <!-- 固定底部按鈕 -->
+        <div class="shrink-0 flex gap-2 border-t border-brand-100" style="padding: 16px 24px calc(16px + env(safe-area-inset-bottom, 0px));">
+          <button class="btn-outline flex-1" @click="showModal = false">取消</button>
+          <button class="btn-primary flex-1" @click="confirmCheckout">{{ isEditingPaid ? '儲存修改' : '確認結帳' }}</button>
         </div>
       </div>
     </div>

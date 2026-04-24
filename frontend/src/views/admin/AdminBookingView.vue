@@ -936,11 +936,12 @@ async function copyExportText() {
             </div>
           </div>
 
-          <!-- 按鈕 -->
-          <div class="flex gap-2 mt-4">
-            <button class="btn-outline flex-1" @click="showModal = false">取消</button>
-            <button class="btn-primary flex-1" @click="save">儲存</button>
-          </div>
+        </div>
+
+        <!-- 固定底部按鈕 -->
+        <div class="shrink-0 flex gap-2 border-t border-brand-100" style="padding: 16px 24px calc(16px + env(safe-area-inset-bottom, 0px));">
+          <button class="btn-outline flex-1" @click="showModal = false">取消</button>
+          <button class="btn-primary flex-1" @click="save">儲存</button>
         </div>
       </div>
     </div>

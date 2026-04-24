@@ -21,7 +21,7 @@ function logout() {
 </script>
 
 <template>
-  <div class="min-h-screen bg-brand-50 pb-24">
+  <div class="min-h-screen bg-brand-50" style="padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px));">
     <!-- Header -->
     <div class="flex justify-between items-center px-4 pt-4 mb-4">
       <h1 class="text-base font-bold text-brand-800">後台管理</h1>
