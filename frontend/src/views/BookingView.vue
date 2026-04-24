@@ -136,9 +136,19 @@ function goHistory() {
 </script>
 
 <template>
-  <section class="min-h-screen bg-white p-6 pb-32">
+  <section class="h-dvh flex flex-col bg-white">
+    <!-- Header (固定頂部) -->
+    <header class="px-5 py-4 shrink-0 flex justify-between items-center" style="border-bottom: 1px solid #f5f4f2;">
+      <div>
+        <h1 class="text-base font-bold tracking-tight text-brand-700">SHANSHAN.STUDIO</h1>
+        <p class="text-[8px] tracking-[0.2em] text-brand-300 uppercase font-bold">HOTWAXING</p>
+      </div>
+    </header>
+
+    <!-- 可滾動的內容區域 -->
+    <div class="flex-1 overflow-y-auto p-6 pb-24">
     <!-- 預約成功確認頁 -->
-    <div v-if="submitted" class="max-w-[300px] mx-auto text-center pt-10">
+    <div v-if="submitted" class="max-w-[300px] mx-auto text-center pt-4">
       <div class="w-16 h-16 rounded-full bg-brand-50 flex items-center justify-center mx-auto mb-5">
         <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#655b55" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>
       </div>
@@ -382,6 +392,7 @@ function goHistory() {
           </button>
         </div>
       </div>
+    </div>
     </div>
   </section>
 </template>

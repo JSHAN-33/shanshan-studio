@@ -58,7 +58,7 @@ function proceed() {
 </script>
 
 <template>
-  <section class="h-screen flex flex-col">
+  <section class="h-dvh flex flex-col">
     <!-- Header (固定頂部) -->
     <header class="bg-white px-5 py-4 shrink-0 flex justify-between items-center" style="border-bottom: 1px solid #f5f4f2;">
       <div>

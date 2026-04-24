@@ -41,12 +41,12 @@ onMounted(load);
 </script>
 
 <template>
-  <section class="h-screen flex flex-col">
-    <!-- Header (固定頂部) -->
-    <header class="bg-white px-5 py-4 shrink-0 flex justify-between items-center" style="border-bottom: 1px solid #f5f4f2;">
+  <section class="h-dvh flex flex-col">
+    <!-- Header (精簡固定頂部) -->
+    <header class="bg-white px-5 py-2.5 shrink-0 flex justify-between items-center" style="border-bottom: 1px solid #f5f4f2;">
       <div>
-        <h1 class="text-base font-bold tracking-tight text-brand-700">SHANSHAN.STUDIO</h1>
-        <p class="text-[8px] tracking-[0.2em] text-brand-300 uppercase font-bold">MEMBER CENTER</p>
+        <h1 class="text-sm font-bold tracking-tight text-brand-700">SHANSHAN.STUDIO</h1>
+        <p class="text-[7px] tracking-[0.2em] text-brand-300 uppercase font-bold">MEMBER CENTER</p>
       </div>
       <button
         type="button"
@@ -58,7 +58,7 @@ onMounted(load);
     </header>
 
     <!-- 可滾動的內容區域 -->
-    <main class="flex-1 overflow-y-auto px-4 pt-6 pb-24 space-y-4">
+    <main class="flex-1 overflow-y-auto px-4 pt-4 pb-24 space-y-4">
       <!-- Member card (dark style) -->
       <div style="border-radius: 28px; overflow: hidden; box-shadow: 0 8px 32px rgba(59,53,48,0.28);">
         <div style="background: #3b3530; padding: 24px 24px 26px; position: relative; overflow: hidden;">

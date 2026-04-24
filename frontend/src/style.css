@@ -117,3 +117,6 @@
 
 /* Safe area padding for iPhone Home Indicator */
 .pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px); }
+
+/* Dynamic viewport height for LIFF / mobile browsers */
+.h-dvh { height: 100dvh; }
