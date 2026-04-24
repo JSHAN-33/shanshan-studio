@@ -69,9 +69,12 @@ export interface Cost {
   createdAt: string;
 }
 
+export type InventoryCat = 'product' | 'consumable';
+
 export interface InventoryItem {
   id: string;
   name: string;
+  cat: InventoryCat;
   qty: number;
   unit: string;
   minQty: number;

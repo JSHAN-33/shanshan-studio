@@ -1,18 +1,27 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { inventoryApi } from '@/api/inventory';
-import { financeApi } from '@/api/finance';
-import type { InventoryItem, AnalyticsSummary } from '@/api/types';
+import type { InventoryItem, InventoryCat } from '@/api/types';
 
 const items = ref<InventoryItem[]>([]);
 const lowStock = ref<InventoryItem[]>([]);
 const loading = ref(false);
-const analytics = ref<AnalyticsSummary | null>(null);
+const activeTab = ref<InventoryCat>('product');
+
+const tabs: Array<{ value: InventoryCat; label: string }> = [
+  { value: 'product', label: '產品' },
+  { value: 'consumable', label: '耗材' },
+];
+
+const filteredItems = computed(() =>
+  items.value.filter((i) => i.cat === activeTab.value)
+);
 
 const showModal = ref(false);
 const editing = ref<InventoryItem | null>(null);
 const form = ref({
   name: '',
+  cat: 'product' as InventoryCat,
   qty: 0,
   unit: '個',
   minQty: 0,
@@ -31,18 +40,17 @@ async function load() {
 
 onMounted(() => {
   load();
-  financeApi.analytics().then((res) => { analytics.value = res; }).catch(() => {});
 });
 
 function openCreate() {
   editing.value = null;
-  form.value = { name: '', qty: 0, unit: '個', minQty: 0 };
+  form.value = { name: '', cat: activeTab.value, qty: 0, unit: '個', minQty: 0 };
   showModal.value = true;
 }
 
 function openEdit(item: InventoryItem) {
   editing.value = item;
-  form.value = { name: item.name, qty: item.qty, unit: item.unit, minQty: item.minQty };
+  form.value = { name: item.name, cat: item.cat, qty: item.qty, unit: item.unit, minQty: item.minQty };
   showModal.value = true;
 }
 
@@ -50,6 +58,7 @@ async function save() {
   if (editing.value) {
     await inventoryApi.update(editing.value.id, {
       name: form.value.name,
+      cat: form.value.cat,
       qty: Number(form.value.qty),
       unit: form.value.unit,
       minQty: Number(form.value.minQty),
@@ -57,6 +66,7 @@ async function save() {
   } else {
     await inventoryApi.create({
       name: form.value.name,
+      cat: form.value.cat,
       qty: Number(form.value.qty),
       unit: form.value.unit,
       minQty: Number(form.value.minQty),
@@ -80,53 +90,6 @@ async function adjustQty(item: InventoryItem, delta: number) {
 
 <template>
   <div class="space-y-4">
-    <!-- 數據分析 -->
-    <div v-if="analytics" class="card !py-3">
-      <p class="section-label mb-2">本月數據分析</p>
-      <div class="grid grid-cols-3 gap-2 mb-3">
-        <div class="text-center">
-          <p class="text-lg font-extrabold text-brand-600 leading-none">{{ analytics.monthlyBookings }}</p>
-          <p class="text-[9px] text-brand-400 font-bold mt-1">總預約數</p>
-        </div>
-        <div class="text-center">
-          <p class="text-sm font-extrabold text-brand-600 leading-none">{{ analytics.popularTimeSlots[0]?.time ?? '-' }}</p>
-          <p class="text-[9px] text-brand-400 font-bold mt-1">最熱門時段</p>
-        </div>
-        <div class="text-center">
-          <p class="text-sm font-extrabold text-brand-600 leading-none truncate px-1">{{ analytics.popularServices[0]?.name ?? '-' }}</p>
-          <p class="text-[9px] text-brand-400 font-bold mt-1">最熱門服務</p>
-        </div>
-      </div>
-      <div v-if="analytics.popularTimeSlots.length > 1 || analytics.popularServices.length > 1" class="space-y-2 pt-2" style="border-top: 1px dashed #e5e2df;">
-        <div v-if="analytics.popularTimeSlots.length > 1">
-          <p class="text-[9px] text-brand-400 font-bold mb-1">熱門時段 TOP {{ analytics.popularTimeSlots.length }}</p>
-          <div class="flex flex-wrap gap-1.5">
-            <span
-              v-for="(slot, i) in analytics.popularTimeSlots"
-              :key="slot.time"
-              class="text-[10px] font-bold px-2 py-0.5 rounded-full"
-              :class="i === 0 ? 'bg-brand-600 text-white' : 'bg-brand-50 text-brand-500'"
-            >
-              {{ slot.time }} ({{ slot.count }})
-            </span>
-          </div>
-        </div>
-        <div v-if="analytics.popularServices.length > 1">
-          <p class="text-[9px] text-brand-400 font-bold mb-1">熱門服務 TOP {{ analytics.popularServices.length }}</p>
-          <div class="flex flex-wrap gap-1.5">
-            <span
-              v-for="(svc, i) in analytics.popularServices"
-              :key="svc.name"
-              class="text-[10px] font-bold px-2 py-0.5 rounded-full"
-              :class="i === 0 ? 'bg-brand-600 text-white' : 'bg-brand-50 text-brand-500'"
-            >
-              {{ svc.name }} ({{ svc.count }})
-            </span>
-          </div>
-        </div>
-      </div>
-    </div>
-
     <div v-if="lowStock.length" class="card bg-red-50 border-red-200">
       <div class="font-bold text-red-700 mb-1">⚠️ 不足警示</div>
       <div class="text-sm text-red-600">
@@ -139,9 +102,25 @@ async function adjustQty(item: InventoryItem, delta: number) {
       <button class="btn-pill text-[10px]" @click="openCreate">+ 新增</button>
     </div>
 
+    <!-- 產品 / 耗材 tabs -->
+    <div class="flex gap-2">
+      <button
+        v-for="t in tabs"
+        :key="t.value"
+        type="button"
+        class="flex-1 py-2.5 text-xs font-bold text-center rounded-xl border-[1.5px] transition-all"
+        :class="activeTab === t.value
+          ? 'bg-brand-600 text-white border-brand-600'
+          : 'bg-white text-brand-500 border-brand-200'"
+        @click="activeTab = t.value"
+      >
+        {{ t.label }}
+      </button>
+    </div>
+
     <p v-if="loading" class="text-center text-brand-400 py-6">載入中…</p>
     <ul v-else class="space-y-2">
-      <li v-for="it in items" :key="it.id" class="card !py-2">
+      <li v-for="it in filteredItems" :key="it.id" class="card !py-2">
         <div class="flex justify-between items-center">
           <div>
             <div class="font-bold text-sm">{{ it.name }}</div>
@@ -160,13 +139,31 @@ async function adjustQty(item: InventoryItem, delta: number) {
           <button class="btn-outline text-xs !py-0.5 flex-1 !text-red-600 !border-red-200" @click="remove(it)">刪除</button>
         </div>
       </li>
-      <li v-if="!items.length" class="text-center text-brand-400 py-6">尚無庫存品項</li>
+      <li v-if="!filteredItems.length" class="text-center text-brand-400 py-6">尚無{{ activeTab === 'product' ? '產品' : '耗材' }}品項</li>
     </ul>
 
     <!-- Modal -->
     <div v-if="showModal" class="fixed inset-0 z-30 flex items-center justify-center p-5" style="background:rgba(0,0,0,0.5);">
-      <div class="bg-white w-full max-w-[320px] max-h-[90vh] overflow-y-auto space-y-3 no-scrollbar" style="border-radius:24px;padding:28px;">
+      <div class="bg-white w-full max-w-[320px] max-h-[90dvh] overflow-y-auto space-y-3 no-scrollbar" style="border-radius:24px;padding:28px;">
         <h3 class="font-bold text-lg">{{ editing ? '編輯品項' : '新增品項' }}</h3>
+        <!-- 分類 -->
+        <div>
+          <label class="label">分類</label>
+          <div class="flex gap-2">
+            <button
+              v-for="t in tabs"
+              :key="t.value"
+              type="button"
+              class="flex-1 py-2 text-xs font-bold text-center rounded-xl border-[1.5px] transition-all"
+              :class="form.cat === t.value
+                ? 'bg-brand-600 text-white border-brand-600'
+                : 'bg-white text-brand-500 border-brand-200'"
+              @click="form.cat = t.value"
+            >
+              {{ t.label }}
+            </button>
+          </div>
+        </div>
         <div>
           <label class="label">名稱</label>
           <input v-model="form.name" class="input" />

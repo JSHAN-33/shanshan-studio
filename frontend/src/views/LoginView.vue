@@ -44,7 +44,7 @@ async function submit() {
 </script>
 
 <template>
-  <section class="min-h-screen flex flex-col">
+  <section class="flex flex-col" style="min-height: 100dvh;">
     <!-- Header -->
     <header class="bg-white px-5 py-4 flex justify-between items-center">
       <div>

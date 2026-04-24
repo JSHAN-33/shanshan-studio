@@ -76,6 +76,7 @@ model Cost {
 model Inventory {
   id        String   @id @default(cuid())
   name      String
+  cat       String   @default("consumable")
   qty       Int      @default(0)
   unit      String   @default("個")
   minQty    Int      @default(0)
