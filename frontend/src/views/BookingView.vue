@@ -236,6 +236,10 @@ function goHistory() {
               <span class="shrink-0 mt-0.5" style="color:#d5d0cc;">●</span>
               臨時取消或未到場者，預約金恕不退還
             </p>
+            <p class="text-[11px] text-brand-500 leading-relaxed flex items-start gap-2 mt-1">
+              <span class="shrink-0 mt-0.5" style="color:#c8a96e;">★</span>
+              <strong>預約金只需付一次</strong>，回訪客人免付預約金
+            </p>
           </div>
         </div>
       </div>
@@ -246,6 +250,42 @@ function goHistory() {
       <p class="text-[11px] text-brand-400 mb-4 leading-relaxed">
         如需異動預約，請透過 LINE 私訊小編人工處理
       </p>
+
+      <!-- LINE 通知綁定提示 -->
+      <div class="line-bind-card mb-3">
+        <div class="flex items-center gap-2.5 mb-2.5">
+          <span class="line-bind-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 2C6.48 2 2 5.81 2 10.5c0 2.65 1.33 5.02 3.42 6.58-.12.44-.64 2.32-.67 2.47 0 0-.01.08.04.11.05.03.11.01.11.01.15-.02 1.76-1.15 2.5-1.7.85.25 1.76.38 2.6.38 5.52 0 10-3.81 10-8.5S17.52 2 12 2z" fill="#06C755"/></svg>
+          </span>
+          <div>
+            <p class="text-xs font-bold text-brand-700">開啟預約提醒通知</p>
+            <p class="text-[10px] text-brand-400">只需設定一次，之後自動收到通知</p>
+          </div>
+        </div>
+        <div class="line-bind-steps">
+          <div class="line-bind-step">
+            <span class="line-bind-num">1</span>
+            <span class="text-[11px] text-brand-500">加入官方 LINE 好友</span>
+          </div>
+          <div class="line-bind-step">
+            <span class="line-bind-num">2</span>
+            <span class="text-[11px] text-brand-500">傳送您的手機號碼</span>
+          </div>
+          <div class="line-bind-step">
+            <span class="line-bind-num">3</span>
+            <span class="text-[11px] text-brand-500">綁定完成，自動收到預約提醒</span>
+          </div>
+        </div>
+        <a
+          href="https://line.me/R/ti/p/@903zzutx"
+          target="_blank"
+          rel="noopener"
+          class="line-bind-btn"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 2C6.48 2 2 5.81 2 10.5c0 2.65 1.33 5.02 3.42 6.58-.12.44-.64 2.32-.67 2.47 0 0-.01.08.04.11.05.03.11.01.11.01.15-.02 1.76-1.15 2.5-1.7.85.25 1.76.38 2.6.38 5.52 0 10-3.81 10-8.5S17.52 2 12 2z" fill="white"/></svg>
+          加入好友
+        </a>
+      </div>
 
       <!-- Google Map 店面位置 -->
       <a
@@ -575,5 +615,67 @@ function goHistory() {
 .map-link-arrow {
   color: #b0aba7;
   flex-shrink: 0;
+}
+
+/* LINE 綁定通知卡片 */
+.line-bind-card {
+  background: #f8f7f5;
+  border: 1.5px solid #ede9e5;
+  border-radius: 16px;
+  padding: 16px;
+}
+.line-bind-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #e8f5e9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.line-bind-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.line-bind-step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.line-bind-num {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #655b55;
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.line-bind-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  background: #06C755;
+  color: white;
+  font-size: 13px;
+  font-weight: 700;
+  border: none;
+  border-radius: 12px;
+  padding: 11px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.15s;
+}
+.line-bind-btn:active {
+  background: #05a847;
 }
 </style>
