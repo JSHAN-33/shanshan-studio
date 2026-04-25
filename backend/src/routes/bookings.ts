@@ -10,6 +10,7 @@ import {
 import { getAvailableSlots, hasConflict } from '../services/bookingService.js';
 import { upsertMemberFromBooking } from '../services/memberService.js';
 import {
+  buildBindPromptMessage,
   buildBookingCancelledMessage,
   buildBookingConfirmedMessage,
   buildNewBookingMessage,
@@ -135,6 +136,13 @@ export async function bookingsRoutes(app: FastifyInstance) {
         items: input.items,
         total: input.total,
       })).catch((err) => console.error('[LINE] pushToOa failed', err));
+    }
+
+    // 若客人尚未綁定 OA，推播綁定提醒
+    const mem = await app.prisma.member.findUnique({ where: { phone: input.phone } });
+    if (mem && !mem.lineOaUserId && mem.lineUserId) {
+      pushToUser(mem.lineUserId, buildBindPromptMessage(input.name))
+        .catch((err) => console.error('[LINE] bind prompt push failed', err));
     }
 
     return reply.status(201).send({ booking });

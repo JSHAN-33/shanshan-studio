@@ -265,11 +265,11 @@ function goHistory() {
         <div class="line-bind-steps">
           <div class="line-bind-step">
             <span class="line-bind-num">1</span>
-            <span class="text-[11px] text-brand-500">加入官方 LINE 好友</span>
+            <span class="text-[11px] text-brand-500">到官方 LINE 聊天室</span>
           </div>
           <div class="line-bind-step">
             <span class="line-bind-num">2</span>
-            <span class="text-[11px] text-brand-500">傳送您的手機號碼</span>
+            <span class="text-[11px] text-brand-500">輸入您的手機號碼</span>
           </div>
           <div class="line-bind-step">
             <span class="line-bind-num">3</span>
@@ -283,7 +283,7 @@ function goHistory() {
           class="line-bind-btn"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 2C6.48 2 2 5.81 2 10.5c0 2.65 1.33 5.02 3.42 6.58-.12.44-.64 2.32-.67 2.47 0 0-.01.08.04.11.05.03.11.01.11.01.15-.02 1.76-1.15 2.5-1.7.85.25 1.76.38 2.6.38 5.52 0 10-3.81 10-8.5S17.52 2 12 2z" fill="white"/></svg>
-          加入好友
+          前往輸入手機號碼
         </a>
       </div>
 
