@@ -301,3 +301,99 @@ export function buildBindPromptMessage(name: string, phone: string): object {
   };
 }
 
+/** 熱蠟後保養注意事項（推給客人，預約結束後 1 小時） */
+export function buildAftercareMessage(): object {
+  return {
+    type: 'flex',
+    altText: '[SHANSHAN.STUDIO x RICA] 熱蠟後保養及注意事項',
+    contents: {
+      type: 'bubble',
+      size: 'mega',
+      header: {
+        type: 'box', layout: 'vertical', backgroundColor: '#655b55', paddingAll: '20px',
+        contents: [
+          { type: 'text', text: 'SHANSHAN.STUDIO', color: '#ffffff80', size: 'xxs', weight: 'bold' },
+          { type: 'text', text: '熱蠟後保養及注意事項', color: '#ffffff', size: 'lg', weight: 'bold', margin: 'md' },
+          { type: 'text', text: 'SHANSHAN.STUDIO x RICA', color: '#ffffffaa', size: 'xs', margin: 'sm' },
+        ],
+      },
+      body: {
+        type: 'box', layout: 'vertical', paddingAll: '20px', spacing: 'lg',
+        contents: [
+          {
+            type: 'box', layout: 'vertical', spacing: 'sm',
+            contents: [
+              { type: 'text', text: '❶ 穿著寬鬆衣服', size: 'sm', weight: 'bold', color: '#4a423d' },
+              { type: 'text', text: '除毛後肌膚較脆弱，勿穿著緊身衣褲，以免過度摩擦造成肌膚不適！', size: 'sm', color: '#7a726d', wrap: true },
+            ],
+          },
+          {
+            type: 'box', layout: 'vertical', spacing: 'sm',
+            contents: [
+              { type: 'text', text: '❷ 避開高溫＆公共浴池', size: 'sm', weight: 'bold', color: '#4a423d' },
+              { type: 'text', text: '2 日內不要洗高溫的熱水，也避免大量流汗的活動！\n3-5 天不要去游泳池、海邊、溫泉等地方，避免毛孔刺激敏感。', size: 'sm', color: '#7a726d', wrap: true },
+            ],
+          },
+          {
+            type: 'box', layout: 'vertical', spacing: 'sm',
+            contents: [
+              { type: 'text', text: '❸ 記得去角質', size: 'sm', weight: 'bold', color: '#4a423d' },
+              { type: 'text', text: '除毛後讓肌膚休息 3-5 天後，就可以使用溫和的去角質產品，來避免毛囊炎的情況', size: 'sm', color: '#7a726d', wrap: true },
+            ],
+          },
+          {
+            type: 'box', layout: 'vertical', spacing: 'sm',
+            contents: [
+              { type: 'text', text: '❹ 記得要保養 🧴', size: 'sm', weight: 'bold', color: '#4a423d' },
+              { type: 'text', text: '使用溫和單純成分的清爽乳液，可以幫助肌膚舒緩，喝飽水的皮膚還會水嫩透亮噢！\n一個禮拜內避開美白產品', size: 'sm', color: '#7a726d', wrap: true },
+            ],
+          },
+        ],
+      },
+    },
+  };
+}
+
+/** 感謝回饋訊息（推給客人，預約結束後 1 小時） */
+export function buildFeedbackMessage(name: string, googleReviewUrl?: string): object {
+  const bodyContents: object[] = [
+    { type: 'text', text: `謝謝${name}今天的來訪 💛`, size: 'sm', weight: 'bold', color: '#4a423d' },
+    { type: 'text', text: '如果妳喜歡今天的服務，也歡迎告訴我妳的感受，或幫我們分享給身邊的朋友 ✨\n每一份回饋與分享，都是讓我們有更好的動力 💛', size: 'sm', color: '#7a726d', wrap: true, margin: 'md' },
+  ];
+
+  const footerContents: object[] = [];
+  if (googleReviewUrl) {
+    footerContents.push({
+      type: 'button',
+      style: 'primary',
+      color: '#655b55',
+      height: 'sm',
+      action: { type: 'uri', label: '⭐ 留下 Google 評論', uri: googleReviewUrl },
+    });
+  }
+
+  const bubble: Record<string, unknown> = {
+    type: 'bubble',
+    size: 'kilo',
+    header: {
+      type: 'box', layout: 'vertical', backgroundColor: '#655b55', paddingAll: '20px',
+      contents: [
+        { type: 'text', text: 'SHANSHAN.STUDIO', color: '#ffffff80', size: 'xxs', weight: 'bold' },
+        { type: 'text', text: '感謝您的來訪', color: '#ffffff', size: 'xl', weight: 'bold', margin: 'md' },
+      ],
+    },
+    body: {
+      type: 'box', layout: 'vertical', paddingAll: '20px', spacing: 'md',
+      contents: bodyContents,
+    },
+  };
+  if (footerContents.length > 0) {
+    bubble.footer = {
+      type: 'box', layout: 'vertical', paddingAll: '16px',
+      contents: footerContents,
+    };
+  }
+
+  return { type: 'flex', altText: '感謝您的來訪', contents: bubble };
+}
+

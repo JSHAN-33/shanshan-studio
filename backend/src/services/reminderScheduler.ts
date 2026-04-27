@@ -1,6 +1,6 @@
 import cron from 'node-cron';
 import type { PrismaClient } from '@prisma/client';
-import { buildBookingReminderMessage, pushToUser } from './lineNotifyService.js';
+import { buildBookingReminderMessage, buildAftercareMessage, buildFeedbackMessage, pushToUser } from './lineNotifyService.js';
 
 /**
  * 每天下午 17:00 自動發送明日預約提醒給有綁定 OA 的客人。
@@ -43,4 +43,63 @@ export function startReminderScheduler(prisma: PrismaClient) {
   });
 
   console.log('[Reminder] Scheduler started — daily at 17:00 (Asia/Taipei)');
+
+  // 每 10 分鐘檢查：預約結束 1 小時後推播保養須知 + 回饋邀請
+  cron.schedule('*/10 * * * *', async () => {
+    try {
+      const now = new Date();
+      // 台灣時間
+      const twNow = new Date(now.getTime() + 8 * 60 * 60 * 1000);
+      const todayStr = twNow.toISOString().slice(0, 10);
+      const twHour = twNow.getUTCHours();
+      const twMin = twNow.getUTCMinutes();
+      const nowMinutes = twHour * 60 + twMin; // 台灣時間分鐘數
+
+      // 找今天已確認/已完成、尚未發過 aftercare 的預約
+      const bookings = await prisma.booking.findMany({
+        where: {
+          date: todayStr,
+          status: { in: ['已確認', '已完成'] },
+          aftercareSentAt: null,
+        },
+      });
+
+      for (const b of bookings) {
+        // 計算預約結束時間 = 預約開始 + duration（預設 60 分鐘）
+        const [h, m] = b.time.split(':').map(Number);
+        const startMinutes = h * 60 + m;
+        const duration = b.duration ?? 60;
+        const endMinutes = startMinutes + duration;
+        // 結束後 1 小時才推播
+        const sendAfterMinutes = endMinutes + 60;
+
+        if (nowMinutes < sendAfterMinutes) continue;
+
+        // 找會員的推播 ID
+        const member = await prisma.member.findUnique({ where: { phone: b.phone } });
+        const pushUserId = member?.lineOaUserId ?? member?.lineUserId;
+        if (!pushUserId) continue;
+
+        // 取得 Google 評論連結（存在 SystemSetting）
+        const reviewSetting = await prisma.systemSetting.findUnique({ where: { key: 'googleReviewUrl' } });
+
+        // 推播兩則訊息：保養須知 + 回饋邀請
+        await pushToUser(pushUserId, buildAftercareMessage());
+        await pushToUser(pushUserId, buildFeedbackMessage(b.name, reviewSetting?.value));
+
+        // 標記已發送
+        await prisma.booking.update({
+          where: { id: b.id },
+          data: { aftercareSentAt: new Date() },
+        });
+        console.log(`[Aftercare] Sent to ${b.name} (${b.phone})`);
+      }
+    } catch (err) {
+      console.error('[Aftercare] Error:', err);
+    }
+  }, {
+    timezone: 'Asia/Taipei',
+  });
+
+  console.log('[Aftercare] Scheduler started — every 10 minutes');
 }
