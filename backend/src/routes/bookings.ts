@@ -96,9 +96,9 @@ export async function bookingsRoutes(app: FastifyInstance) {
     let needsDeposit = false;
 
     if (depositEnabled?.value === 'true') {
-      // 檢查是否為新客（沒有已完成的預約紀錄）
+      // 檢查是否為新客（沒有任何非取消的預約紀錄）
       const pastBookings = await app.prisma.booking.count({
-        where: { phone: input.phone, status: '已完成' },
+        where: { phone: input.phone, status: { not: '已取消' } },
       });
       if (pastBookings === 0) {
         const amountSetting = await app.prisma.systemSetting.findUnique({ where: { key: 'depositAmount' } });
