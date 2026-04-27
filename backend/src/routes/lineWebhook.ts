@@ -92,8 +92,9 @@ export async function lineWebhookRoutes(app: FastifyInstance) {
         const alreadyLinked = await app.prisma.member.findFirst({ where: { lineOaUserId: userId } });
         if (alreadyLinked) continue;
 
-        // 檢查是否是手機號碼格式，不是的話就不回覆（讓店家手動回）
-        const phone = normalizePhone(text);
+        // 支援「綁定 09xxxxxxxx」或直接輸入手機號碼
+        const stripped = text.replace(/^綁定\s*/i, '');
+        const phone = normalizePhone(stripped);
         const isPhone = /^09\d{8}$/.test(phone);
         if (!isPhone) continue;
 

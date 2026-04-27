@@ -141,7 +141,7 @@ export async function bookingsRoutes(app: FastifyInstance) {
     // 若客人尚未綁定 OA，推播綁定提醒
     const mem = await app.prisma.member.findUnique({ where: { phone: input.phone } });
     if (mem && !mem.lineOaUserId && mem.lineUserId) {
-      pushToUser(mem.lineUserId, buildBindPromptMessage(input.name))
+      pushToUser(mem.lineUserId, buildBindPromptMessage(input.name, input.phone))
         .catch((err) => console.error('[LINE] bind prompt push failed', err));
     }
 

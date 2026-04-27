@@ -258,8 +258,9 @@ export function buildNewMemberMessage(member: {
   });
 }
 
-/** 綁定通知提醒（推給客人，請他在 OA 輸入手機號碼） */
-export function buildBindPromptMessage(name: string): object {
+/** 綁定通知提醒（推給客人，一鍵開啟綁定） */
+export function buildBindPromptMessage(name: string, phone: string): object {
+  const prefillUri = `https://line.me/R/oaMessage/%40903zzutx/?${encodeURIComponent('綁定 ' + phone)}`;
   return {
     type: 'flex',
     altText: '開啟預約提醒通知',
@@ -278,10 +279,22 @@ export function buildBindPromptMessage(name: string): object {
         type: 'box', layout: 'vertical', paddingAll: '20px', spacing: 'md',
         contents: [
           { type: 'text', text: `${name} 您好 ✨`, size: 'sm', weight: 'bold', color: '#4a423d' },
-          { type: 'text', text: '請在這裡直接輸入您的手機號碼（例如 0912345678），即可完成綁定，之後預約確認、提醒通知都會自動傳送給您！', size: 'sm', color: '#7a726d', wrap: true, margin: 'md' },
+          { type: 'text', text: '點擊下方按鈕，按送出即可完成綁定，之後預約確認、提醒通知都會自動傳送給您！', size: 'sm', color: '#7a726d', wrap: true, margin: 'md' },
           { type: 'separator', margin: 'lg' },
           { type: 'text', text: '💡 綁定後即享有：', size: 'sm', weight: 'bold', color: '#4a423d', margin: 'lg' },
           { type: 'text', text: '• 預約確認通知\n• 明日預約提醒\n• 預約異動通知', size: 'sm', color: '#7a726d', wrap: true, margin: 'sm' },
+        ],
+      },
+      footer: {
+        type: 'box', layout: 'vertical', paddingAll: '16px',
+        contents: [
+          {
+            type: 'button',
+            style: 'primary',
+            color: '#06C755',
+            height: 'sm',
+            action: { type: 'uri', label: '一鍵綁定通知', uri: prefillUri },
+          },
         ],
       },
     },
