@@ -25,6 +25,7 @@ const submitted = ref(false);
 const agreedNotice = ref(false);
 const showNotice = ref(false);
 const createdBooking = ref<Booking | null>(null);
+const needsBind = ref(false);
 const depositBankInfo = ref('');
 
 function todayStr(): string {
@@ -101,6 +102,7 @@ async function submit() {
       inLiff: liff.isInClient(),
     });
     createdBooking.value = result;
+    needsBind.value = result.needsBind ?? false;
     // 透過 liff.sendMessages 把通知卡片發到 OA 聊天室（顯示在左邊，客人發的）
     sendFlexToChat(buildNewBookingFlex({
       name: auth.customer.name,
@@ -251,8 +253,8 @@ function goHistory() {
         如需異動預約，請透過 LINE 私訊小編人工處理
       </p>
 
-      <!-- LINE 通知綁定提示 -->
-      <div class="line-bind-card mb-3">
+      <!-- LINE 通知綁定提示（僅未綁定的客人顯示） -->
+      <div v-if="needsBind" class="line-bind-card mb-3">
         <div class="flex items-center gap-2.5 mb-2.5">
           <span class="line-bind-icon">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 2C6.48 2 2 5.81 2 10.5c0 2.65 1.33 5.02 3.42 6.58-.12.44-.64 2.32-.67 2.47 0 0-.01.08.04.11.05.03.11.01.11.01.15-.02 1.76-1.15 2.5-1.7.85.25 1.76.38 2.6.38 5.52 0 10-3.81 10-8.5S17.52 2 12 2z" fill="#06C755"/></svg>

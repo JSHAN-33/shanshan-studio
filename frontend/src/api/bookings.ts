@@ -52,9 +52,9 @@ export const bookingsApi = {
     total: number;
     remarks?: string | null;
     inLiff?: boolean;
-  }): Promise<Booking> {
-    const res = await http.post<{ booking: Booking }>('/bookings', data);
-    return res.data.booking;
+  }): Promise<Booking & { needsBind?: boolean }> {
+    const res = await http.post<{ booking: Booking; needsBind?: boolean }>('/bookings', data);
+    return { ...res.data.booking, needsBind: res.data.needsBind };
   },
   async adminCreate(data: {
     name: string;
