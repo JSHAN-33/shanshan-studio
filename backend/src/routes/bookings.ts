@@ -13,6 +13,7 @@ import {
   buildBindPromptMessage,
   buildBookingCancelledMessage,
   buildBookingConfirmedMessage,
+  buildDepositInfoMessage,
   buildNewBookingMessage,
   pushToOa,
   pushToUser,
@@ -144,6 +145,25 @@ export async function bookingsRoutes(app: FastifyInstance) {
     if (needsBind && mem!.lineUserId) {
       pushToUser(mem!.lineUserId, buildBindPromptMessage(input.name, input.phone))
         .catch((err) => console.error('[LINE] bind prompt push failed', err));
+    }
+
+    // 新客需付預約金 → 推播轉帳資訊給客人
+    if (needsDeposit) {
+      const pushUid = mem?.lineOaUserId ?? mem?.lineUserId;
+      if (pushUid) {
+        const bankSetting = await app.prisma.systemSetting.findUnique({ where: { key: 'depositBankInfo' } });
+        if (bankSetting?.value) {
+          pushToUser(pushUid, buildDepositInfoMessage({
+            name: input.name,
+            date: input.date,
+            time: input.time,
+            items: input.items,
+            total: input.total,
+            depositAmount: depositData.depositAmount ?? 500,
+            bankInfo: bankSetting.value,
+          })).catch((err) => console.error('[LINE] deposit info push failed', err));
+        }
+      }
     }
 
     return reply.status(201).send({ booking, needsBind });

@@ -301,6 +301,92 @@ export function buildBindPromptMessage(name: string, phone: string): object {
   };
 }
 
+/** 預約金轉帳資訊（推給新客，預約送出後自動發送） */
+export function buildDepositInfoMessage(booking: {
+  name: string;
+  date: string;
+  time: string;
+  items: string;
+  total: number;
+  depositAmount: number;
+  bankInfo: string;
+}): object {
+  const bankLines = booking.bankInfo.split('\n').filter(Boolean);
+  const bankContents: object[] = bankLines.map((line) => ({
+    type: 'text', text: line, size: 'sm', color: '#4a423d', weight: 'bold', wrap: true,
+  }));
+
+  return {
+    type: 'flex',
+    altText: '預約金轉帳資訊',
+    contents: {
+      type: 'bubble',
+      size: 'kilo',
+      header: {
+        type: 'box', layout: 'vertical', backgroundColor: '#3b3530', paddingAll: '20px',
+        contents: [
+          { type: 'text', text: 'SHANSHAN.STUDIO', color: '#ffffff50', size: 'xxs', weight: 'bold' },
+          { type: 'text', text: '預約金轉帳資訊', color: '#ffffff', size: 'xl', weight: 'bold', margin: 'md' },
+          { type: 'text', text: `DEPOSIT  NT$ ${booking.depositAmount}`, color: '#c8a96e', size: 'sm', weight: 'bold', margin: 'sm' },
+        ],
+      },
+      body: {
+        type: 'box', layout: 'vertical', paddingAll: '20px', spacing: 'md',
+        contents: [
+          {
+            type: 'box', layout: 'horizontal',
+            contents: [
+              { type: 'text', text: '姓名', size: 'sm', color: '#b0aba7', flex: 2 },
+              { type: 'text', text: booking.name, size: 'sm', weight: 'bold', color: '#4a423d', flex: 3, align: 'end' },
+            ],
+          },
+          {
+            type: 'box', layout: 'horizontal',
+            contents: [
+              { type: 'text', text: '日期', size: 'sm', color: '#b0aba7', flex: 2 },
+              { type: 'text', text: booking.date, size: 'sm', weight: 'bold', color: '#4a423d', flex: 3, align: 'end' },
+            ],
+          },
+          {
+            type: 'box', layout: 'horizontal',
+            contents: [
+              { type: 'text', text: '時段', size: 'sm', color: '#b0aba7', flex: 2 },
+              { type: 'text', text: booking.time, size: 'sm', weight: 'bold', color: '#4a423d', flex: 3, align: 'end' },
+            ],
+          },
+          {
+            type: 'box', layout: 'horizontal',
+            contents: [
+              { type: 'text', text: '項目', size: 'sm', color: '#b0aba7', flex: 2 },
+              { type: 'text', text: booking.items, size: 'sm', weight: 'bold', color: '#4a423d', flex: 3, align: 'end', wrap: true },
+            ],
+          },
+          { type: 'separator', margin: 'lg' },
+          {
+            type: 'box', layout: 'vertical', margin: 'lg', backgroundColor: '#f8f7f5',
+            cornerRadius: '12px', paddingAll: '14px', spacing: 'sm',
+            contents: [
+              { type: 'text', text: '匯款資訊', size: 'xxs', color: '#b0aba7', weight: 'bold' },
+              ...bankContents,
+            ],
+          },
+          { type: 'separator', margin: 'lg' },
+          { type: 'text', text: '● 轉帳完成後請截圖傳至 LINE 告知小編', size: 'xxs', color: '#7a726d', wrap: true, margin: 'lg' },
+          { type: 'text', text: '● 確認收款後將為您正式登記預約', size: 'xxs', color: '#7a726d', wrap: true },
+          { type: 'text', text: '● 逾時未付款，預約將自動取消', size: 'xxs', color: '#b0aba7', wrap: true },
+          { type: 'text', text: '● 臨時取消或未到場者，預約金恕不退還', size: 'xxs', color: '#b0aba7', wrap: true },
+        ],
+      },
+      footer: {
+        type: 'box', layout: 'vertical', paddingAll: '16px',
+        contents: [
+          { type: 'text', text: '請於 24 小時內完成轉帳', size: 'xs', color: '#8b6914', weight: 'bold', align: 'center' },
+        ],
+      },
+    },
+  };
+}
+
 /** 熱蠟後保養注意事項（推給客人，預約結束後 1 小時） */
 export function buildAftercareMessage(): object {
   return {
