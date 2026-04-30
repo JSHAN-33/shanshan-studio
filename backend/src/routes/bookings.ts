@@ -244,19 +244,11 @@ export async function bookingsRoutes(app: FastifyInstance) {
 
     const booking = await app.prisma.booking.update({ where: { id }, data });
 
-    // 狀態變更時推播顧客
+    // 狀態變更時推播顧客（用 member.lineOaUserId）
     if (input.status && input.status !== existing.status) {
       console.log(`[LINE] Status changed: ${existing.status} → ${input.status}, phone: ${booking.phone}`);
-      let mem = await app.prisma.member.findUnique({ where: { phone: booking.phone } });
-      // 自動補綁 lineOaUserId（舊會員可能只有 lineUserId）
-      if (mem && mem.lineUserId && !mem.lineOaUserId) {
-        mem = await app.prisma.member.update({
-          where: { id: mem.id },
-          data: { lineOaUserId: mem.lineUserId },
-        });
-        console.log(`[LINE] Auto-backfilled lineOaUserId for ${mem.name}`);
-      }
-      const pushUserId = mem?.lineOaUserId ?? mem?.lineUserId;
+      const mem = await app.prisma.member.findUnique({ where: { phone: booking.phone } });
+      const pushUserId = mem?.lineOaUserId;
       console.log(`[LINE] Member found: ${mem?.name}, lineOaUserId: ${mem?.lineOaUserId}, lineUserId: ${mem?.lineUserId}, using: ${pushUserId}`);
       if (pushUserId) {
         if (input.status === '已確認') {

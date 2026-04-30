@@ -26,15 +26,11 @@ export async function authRoutes(app: FastifyInstance) {
     });
 
     if (member) {
-      // 同步最新 LINE 頭像 + 自動補綁 OA
-      const needsUpdate = (pictureUrl && pictureUrl !== member.pictureUrl) || !member.lineOaUserId;
-      if (needsUpdate) {
+      // 同步最新 LINE 頭像
+      if (pictureUrl && pictureUrl !== member.pictureUrl) {
         member = await app.prisma.member.update({
           where: { lineUserId },
-          data: {
-            ...(pictureUrl && pictureUrl !== member.pictureUrl ? { pictureUrl } : {}),
-            ...(!member.lineOaUserId ? { lineOaUserId: lineUserId } : {}),
-          },
+          data: { pictureUrl },
         });
       }
       const bookingCount = await app.prisma.booking.count({
@@ -67,12 +63,11 @@ export async function authRoutes(app: FastifyInstance) {
 
     let member;
     if (existingPhone) {
-      // 手機已存在但沒綁 LINE → 綁定（同時綁定 OA）
+      // 手機已存在但沒綁 LINE → 綁定
       member = await app.prisma.member.update({
         where: { phone: input.phone },
         data: {
           lineUserId: input.lineUserId,
-          lineOaUserId: existingPhone.lineOaUserId ?? input.lineUserId,
           name: input.name,
           gender: input.gender,
           bday: input.bday ?? undefined,
@@ -80,7 +75,7 @@ export async function authRoutes(app: FastifyInstance) {
         },
       });
     } else {
-      // 全新會員（同時綁定 LIFF + OA）
+      // 全新會員
       member = await app.prisma.member.create({
         data: {
           phone: input.phone,
@@ -88,7 +83,6 @@ export async function authRoutes(app: FastifyInstance) {
           gender: input.gender,
           bday: input.bday ?? undefined,
           lineUserId: input.lineUserId,
-          lineOaUserId: input.lineUserId,
           pictureUrl: input.pictureUrl ?? undefined,
         },
       });
