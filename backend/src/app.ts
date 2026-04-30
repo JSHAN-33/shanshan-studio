@@ -17,6 +17,7 @@ import { authRoutes } from './routes/auth.js';
 import { lineWebhookRoutes } from './routes/lineWebhook.js';
 import { serviceHistoryRoutes } from './routes/serviceHistory.js';
 import { settingsRoutes } from './routes/settings.js';
+import { icalRoutes } from './routes/ical.js';
 
 export async function buildApp(): Promise<FastifyInstance> {
   const app = Fastify({
@@ -40,6 +41,9 @@ export async function buildApp(): Promise<FastifyInstance> {
 
   // LINE Webhook（獨立路由，不走 /api prefix）
   await app.register(lineWebhookRoutes, { prefix: '/line' });
+
+  // iCal 日曆訂閱（不走 /api prefix，讓 TimeTree 等日曆 app 可直接存取）
+  await app.register(icalRoutes, { prefix: '/cal' });
 
   // 所有業務路由掛在 /api
   await app.register(
