@@ -288,6 +288,10 @@ async function removePaid(b: Booking) {
   }
 }
 
+// --- 收合/展開 ---
+const pendingExpanded = ref(true);
+const paidExpanded = ref(true);
+
 const payMethodOptions: { value: PayMethod; icon: string; label: string }[] = [
   { value: '現金', icon: '💰', label: '現金' },
   { value: '轉帳', icon: '🏦', label: '轉帳' },
@@ -310,32 +314,40 @@ const payMethodOptions: { value: PayMethod; icon: string; label: string }[] = [
     </div>
 
     <section>
-      <h2 class="font-bold mb-2">待結帳</h2>
-      <p v-if="loading" class="text-center text-brand-400 py-4">載入中…</p>
-      <p v-else-if="!pending.length" class="text-center text-brand-400 py-4">目前沒有待結帳項目</p>
-      <ul v-else class="space-y-1.5">
-        <li v-for="b in pending" :key="b.id" class="card !p-2.5 !rounded-xl flex justify-between items-center">
-          <div>
-            <div class="font-bold text-xs">{{ b.name }}</div>
-            <div class="text-[11px] text-brand-500">{{ b.date }} {{ b.time }}</div>
-            <div class="text-[10px] text-brand-400 mt-0.5">{{ b.items }}</div>
-          </div>
-          <div class="text-right">
-            <div class="text-brand-600 font-bold text-xs">${{ b.total }}</div>
-            <span class="badge text-[9px] mt-0.5" :class="{
-              'badge-pending': b.status === '待確認',
-              'badge-confirmed': b.status === '已確認',
-              'badge-done': b.status === '已完成',
-            }">{{ b.status }}</span>
-            <button class="btn-primary !text-[11px] !py-0.5 mt-0.5 block ml-auto" @click="openCheckout(b)">結帳</button>
-          </div>
-        </li>
-      </ul>
+      <button class="w-full flex items-center justify-between mb-2" @click="pendingExpanded = !pendingExpanded">
+        <h2 class="font-bold">待結帳<span v-if="pending.length" class="text-brand-400 font-normal text-sm ml-1">({{ pending.length }})</span></h2>
+        <svg class="w-4 h-4 text-brand-400 transition-transform duration-200" :class="{ 'rotate-180': pendingExpanded }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+      <div v-show="pendingExpanded">
+        <p v-if="loading" class="text-center text-brand-400 py-4">載入中…</p>
+        <p v-else-if="!pending.length" class="text-center text-brand-400 py-4">目前沒有待結帳項目</p>
+        <ul v-else class="space-y-1.5">
+          <li v-for="b in pending" :key="b.id" class="card !p-2.5 !rounded-xl flex justify-between items-center">
+            <div>
+              <div class="font-bold text-xs">{{ b.name }}</div>
+              <div class="text-[11px] text-brand-500">{{ b.date }} {{ b.time }}</div>
+              <div class="text-[10px] text-brand-400 mt-0.5">{{ b.items }}</div>
+            </div>
+            <div class="text-right">
+              <div class="text-brand-600 font-bold text-xs">${{ b.total }}</div>
+              <span class="badge text-[9px] mt-0.5" :class="{
+                'badge-pending': b.status === '待確認',
+                'badge-confirmed': b.status === '已確認',
+                'badge-done': b.status === '已完成',
+              }">{{ b.status }}</span>
+              <button class="btn-primary !text-[11px] !py-0.5 mt-0.5 block ml-auto" @click="openCheckout(b)">結帳</button>
+            </div>
+          </li>
+        </ul>
+      </div>
     </section>
 
     <section>
-      <h2 class="font-bold mb-2">已結帳（本月）</h2>
-      <ul v-if="paid.length" class="space-y-1.5">
+      <button class="w-full flex items-center justify-between mb-2" @click="paidExpanded = !paidExpanded">
+        <h2 class="font-bold">已結帳（本月）<span v-if="paid.length" class="text-brand-400 font-normal text-sm ml-1">({{ paid.length }})</span></h2>
+        <svg class="w-4 h-4 text-brand-400 transition-transform duration-200" :class="{ 'rotate-180': paidExpanded }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+      <ul v-if="paid.length" v-show="paidExpanded" class="space-y-1.5">
         <li v-for="b in paid" :key="b.id" class="card !p-2.5 !rounded-xl">
           <div class="flex justify-between items-start gap-2">
             <div class="min-w-0 flex-1">
@@ -365,7 +377,7 @@ const payMethodOptions: { value: PayMethod; icon: string; label: string }[] = [
           </div>
         </li>
       </ul>
-      <p v-else class="text-center text-brand-400 py-4">尚無結帳紀錄</p>
+      <p v-else v-show="paidExpanded" class="text-center text-brand-400 py-4">尚無結帳紀錄</p>
     </section>
 
     <!-- Checkout Modal -->
