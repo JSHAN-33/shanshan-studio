@@ -14,4 +14,6 @@ export const listCostsQuery = z.object({
   cat: costCatEnum.optional(),
 });
 
+export const updateCostSchema = createCostSchema.partial();
+
 export type CreateCostInput = z.infer<typeof createCostSchema>;

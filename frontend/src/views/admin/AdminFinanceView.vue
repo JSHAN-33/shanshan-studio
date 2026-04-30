@@ -24,7 +24,7 @@ const loading = ref(false);
 const analytics = ref<AnalyticsSummary | null>(null);
 
 const form = ref({
-  cat: '耗材' as Cost['cat'],
+  cat: '店租' as Cost['cat'],
   desc: '',
   amount: 0,
   date: new Date().toISOString().slice(0, 10),
@@ -119,7 +119,7 @@ async function save() {
     date: form.value.date,
   });
   form.value = {
-    cat: '耗材',
+    cat: '店租',
     desc: '',
     amount: 0,
     date: new Date().toISOString().slice(0, 10),
@@ -347,6 +347,28 @@ async function exportMonthCSV() {
   a.click();
   URL.revokeObjectURL(url);
   toast.show('月報表已下載');
+}
+
+// --- 編輯成本 ---
+const editingCost = ref<Cost | null>(null);
+const editForm = ref({ cat: '店租' as Cost['cat'], desc: '', amount: 0, date: '' });
+
+function openEditCost(c: Cost) {
+  editingCost.value = c;
+  editForm.value = { cat: c.cat, desc: c.desc ?? '', amount: c.amount, date: c.date };
+}
+
+async function saveEditCost() {
+  if (!editingCost.value) return;
+  await costsApi.update(editingCost.value.id, {
+    cat: editForm.value.cat,
+    desc: editForm.value.desc || undefined,
+    amount: Number(editForm.value.amount),
+    date: editForm.value.date,
+  });
+  editingCost.value = null;
+  toast.show('成本已更新');
+  await load();
 }
 
 const { refreshing } = usePullRefresh(load);
@@ -577,6 +599,9 @@ const { refreshing } = usePullRefresh(load);
                 </div>
                 <div class="flex items-center gap-2 shrink-0">
                   <span class="font-extrabold text-brand-700">NT$ {{ c.amount.toLocaleString() }}</span>
+                  <button class="w-6 h-6 rounded-full bg-brand-50 flex items-center justify-center text-brand-400 hover:bg-brand-100 transition shrink-0" @click="openEditCost(c)">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                  </button>
                   <button class="w-6 h-6 rounded-full bg-red-50 flex items-center justify-center text-red-400 hover:bg-red-100 transition shrink-0" @click="remove(c)">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
                   </button>
@@ -785,6 +810,59 @@ const { refreshing } = usePullRefresh(load);
           <p class="text-[10px] text-brand-400 mt-4 leading-relaxed">
             * 以已結帳（有 paidAt）的預約為準，按 paidAt 月份歸類
           </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Edit Cost Modal -->
+    <div v-if="editingCost" class="fixed inset-0 z-40 flex items-center justify-center p-4" style="background:rgba(0,0,0,0.5);" @click.self="editingCost = null">
+      <div class="bg-white w-full max-w-[360px]" style="border-radius:24px; overflow: hidden;">
+        <div class="flex justify-between items-start" style="padding: 24px 24px 12px;">
+          <h3 class="font-bold text-lg">編輯成本</h3>
+          <button class="w-8 h-8 rounded-full bg-brand-50 flex items-center justify-center text-brand-400 hover:bg-brand-100 transition" @click="editingCost = null">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+        <div style="padding: 0 24px 24px;" class="space-y-3">
+          <!-- 分類 -->
+          <div>
+            <p class="text-xs text-brand-400 font-bold mb-2">分類</p>
+            <div class="flex flex-wrap gap-2">
+              <button
+                v-for="c in cats"
+                :key="c"
+                type="button"
+                class="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all border-[1.5px]"
+                :class="editForm.cat === c
+                  ? 'bg-brand-600 text-white border-brand-600'
+                  : 'bg-white text-brand-500 border-brand-200'"
+                @click="editForm.cat = c"
+              >
+                <span>{{ catIcons[c] }}</span>
+                <span>{{ c }}</span>
+              </button>
+            </div>
+          </div>
+          <!-- 說明 -->
+          <div>
+            <p class="text-xs text-brand-400 font-bold mb-2">說明</p>
+            <input v-model="editForm.desc" class="cost-field w-full" placeholder="說明" />
+          </div>
+          <!-- 金額 -->
+          <div>
+            <p class="text-xs text-brand-400 font-bold mb-2">金額</p>
+            <input v-model.number="editForm.amount" type="number" class="cost-field w-full" placeholder="金額 NT$" />
+          </div>
+          <!-- 日期 -->
+          <div>
+            <p class="text-xs text-brand-400 font-bold mb-2">日期</p>
+            <input v-model="editForm.date" type="date" class="cost-field w-full" />
+          </div>
+          <!-- 按鈕 -->
+          <div class="flex gap-2 pt-2">
+            <button class="btn-outline flex-1" @click="editingCost = null">取消</button>
+            <button class="btn-primary flex-1" @click="saveEditCost">儲存</button>
+          </div>
         </div>
       </div>
     </div>
