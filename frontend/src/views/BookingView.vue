@@ -9,7 +9,7 @@ import { useBookingStore } from '@/stores/booking';
 import { useAuthStore } from '@/stores/auth';
 import type { AvailableSlot, Booking } from '@/api/types';
 import liff from '@line/liff';
-import { buildNewBookingFlex, sendFlexToChat } from '@/composables/liffMessages';
+import { buildNewBookingFlex, sendFlexToChat, sendFlexAndLinkPhone } from '@/composables/liffMessages';
 
 const booking = useBookingStore();
 const auth = useAuthStore();
@@ -103,15 +103,30 @@ async function submit() {
     });
     createdBooking.value = result;
     needsBind.value = result.needsBind ?? false;
-    // 透過 liff.sendMessages 把通知卡片發到 OA 聊天室（顯示在左邊，客人發的）
-    sendFlexToChat(buildNewBookingFlex({
-      name: auth.customer.name,
-      phone: auth.customer.phone,
-      date: selectedDate.value!,
-      time: selectedTime.value!,
-      items: booking.itemsLabel,
-      total: booking.total,
-    }));
+    // 透過 liff.sendMessages 把通知卡片 + 手機號碼發到 OA 聊天室
+    // 若 OA 尚未綁定，手機號碼會觸發 webhook 自動綁定
+    if (needsBind.value) {
+      sendFlexAndLinkPhone(
+        buildNewBookingFlex({
+          name: auth.customer.name,
+          phone: auth.customer.phone,
+          date: selectedDate.value!,
+          time: selectedTime.value!,
+          items: booking.itemsLabel,
+          total: booking.total,
+        }),
+        auth.customer.phone,
+      );
+    } else {
+      sendFlexToChat(buildNewBookingFlex({
+        name: auth.customer.name,
+        phone: auth.customer.phone,
+        date: selectedDate.value!,
+        time: selectedTime.value!,
+        items: booking.itemsLabel,
+        total: booking.total,
+      }));
+    }
     // 若需付預約金，取得銀行資訊
     if (result.depositStatus === '待付訂金') {
       try {

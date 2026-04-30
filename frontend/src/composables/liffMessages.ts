@@ -114,3 +114,21 @@ export async function sendFlexToChat(message: ReturnType<typeof flexCard>): Prom
     console.warn('[liffMessages] sendMessages failed (降級為後端推播)', err);
   }
 }
+
+/**
+ * 註冊後同時發送 Flex 卡片 + 手機號碼到 OA 聊天室。
+ * 手機號碼會觸發 webhook 自動綁定 lineOaUserId，
+ * 讓推播功能不需要客人額外操作就能啟用。
+ */
+export async function sendFlexAndLinkPhone(message: ReturnType<typeof flexCard>, phone: string): Promise<void> {
+  try {
+    if (!liff.isInClient()) return;
+    await liff.sendMessages([
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      message as any,
+      { type: 'text' as const, text: phone },
+    ]);
+  } catch (err) {
+    console.warn('[liffMessages] sendMessages+link failed (降級為後端推播)', err);
+  }
+}

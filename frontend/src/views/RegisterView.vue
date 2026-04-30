@@ -5,7 +5,7 @@ import SharedCalendar from '@/components/SharedCalendar.vue';
 import liff from '@line/liff';
 import { useAuthStore } from '@/stores/auth';
 import { authApi } from '@/api/auth';
-import { buildNewMemberFlex, sendFlexToChat } from '@/composables/liffMessages';
+import { buildNewMemberFlex, sendFlexAndLinkPhone } from '@/composables/liffMessages';
 
 const auth = useAuthStore();
 const router = useRouter();
@@ -62,13 +62,17 @@ async function submit() {
       inLiff: liff.isInClient(),
     });
 
-    // 透過 liff.sendMessages 把註冊通知發到 OA 聊天室（顯示在左邊，客人發的）
-    sendFlexToChat(buildNewMemberFlex({
-      name: form.name.trim(),
-      phone: form.phone.trim(),
-      gender: form.gender,
-      bday: form.bday || null,
-    }));
+    // 透過 liff.sendMessages 發送註冊通知 + 手機號碼到 OA 聊天室
+    // 手機號碼會觸發 webhook 自動綁定 lineOaUserId，讓推播功能自動啟用
+    sendFlexAndLinkPhone(
+      buildNewMemberFlex({
+        name: form.name.trim(),
+        phone: form.phone.trim(),
+        gender: form.gender,
+        bday: form.bday || null,
+      }),
+      form.phone.trim(),
+    );
 
     auth.setProfile({ ...auth.profile!, needsRegister: false });
     auth.setCustomer({
