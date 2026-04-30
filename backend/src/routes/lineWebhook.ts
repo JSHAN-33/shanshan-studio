@@ -66,12 +66,26 @@ export async function lineWebhookRoutes(app: FastifyInstance) {
 
       console.log(`[Webhook] Event: ${event.type} from ${userId}`);
 
-      // ── follow 事件：歡迎 + 請輸入手機綁定 ──
+      // ── follow 事件：歡迎 + 自動綁定（若已透過 LIFF 註冊）──
       if (event.type === 'follow') {
         const alreadyLinked = await app.prisma.member.findFirst({ where: { lineOaUserId: userId } });
         if (alreadyLinked) {
           await replyMessage(event.replyToken!, [
             { type: 'text', text: `歡迎回來 ${alreadyLinked.name} ✨\n之後的預約通知會從這裡發送給您` },
+          ]);
+          continue;
+        }
+
+        // 嘗試用 LIFF lineUserId 自動綁定
+        const liffMember = await app.prisma.member.findUnique({ where: { lineUserId: userId } });
+        if (liffMember) {
+          await app.prisma.member.update({
+            where: { id: liffMember.id },
+            data: { lineOaUserId: userId },
+          });
+          console.log(`[Webhook] Auto-linked OA by LIFF userId: ${liffMember.name} → ${userId}`);
+          await replyMessage(event.replyToken!, [
+            { type: 'text', text: `${liffMember.name} 您好 ✨\n預約通知已自動啟用！之後所有預約相關訊息都會從這裡發送給您 💕` },
           ]);
         } else {
           await replyMessage(event.replyToken!, [
@@ -88,9 +102,23 @@ export async function lineWebhookRoutes(app: FastifyInstance) {
       if (event.type === 'message' && event.message?.type === 'text') {
         const text = (event.message.text ?? '').trim();
 
-        // 已綁定 → 不處理，讓店家自己回覆
+        // 已綁定 OA → 不處理，讓店家自己回覆
         const alreadyLinked = await app.prisma.member.findFirst({ where: { lineOaUserId: userId } });
         if (alreadyLinked) continue;
+
+        // 嘗試用 LIFF lineUserId 自動綁定
+        const liffMember = await app.prisma.member.findUnique({ where: { lineUserId: userId } });
+        if (liffMember) {
+          await app.prisma.member.update({
+            where: { id: liffMember.id },
+            data: { lineOaUserId: userId },
+          });
+          console.log(`[Webhook] Auto-linked OA by LIFF userId (message): ${liffMember.name} → ${userId}`);
+          await replyMessage(event.replyToken!, [
+            { type: 'text', text: `${liffMember.name} 您好 ✨\n預約通知已自動啟用！之後所有預約相關訊息都會從這裡發送給您 💕` },
+          ]);
+          continue;
+        }
 
         // 支援「綁定 09xxxxxxxx」或直接輸入手機號碼
         const stripped = text.replace(/^綁定\s*/i, '');
