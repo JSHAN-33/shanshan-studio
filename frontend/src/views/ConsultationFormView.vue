@@ -26,6 +26,12 @@ const form = ref({
   isPregnant: null as boolean | null,
   isSick: null as boolean | null,
   hasAcne: null as boolean | null,
+  consent1: false,
+  consent2: false,
+  consent3: false,
+  consent4: false,
+  privacy1: false,
+  privacy2: false,
   consentAgreed: false,
 });
 
@@ -282,10 +288,22 @@ async function submit() {
           <div class="cf-tag" style="background:#8c7e73;">服務確認條款</div>
           <p class="cf-consent-note">（請貴客戶確認下述事項後，於<span style="color:#8c4a2f;font-weight:700;">☑處打✓</span>）</p>
           <div class="cf-consent-list">
-            <p><span class="cf-num">1.</span> 本人確認接受熱蠟除毛部位之皮膚並無下列異常狀況，如：尚未復原或期復原之<span class="cf-hl">傷口疤痕</span>、<span class="cf-hl">瘀傷</span>、<span class="cf-hl">靜脈炎（靜脈曲張）</span>、<span class="cf-hl">傳染性皮膚疾病</span>、其他皮膚病變（包含糖尿病引起之皮膚問題）。</p>
-            <p><span class="cf-num">2.</span> 本人確認接受熱蠟除毛部位之皮膚並無一週內接受下列醫療處置：<span class="cf-hl">皮下微整形注射</span>（如：肉毒桿菌、玻尿酸、膠原蛋白…等）、<span class="cf-hl">醫美煥膚</span>（果酸、杏仁酸、胜肽酸…等），以及使用皮膚科面部治療藥物（維他命A酸、維他命A、四環黴素、乙醯胺酚…等）。如有上述皮膚狀況但未於除毛前告知美容師，<span class="cf-warn">本人願自行負擔相關風險</span>。</p>
-            <p><span class="cf-num">3.</span> 本人明白因為體質的不同，接受除毛後的皮膚，可能會出現暫時性的<span class="cf-hl">發紅</span>、<span class="cf-hl">毛囊水腫</span>、<span class="cf-hl">小紅疹</span>、<span class="cf-hl">瘀青</span>或是<span class="cf-hl">輕微脫皮</span>的狀況，同時本人後續願意遵照除毛後叮嚀之護理程序，以避免皮膚發炎之狀況產生。</p>
-            <p><span class="cf-num">4.</span> 本人已詳細閱讀並同意遵照「<span class="cf-hl">肌膚照護指南</span>」小卡之注意事項。</p>
+            <label class="cf-consent-item">
+              <input type="checkbox" v-model="form.consent1" /><span class="cf-box cf-box--sq"></span>
+              <p><span class="cf-num">1.</span> 本人確認接受熱蠟除毛部位之皮膚並無下列異常狀況，如：尚未復原或期復原之<span class="cf-hl">傷口疤痕</span>、<span class="cf-hl">瘀傷</span>、<span class="cf-hl">靜脈炎（靜脈曲張）</span>、<span class="cf-hl">傳染性皮膚疾病</span>、其他皮膚病變（包含糖尿病引起之皮膚問題）。</p>
+            </label>
+            <label class="cf-consent-item">
+              <input type="checkbox" v-model="form.consent2" /><span class="cf-box cf-box--sq"></span>
+              <p><span class="cf-num">2.</span> 本人確認接受熱蠟除毛部位之皮膚並無一週內接受下列醫療處置：<span class="cf-hl">皮下微整形注射</span>（如：肉毒桿菌、玻尿酸、膠原蛋白…等）、<span class="cf-hl">醫美煥膚</span>（果酸、杏仁酸、胜肽酸…等），以及使用皮膚科面部治療藥物（維他命A酸、維他命A、四環黴素、乙醯胺酚…等）。如有上述皮膚狀況但未於除毛前告知美容師，<span class="cf-warn">本人願自行負擔相關風險</span>。</p>
+            </label>
+            <label class="cf-consent-item">
+              <input type="checkbox" v-model="form.consent3" /><span class="cf-box cf-box--sq"></span>
+              <p><span class="cf-num">3.</span> 本人明白因為體質的不同，接受除毛後的皮膚，可能會出現暫時性的<span class="cf-hl">發紅</span>、<span class="cf-hl">毛囊水腫</span>、<span class="cf-hl">小紅疹</span>、<span class="cf-hl">瘀青</span>或是<span class="cf-hl">輕微脫皮</span>的狀況，同時本人後續願意遵照除毛後叮嚀之護理程序，以避免皮膚發炎之狀況產生。</p>
+            </label>
+            <label class="cf-consent-item">
+              <input type="checkbox" v-model="form.consent4" /><span class="cf-box cf-box--sq"></span>
+              <p><span class="cf-num">4.</span> 本人已詳細閱讀並同意遵照「<span class="cf-hl">肌膚照護指南</span>」小卡之注意事項。</p>
+            </label>
           </div>
         </div>
 
@@ -293,8 +311,14 @@ async function submit() {
         <div class="cf-block">
           <div class="cf-tag">個人資料授權同意</div>
           <div class="cf-consent-list">
-            <p><span class="cf-num">1.</span> 為保障個人優惠權益，本人同意提供貴單位蒐集保存、電腦處理、利用本人之個人資料，並同意不定時接收優惠資訊。</p>
-            <p><span class="cf-num">2.</span> 後續如有需求，本人願意以<span class="cf-hl">書面</span>方式提出申請，終止利用或刪除個人資料之授權。</p>
+            <label class="cf-consent-item">
+              <input type="checkbox" v-model="form.privacy1" /><span class="cf-box cf-box--sq"></span>
+              <p><span class="cf-num">1.</span> 為保障個人優惠權益，本人同意提供貴單位蒐集保存、電腦處理、利用本人之個人資料，並同意不定時接收優惠資訊。</p>
+            </label>
+            <label class="cf-consent-item">
+              <input type="checkbox" v-model="form.privacy2" /><span class="cf-box cf-box--sq"></span>
+              <p><span class="cf-num">2.</span> 後續如有需求，本人願意以<span class="cf-hl">書面</span>方式提出申請，終止利用或刪除個人資料之授權。</p>
+            </label>
           </div>
           <label class="cf-agree">
             <input type="checkbox" v-model="form.consentAgreed" />
@@ -513,9 +537,18 @@ async function submit() {
   font-size: 12px; color: #6b5f57; font-weight: 600;
   margin-bottom: 12px; line-height: 1.6;
 }
+.cf-consent-item {
+  display: flex; align-items: flex-start; gap: 8px;
+  cursor: pointer; margin-bottom: 12px;
+}
+.cf-consent-item input { display: none; }
+.cf-consent-item > .cf-box {
+  margin-top: 3px; flex-shrink: 0;
+}
+.cf-consent-item p,
 .cf-consent-list p {
   font-size: 11.5px; color: #4a423d; line-height: 1.8;
-  margin-bottom: 10px; text-align: justify;
+  margin: 0; text-align: justify; flex: 1;
 }
 .cf-num {
   font-weight: 800; color: #6b5f57; margin-right: 2px;
