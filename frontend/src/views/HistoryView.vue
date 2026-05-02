@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router';
 import { bookingsApi } from '@/api/bookings';
 import { membersApi } from '@/api/members';
 import { serviceHistoryApi } from '@/api/serviceHistory';
+import { consultationFormsApi } from '@/api/consultationForms';
 import { useAuthStore } from '@/stores/auth';
 import type { Booking, BookingStatus, Member, ServiceHistory } from '@/api/types';
 
@@ -14,6 +15,7 @@ const serviceHistory = ref<ServiceHistory[]>([]);
 const member = ref<Member | null>(null);
 const loading = ref(true);
 const showTopup = ref(false);
+const hasConsultation = ref(false);
 
 const badgeClass: Record<BookingStatus, string> = {
   待付訂金: 'badge-deposit',
@@ -26,14 +28,16 @@ const badgeClass: Record<BookingStatus, string> = {
 async function load() {
   if (!auth.customer?.phone) { router.replace('/login'); return; }
   loading.value = true;
-  const [bList, mem, hList] = await Promise.all([
+  const [bList, mem, hList, cfForm] = await Promise.all([
     bookingsApi.listByPhone(auth.customer.phone),
     membersApi.getByPhone(auth.customer.phone),
     serviceHistoryApi.listByPhone(auth.customer.phone).catch(() => []),
+    consultationFormsApi.getMine(auth.customer.phone).catch(() => null),
   ]);
   bookings.value = bList;
   member.value = mem;
   serviceHistory.value = hList;
+  hasConsultation.value = !!cfForm;
   loading.value = false;
 }
 
@@ -106,6 +110,16 @@ onMounted(load);
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 2v20M2 12h20"/></svg>
         </span>
         <span class="topup-btn-text">儲值優惠方案</span>
+        <svg class="topup-btn-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+      </button>
+
+      <!-- 顧客諮詢表按鈕 -->
+      <button type="button" class="topup-btn" @click="router.push('/consultation-form')">
+        <span class="topup-btn-icon" style="background:rgba(255,255,255,0.08);">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        </span>
+        <span class="topup-btn-text">{{ hasConsultation ? '查看／更新諮詢表' : '填寫顧客諮詢表' }}</span>
+        <span v-if="hasConsultation" style="font-size:9px;font-weight:700;color:#c8a96e;background:rgba(200,169,110,0.15);padding:2px 8px;border-radius:8px;margin-right:4px;">已填寫</span>
         <svg class="topup-btn-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
       </button>
 

@@ -8,6 +8,7 @@ const routes: RouteRecordRaw[] = [
   { path: '/services', name: 'services', component: () => import('@/views/ServicesView.vue'), meta: { requiresUser: true } },
   { path: '/booking', name: 'booking', component: () => import('@/views/BookingView.vue'), meta: { requiresUser: true } },
   { path: '/history', name: 'history', component: () => import('@/views/HistoryView.vue'), meta: { requiresUser: true } },
+  { path: '/consultation-form', name: 'consultation-form', component: () => import('@/views/ConsultationFormView.vue'), meta: { requiresUser: true } },
   {
     path: '/admin',
     component: () => import('@/views/admin/AdminLayout.vue'),

@@ -18,6 +18,7 @@ import { lineWebhookRoutes } from './routes/lineWebhook.js';
 import { serviceHistoryRoutes } from './routes/serviceHistory.js';
 import { settingsRoutes } from './routes/settings.js';
 import { icalRoutes } from './routes/ical.js';
+import { consultationFormsRoutes } from './routes/consultationForms.js';
 
 export async function buildApp(): Promise<FastifyInstance> {
   const app = Fastify({
@@ -59,6 +60,7 @@ export async function buildApp(): Promise<FastifyInstance> {
       await api.register(authRoutes, { prefix: '/auth' });
       await api.register(serviceHistoryRoutes, { prefix: '/service-history' });
       await api.register(settingsRoutes, { prefix: '/settings' });
+      await api.register(consultationFormsRoutes, { prefix: '/consultation-forms' });
     },
     { prefix: '/api' }
   );

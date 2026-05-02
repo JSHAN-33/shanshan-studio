@@ -107,6 +107,28 @@ export interface ServiceHistory {
   updatedAt: string;
 }
 
+export interface ConsultationForm {
+  id: string;
+  phone: string;
+  name: string;
+  gender?: string | null;
+  birthday?: string | null;
+  mobile?: string | null;
+  address?: string | null;
+  hairRemoval: string[];
+  isFirstWax: boolean;
+  isSensitive: boolean;
+  isAlcoholSensitive: boolean;
+  isPeriod: boolean;
+  isPregnant: boolean;
+  isSick: boolean;
+  hasAcne: boolean;
+  consentAgreed: boolean;
+  signatureData?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export type PayMethodLabel = '現金' | '轉帳' | '儲值金' | '空檔費';
 
 export interface PayMethodBookingEntry {

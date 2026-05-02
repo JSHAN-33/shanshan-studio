@@ -8,7 +8,8 @@ import { servicesApi } from '@/api/services';
 import { bookingsApi } from '@/api/bookings';
 import { slotsApi } from '@/api/slots';
 import { serviceHistoryApi } from '@/api/serviceHistory';
-import type { Member, Service, ServiceCat, AvailableSlot, BlockedSlot, Booking, ServiceHistory } from '@/api/types';
+import { consultationFormsApi } from '@/api/consultationForms';
+import type { Member, Service, ServiceCat, AvailableSlot, BlockedSlot, Booking, ServiceHistory, ConsultationForm } from '@/api/types';
 
 const toast = useToast();
 const members = ref<Member[]>([]);
@@ -422,6 +423,36 @@ async function openHistory(m: Member) {
   }
 }
 
+// --- 諮詢表 ---
+const showConsultModal = ref(false);
+const consultTarget = ref<Member | null>(null);
+const consultData = ref<ConsultationForm | null>(null);
+const consultLoading = ref(false);
+
+const hairLabelMap: Record<string, string> = {
+  '刮片刮毛': '刮片刮毛',
+  '電動美體刀': '電動美體刀',
+  '雷射除毛（醫師施作）': '雷射除毛',
+  '光學除毛（美容師施作）': '光學除毛',
+  '拔毛夾': '拔毛夾',
+  '除毛膏／慕絲': '除毛膏／慕絲',
+  '蜜蠟／蜜蠟貼片': '蜜蠟／蜜蠟貼片',
+};
+
+async function openConsult(m: Member) {
+  consultTarget.value = m;
+  consultData.value = null;
+  showConsultModal.value = true;
+  consultLoading.value = true;
+  try {
+    consultData.value = await consultationFormsApi.getByPhone(m.phone);
+  } catch {
+    consultData.value = null;
+  } finally {
+    consultLoading.value = false;
+  }
+}
+
 function editHistory(b: Booking) {
   historyForm.value = {
     id: b.id,
@@ -590,6 +621,7 @@ const { refreshing } = usePullRefresh(load);
           <button class="btn-outline text-xs !py-0.5 flex-1" @click="openEdit(m)">編輯</button>
           <button class="btn-outline text-xs !py-0.5 flex-1" @click="openWallet(m)">儲值金</button>
           <button class="btn-outline text-xs !py-0.5 flex-1" @click="openHistory(m)">消費紀錄</button>
+          <button class="btn-outline text-xs !py-0.5 flex-1" @click="openConsult(m)">諮詢表</button>
           <button class="w-7 h-7 rounded-full bg-red-50 flex items-center justify-center text-red-400 hover:bg-red-100 transition shrink-0" @click="removeMember(m)">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
           </button>
@@ -1062,6 +1094,72 @@ const { refreshing } = usePullRefresh(load);
                 </div>
               </li>
             </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 諮詢表 Modal -->
+    <div v-if="showConsultModal" class="fixed inset-0 z-30 flex items-center justify-center p-4" style="background:rgba(0,0,0,0.5);">
+      <div class="bg-white w-full max-w-[400px] flex flex-col" style="border-radius:24px; max-height: 88dvh; overflow: hidden;">
+        <div class="flex justify-between items-start shrink-0" style="padding: 24px 24px 12px;">
+          <h3 class="font-bold text-lg">諮詢表 — {{ consultTarget?.name }}</h3>
+          <button class="w-8 h-8 rounded-full bg-brand-50 flex items-center justify-center text-brand-400 hover:bg-brand-100 transition" @click="showConsultModal = false">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+        <div class="flex-1 overflow-y-auto" style="padding: 0 24px 24px;">
+          <p v-if="consultLoading" class="text-center text-brand-400 py-8 text-sm">載入中…</p>
+          <div v-else-if="!consultData" class="text-center py-8">
+            <p class="text-brand-400 text-sm">此會員尚未填寫諮詢表</p>
+          </div>
+          <div v-else class="space-y-4 text-sm">
+            <!-- 基本資料 -->
+            <div>
+              <p class="text-[10px] font-bold text-brand-400 tracking-wider uppercase mb-2">基本資料</p>
+              <div class="grid grid-cols-2 gap-2">
+                <div><span class="text-brand-400 text-xs">姓名：</span><span class="font-bold text-brand-700">{{ consultData.name }}</span></div>
+                <div><span class="text-brand-400 text-xs">性別：</span><span class="font-bold text-brand-700">{{ consultData.gender || '—' }}</span></div>
+                <div><span class="text-brand-400 text-xs">生日：</span><span class="font-bold text-brand-700">{{ consultData.birthday || '—' }}</span></div>
+                <div><span class="text-brand-400 text-xs">手機：</span><span class="font-bold text-brand-700">{{ consultData.mobile || '—' }}</span></div>
+              </div>
+              <div v-if="consultData.address" class="mt-1"><span class="text-brand-400 text-xs">地址：</span><span class="font-bold text-brand-700">{{ consultData.address }}</span></div>
+            </div>
+            <!-- 過往毛髮處理 -->
+            <div>
+              <p class="text-[10px] font-bold text-brand-400 tracking-wider uppercase mb-2">過往毛髮處理</p>
+              <div v-if="consultData.hairRemoval?.length" class="flex flex-wrap gap-1.5">
+                <span v-for="h in consultData.hairRemoval" :key="h" class="inline-block bg-brand-50 text-brand-600 text-xs px-2.5 py-1 rounded-full font-medium">{{ hairLabelMap[h] || h }}</span>
+              </div>
+              <p v-else class="text-brand-300 text-xs">無</p>
+            </div>
+            <!-- 生理狀態 -->
+            <div>
+              <p class="text-[10px] font-bold text-brand-400 tracking-wider uppercase mb-2">生理狀態確認</p>
+              <div class="space-y-1.5">
+                <div class="flex justify-between"><span class="text-xs text-brand-600">首次熱蠟除毛</span><span class="text-xs font-bold" :class="consultData.isFirstWax ? 'text-amber-600' : 'text-brand-300'">{{ consultData.isFirstWax ? '是' : '否' }}</span></div>
+                <div class="flex justify-between"><span class="text-xs text-brand-600">敏感體質</span><span class="text-xs font-bold" :class="consultData.isSensitive ? 'text-amber-600' : 'text-brand-300'">{{ consultData.isSensitive ? '是' : '否' }}</span></div>
+                <div class="flex justify-between"><span class="text-xs text-brand-600">酒精敏感</span><span class="text-xs font-bold" :class="consultData.isAlcoholSensitive ? 'text-amber-600' : 'text-brand-300'">{{ consultData.isAlcoholSensitive ? '是' : '否' }}</span></div>
+                <div class="flex justify-between"><span class="text-xs text-brand-600">生理期間</span><span class="text-xs font-bold" :class="consultData.isPeriod ? 'text-amber-600' : 'text-brand-300'">{{ consultData.isPeriod ? '是' : '否' }}</span></div>
+                <div class="flex justify-between"><span class="text-xs text-brand-600">懷孕期間</span><span class="text-xs font-bold" :class="consultData.isPregnant ? 'text-amber-600' : 'text-brand-300'">{{ consultData.isPregnant ? '是' : '否' }}</span></div>
+                <div class="flex justify-between"><span class="text-xs text-brand-600">生病／免疫力下降</span><span class="text-xs font-bold" :class="consultData.isSick ? 'text-amber-600' : 'text-brand-300'">{{ consultData.isSick ? '是' : '否' }}</span></div>
+                <div class="flex justify-between"><span class="text-xs text-brand-600">除毛區域出油／痘痘</span><span class="text-xs font-bold" :class="consultData.hasAcne ? 'text-amber-600' : 'text-brand-300'">{{ consultData.hasAcne ? '是' : '否' }}</span></div>
+              </div>
+            </div>
+            <!-- 條款同意 -->
+            <div>
+              <p class="text-[10px] font-bold text-brand-400 tracking-wider uppercase mb-2">條款同意</p>
+              <p class="text-xs"><span class="font-bold" :class="consultData.consentAgreed ? 'text-green-600' : 'text-red-500'">{{ consultData.consentAgreed ? '已同意' : '未同意' }}</span></p>
+            </div>
+            <!-- 簽名 -->
+            <div v-if="consultData.signatureData">
+              <p class="text-[10px] font-bold text-brand-400 tracking-wider uppercase mb-2">簽名</p>
+              <img :src="consultData.signatureData" alt="簽名" class="border border-brand-100 rounded-lg" style="max-height:80px;" />
+            </div>
+            <!-- 填寫時間 -->
+            <div class="pt-2 border-t border-brand-50">
+              <p class="text-[10px] text-brand-300">填寫時間：{{ new Date(consultData.updatedAt).toLocaleString('zh-TW') }}</p>
+            </div>
           </div>
         </div>
       </div>

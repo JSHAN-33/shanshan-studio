@@ -104,6 +104,28 @@ model SlotConfig {
   slots Json
 }
 
+model ConsultationForm {
+  id              String   @id @default(cuid())
+  phone           String   @unique
+  name            String
+  gender          String?
+  birthday        String?
+  mobile          String?
+  address         String?
+  hairRemoval     Json     // array of strings: past hair removal methods
+  isFirstWax      Boolean  @default(false)
+  isSensitive     Boolean  @default(false)
+  isAlcoholSensitive Boolean @default(false)
+  isPeriod        Boolean  @default(false)
+  isPregnant      Boolean  @default(false)
+  isSick          Boolean  @default(false)
+  hasAcne         Boolean  @default(false)
+  consentAgreed   Boolean  @default(false)
+  signatureData   String?  // base64 signature image
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
 model ServiceHistory {
   id        String   @id @default(cuid())
   phone     String
