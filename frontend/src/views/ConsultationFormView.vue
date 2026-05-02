@@ -66,8 +66,6 @@ onMounted(async () => {
     }
   } catch { /* ignore */ }
   loading.value = false;
-
-  // Init canvas
   setTimeout(initCanvas, 100);
 });
 
@@ -170,7 +168,7 @@ async function submit() {
 </script>
 
 <template>
-  <section class="h-dvh flex flex-col bg-white">
+  <section class="h-dvh flex flex-col" style="background:#f5f3f0;">
     <!-- Header -->
     <header class="cf-header">
       <button class="cf-back" @click="router.push('/history')">
@@ -181,184 +179,174 @@ async function submit() {
     </header>
 
     <main v-if="loading" class="flex-1 flex items-center justify-center">
-      <p class="text-brand-400 text-sm">載入中…</p>
+      <p style="color:#b0aba7;font-size:14px;">載入中…</p>
     </main>
 
     <main v-else class="flex-1 overflow-y-auto">
-      <div class="cf-form">
-        <!-- RICA Logo Area -->
-        <div class="cf-logo-area">
-          <div class="cf-logo-text">RICA</div>
-          <div class="cf-logo-sub">MADE IN ITALY</div>
-          <h2 class="cf-form-title">顧 客 諮 詢 表</h2>
+      <div class="cf-paper">
+
+        <!-- ===== 頂部 RICA + 標題 ===== -->
+        <div class="cf-top">
+          <div class="cf-top-left">
+            <div class="cf-rica">RICA</div>
+            <div class="cf-rica-sub">MADE IN ITALY</div>
+          </div>
+          <h2 class="cf-title">顧 客 諮 詢 表</h2>
         </div>
 
-        <!-- 基本資料 -->
-        <div class="cf-section">
-          <div class="cf-section-label">基本資料</div>
-          <div class="cf-field-row">
-            <div class="cf-field flex-1">
-              <label>姓名</label>
-              <input v-model="form.name" type="text" placeholder="請輸入姓名" />
-            </div>
-            <div class="cf-field" style="width:120px">
-              <label>性別</label>
-              <div class="cf-radio-group">
-                <label class="cf-radio"><input type="radio" v-model="form.gender" value="男" /><span>男</span></label>
-                <label class="cf-radio"><input type="radio" v-model="form.gender" value="女" /><span>女</span></label>
-              </div>
-            </div>
+        <!-- ===== 基本資料 ===== -->
+        <div class="cf-block">
+          <div class="cf-tag">基本資料</div>
+          <div class="cf-row">
+            <span class="cf-label">姓名：</span>
+            <input v-model="form.name" type="text" class="cf-input flex-1" placeholder="" />
+            <span class="cf-label" style="margin-left:20px;">性別：</span>
+            <label class="cf-ck"><input type="radio" v-model="form.gender" value="男" /><span class="cf-box"></span> 男</label>
+            <label class="cf-ck"><input type="radio" v-model="form.gender" value="女" /><span class="cf-box"></span> 女</label>
           </div>
-          <div class="cf-field-row">
-            <div class="cf-field flex-1">
-              <label>生日</label>
-              <input v-model="form.birthday" type="date" />
-            </div>
+          <div class="cf-row">
+            <span class="cf-label">生日：</span>
+            <input v-model="form.birthday" type="date" class="cf-input" style="width:160px;" />
           </div>
-          <div class="cf-field-row">
-            <div class="cf-field flex-1">
-              <label>手機</label>
-              <input v-model="form.mobile" type="tel" placeholder="手機號碼" />
-            </div>
-          </div>
-          <div class="cf-field-row">
-            <div class="cf-field flex-1">
-              <label>地址</label>
-              <input v-model="form.address" type="text" placeholder="地址" />
-            </div>
+          <div class="cf-row">
+            <span class="cf-label">手機：</span>
+            <input v-model="form.mobile" type="tel" class="cf-input" style="width:160px;" />
+            <span class="cf-label" style="margin-left:20px;">地址：</span>
+            <input v-model="form.address" type="text" class="cf-input flex-1" />
           </div>
         </div>
 
-        <!-- 過往毛髮處理 -->
-        <div class="cf-section">
-          <div class="cf-section-label">過往毛髮處理</div>
-          <div class="cf-checkbox-grid">
-            <label v-for="opt in hairOptions" :key="opt" class="cf-checkbox">
+        <!-- ===== 過往毛髮處理 ===== -->
+        <div class="cf-block cf-block--tinted">
+          <div class="cf-tag">過往毛髮處理</div>
+          <div class="cf-hair-grid">
+            <label v-for="opt in hairOptions" :key="opt" class="cf-ck">
               <input type="checkbox" :checked="form.hairRemoval.includes(opt)" @change="toggleHair(opt)" />
+              <span class="cf-box cf-box--sq"></span>
               <span>{{ opt }}</span>
             </label>
           </div>
-          <p class="cf-hint">（以上可複選）</p>
+          <p class="cf-note-right">（以上可複選）</p>
         </div>
 
-        <!-- 生理狀態確認 -->
-        <div class="cf-section">
-          <div class="cf-section-label">生理狀態確認</div>
-          <div class="cf-questions">
-            <div class="cf-question">
-              <span class="cf-q-text">· 本次是否為首次進行熱蠟除毛服務？</span>
-              <div class="cf-yn">
-                <label class="cf-radio"><input type="radio" :value="true" v-model="form.isFirstWax" /><span>是</span></label>
-                <label class="cf-radio"><input type="radio" :value="false" v-model="form.isFirstWax" /><span>否</span></label>
-              </div>
+        <!-- ===== 生理狀態確認 ===== -->
+        <div class="cf-block">
+          <div class="cf-tag" style="background:#8c7e73;">生理狀態確認</div>
+          <!-- 是/否 表頭 -->
+          <div class="cf-yn-header">
+            <span></span>
+            <span class="cf-yn-h">是</span>
+            <span class="cf-yn-h">否</span>
+          </div>
+          <div class="cf-q-list">
+            <div class="cf-q-row">
+              <span class="cf-q-text">· 本次是否為<strong>首次</strong>進行熱蠟除毛服務？</span>
+              <label class="cf-ck cf-ck--yn"><input type="radio" :value="true" v-model="form.isFirstWax" /><span class="cf-box cf-box--sq"></span></label>
+              <label class="cf-ck cf-ck--yn"><input type="radio" :value="false" v-model="form.isFirstWax" /><span class="cf-box cf-box--sq"></span></label>
             </div>
-            <div class="cf-question">
-              <span class="cf-q-text">· 是否為敏感體質？（熱敏感、食物敏感、保養品／彩妝品敏感、沙塵敏感…等）</span>
-              <div class="cf-yn">
-                <label class="cf-radio"><input type="radio" :value="true" v-model="form.isSensitive" /><span>是</span></label>
-                <label class="cf-radio"><input type="radio" :value="false" v-model="form.isSensitive" /><span>否</span></label>
-              </div>
+            <div class="cf-q-row">
+              <span class="cf-q-text">· 是否為<strong>敏感體質</strong>？（熱敏感、食物敏感、保養品／彩妝品敏感、沙塵敏感…等）</span>
+              <label class="cf-ck cf-ck--yn"><input type="radio" :value="true" v-model="form.isSensitive" /><span class="cf-box cf-box--sq"></span></label>
+              <label class="cf-ck cf-ck--yn"><input type="radio" :value="false" v-model="form.isSensitive" /><span class="cf-box cf-box--sq"></span></label>
             </div>
-            <div class="cf-question">
-              <span class="cf-q-text">· 是否對酒精敏感？</span>
-              <div class="cf-yn">
-                <label class="cf-radio"><input type="radio" :value="true" v-model="form.isAlcoholSensitive" /><span>是</span></label>
-                <label class="cf-radio"><input type="radio" :value="false" v-model="form.isAlcoholSensitive" /><span>否</span></label>
-              </div>
+            <div class="cf-q-row">
+              <span class="cf-q-text">· 是否對<strong>酒精敏感</strong>？</span>
+              <label class="cf-ck cf-ck--yn"><input type="radio" :value="true" v-model="form.isAlcoholSensitive" /><span class="cf-box cf-box--sq"></span></label>
+              <label class="cf-ck cf-ck--yn"><input type="radio" :value="false" v-model="form.isAlcoholSensitive" /><span class="cf-box cf-box--sq"></span></label>
             </div>
-            <div class="cf-question">
-              <span class="cf-q-text">· 目前是否為生理期間？</span>
-              <div class="cf-yn">
-                <label class="cf-radio"><input type="radio" :value="true" v-model="form.isPeriod" /><span>是</span></label>
-                <label class="cf-radio"><input type="radio" :value="false" v-model="form.isPeriod" /><span>否</span></label>
-              </div>
+            <div class="cf-q-row">
+              <span class="cf-q-text">· 目前是否為<strong>生理期間</strong>？</span>
+              <label class="cf-ck cf-ck--yn"><input type="radio" :value="true" v-model="form.isPeriod" /><span class="cf-box cf-box--sq"></span></label>
+              <label class="cf-ck cf-ck--yn"><input type="radio" :value="false" v-model="form.isPeriod" /><span class="cf-box cf-box--sq"></span></label>
             </div>
-            <div class="cf-question">
-              <span class="cf-q-text">· 目前是否為懷孕期間？</span>
-              <div class="cf-yn">
-                <label class="cf-radio"><input type="radio" :value="true" v-model="form.isPregnant" /><span>是</span></label>
-                <label class="cf-radio"><input type="radio" :value="false" v-model="form.isPregnant" /><span>否</span></label>
-              </div>
+            <div class="cf-q-row">
+              <span class="cf-q-text">· 目前是否為<strong>懷孕期間</strong>？</span>
+              <label class="cf-ck cf-ck--yn"><input type="radio" :value="true" v-model="form.isPregnant" /><span class="cf-box cf-box--sq"></span></label>
+              <label class="cf-ck cf-ck--yn"><input type="radio" :value="false" v-model="form.isPregnant" /><span class="cf-box cf-box--sq"></span></label>
             </div>
-            <div class="cf-question">
-              <span class="cf-q-text">· 目前是否為生病期間或免疫力下降期間？</span>
-              <div class="cf-yn">
-                <label class="cf-radio"><input type="radio" :value="true" v-model="form.isSick" /><span>是</span></label>
-                <label class="cf-radio"><input type="radio" :value="false" v-model="form.isSick" /><span>否</span></label>
-              </div>
+            <div class="cf-q-row">
+              <span class="cf-q-text">· 目前是否為<strong>生病期間</strong>或<strong>免疫力下降</strong>期間？</span>
+              <label class="cf-ck cf-ck--yn"><input type="radio" :value="true" v-model="form.isSick" /><span class="cf-box cf-box--sq"></span></label>
+              <label class="cf-ck cf-ck--yn"><input type="radio" :value="false" v-model="form.isSick" /><span class="cf-box cf-box--sq"></span></label>
             </div>
-            <div class="cf-question">
-              <span class="cf-q-text">· 本次除毛區域是否經常出油／長痘痘部位？</span>
-              <div class="cf-yn">
-                <label class="cf-radio"><input type="radio" :value="true" v-model="form.hasAcne" /><span>是</span></label>
-                <label class="cf-radio"><input type="radio" :value="false" v-model="form.hasAcne" /><span>否</span></label>
-              </div>
+            <div class="cf-q-row">
+              <span class="cf-q-text">· 本次除毛區域是否經常<strong>出油／長痘痘</strong>部位？</span>
+              <label class="cf-ck cf-ck--yn"><input type="radio" :value="true" v-model="form.hasAcne" /><span class="cf-box cf-box--sq"></span></label>
+              <label class="cf-ck cf-ck--yn"><input type="radio" :value="false" v-model="form.hasAcne" /><span class="cf-box cf-box--sq"></span></label>
             </div>
           </div>
         </div>
 
-        <!-- 服務確認條款 -->
-        <div class="cf-section">
-          <div class="cf-section-label">服務確認條款</div>
-          <p class="cf-consent-intro">（請貴客戶確認下述事項後，於下方勾選同意）</p>
-          <div class="cf-consent-items">
-            <p>1. 本人確認接受熱蠟除毛部位之皮膚並無下列異常狀況，如：尚未復原或期復原之傷口疤痕、瘀傷、靜脈炎（靜脈曲張）、傳染性皮膚疾病、其他皮膚病變（包含糖尿病引起之皮膚問題）。</p>
-            <p>2. 本人確認接受熱蠟除毛部位之皮膚並無一週內接受下列醫療處置：皮下微整形注射（如：肉毒桿菌、玻尿酸、膠原蛋白…等）、醫美煥膚（果酸、杏仁酸、胜肽酸…等），以及使用皮膚科面部治療藥物（維他命A酸、維他命A、四環黴素、乙醯胺酚…等）。如有上述皮膚狀況但未於除毛前告知美容師，本人願自行負擔相關風險。</p>
-            <p>3. 本人明白因為體質的不同，接受除毛後的皮膚，可能會出現暫時性的發紅、毛囊水腫、小紅疹、瘀青或是輕微脫皮的狀況，同時本人後續願意遵照除毛後叮嚀之護理程序，以避免皮膚發炎之狀況產生。</p>
-            <p>4. 本人已詳細閱讀並同意遵照「肌膚照護指南」小卡之注意事項。</p>
+        <!-- ===== 服務確認條款 ===== -->
+        <div class="cf-block cf-block--tinted">
+          <div class="cf-tag" style="background:#8c7e73;">服務確認條款</div>
+          <p class="cf-consent-note">（請貴客戶確認下述事項後，於<span style="color:#8c4a2f;font-weight:700;">☑處打✓</span>）</p>
+          <div class="cf-consent-list">
+            <p><span class="cf-num">1.</span> 本人確認接受熱蠟除毛部位之皮膚並無下列異常狀況，如：尚未復原或期復原之<span class="cf-hl">傷口疤痕</span>、<span class="cf-hl">瘀傷</span>、<span class="cf-hl">靜脈炎（靜脈曲張）</span>、<span class="cf-hl">傳染性皮膚疾病</span>、其他皮膚病變（包含糖尿病引起之皮膚問題）。</p>
+            <p><span class="cf-num">2.</span> 本人確認接受熱蠟除毛部位之皮膚並無一週內接受下列醫療處置：<span class="cf-hl">皮下微整形注射</span>（如：肉毒桿菌、玻尿酸、膠原蛋白…等）、<span class="cf-hl">醫美煥膚</span>（果酸、杏仁酸、胜肽酸…等），以及使用皮膚科面部治療藥物（維他命A酸、維他命A、四環黴素、乙醯胺酚…等）。如有上述皮膚狀況但未於除毛前告知美容師，<span class="cf-warn">本人願自行負擔相關風險</span>。</p>
+            <p><span class="cf-num">3.</span> 本人明白因為體質的不同，接受除毛後的皮膚，可能會出現暫時性的<span class="cf-hl">發紅</span>、<span class="cf-hl">毛囊水腫</span>、<span class="cf-hl">小紅疹</span>、<span class="cf-hl">瘀青</span>或是<span class="cf-hl">輕微脫皮</span>的狀況，同時本人後續願意遵照除毛後叮嚀之護理程序，以避免皮膚發炎之狀況產生。</p>
+            <p><span class="cf-num">4.</span> 本人已詳細閱讀並同意遵照「<span class="cf-hl">肌膚照護指南</span>」小卡之注意事項。</p>
           </div>
-          <div class="cf-consent-privacy">
-            <div class="cf-section-label" style="margin-top:16px">個人資料授權同意</div>
-            <p>1. 為保障個人優惠權益，本人同意提供貴單位蒐集保存、電腦處理、利用本人之個人資料，並同意不定時接收優惠資訊。</p>
-            <p>2. 後續如有需求，本人願意以書面方式提出申請，終止利用或刪除個人資料之授權。</p>
+        </div>
+
+        <!-- ===== 個人資料授權同意 ===== -->
+        <div class="cf-block">
+          <div class="cf-tag">個人資料授權同意</div>
+          <div class="cf-consent-list">
+            <p><span class="cf-num">1.</span> 為保障個人優惠權益，本人同意提供貴單位蒐集保存、電腦處理、利用本人之個人資料，並同意不定時接收優惠資訊。</p>
+            <p><span class="cf-num">2.</span> 後續如有需求，本人願意以<span class="cf-hl">書面</span>方式提出申請，終止利用或刪除個人資料之授權。</p>
           </div>
-          <label class="cf-agree-check">
+          <label class="cf-agree">
             <input type="checkbox" v-model="form.consentAgreed" />
-            <span>我已閱讀並同意以上所有條款</span>
+            <span class="cf-box cf-box--sq cf-box--lg"></span>
+            <span class="cf-agree-text">我已閱讀並同意以上所有條款</span>
           </label>
         </div>
 
-        <!-- 簽名 -->
-        <div class="cf-section">
-          <div class="cf-section-label">簽名</div>
-          <div class="cf-signature-area">
-            <canvas
-              ref="canvasRef"
-              class="cf-signature-canvas"
-              @mousedown="startDraw"
-              @mousemove="draw"
-              @mouseup="endDraw"
-              @mouseleave="endDraw"
-              @touchstart="startDraw"
-              @touchmove="draw"
-              @touchend="endDraw"
-            ></canvas>
-            <button type="button" class="cf-clear-sig" @click="clearSignature">清除</button>
+        <!-- ===== 簽名 + 日期 ===== -->
+        <div class="cf-block cf-sign-block">
+          <div class="cf-sign-row">
+            <div class="cf-sign-field">
+              <span class="cf-label">簽名：</span>
+              <div class="cf-sign-canvas-wrap">
+                <canvas
+                  ref="canvasRef"
+                  class="cf-sign-canvas"
+                  @mousedown="startDraw"
+                  @mousemove="draw"
+                  @mouseup="endDraw"
+                  @mouseleave="endDraw"
+                  @touchstart="startDraw"
+                  @touchmove="draw"
+                  @touchend="endDraw"
+                ></canvas>
+                <button type="button" class="cf-clear-sig" @click="clearSignature">清除</button>
+              </div>
+            </div>
           </div>
         </div>
 
         <!-- Submit -->
         <button
           type="button"
-          class="cf-submit-btn"
+          class="cf-submit"
           :disabled="submitting"
           @click="submit"
         >
           {{ submitting ? '送出中…' : (alreadyFilled ? '更新諮詢表' : '送出諮詢表') }}
         </button>
+
       </div>
     </main>
   </section>
 </template>
 
 <style scoped>
+/* ---- Header ---- */
 .cf-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 16px;
-  background: white;
-  border-bottom: 1px solid #f0efed;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 16px; background: white;
+  border-bottom: 1px solid #e8e4df;
 }
 .cf-back {
   width: 32px; height: 32px;
@@ -366,241 +354,240 @@ async function submit() {
   border: none; background: none; color: #655b55; cursor: pointer;
 }
 .cf-header-title {
-  font-size: 15px; font-weight: 800; color: #3b3530; letter-spacing: 0.05em;
+  font-size: 15px; font-weight: 800; color: #3b3530; letter-spacing: 0.08em;
 }
 
-.cf-form {
-  max-width: 480px;
-  margin: 0 auto;
-  padding: 20px 16px 40px;
+/* ---- Paper ---- */
+.cf-paper {
+  max-width: 520px;
+  margin: 12px auto;
+  background: #fff;
+  border: 1px solid #ddd8d2;
+  padding: 0;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
 }
 
-.cf-logo-area {
-  text-align: center;
-  padding: 20px 0 16px;
-  border-bottom: 2px solid #b0a89e;
-  margin-bottom: 20px;
+/* ---- Top / RICA ---- */
+.cf-top {
+  display: flex; align-items: flex-end; gap: 16px;
+  padding: 24px 24px 14px;
+  border-bottom: 2.5px solid #a09388;
 }
-.cf-logo-text {
-  font-size: 32px;
-  font-weight: 300;
-  letter-spacing: 0.35em;
-  color: #3b3530;
-  line-height: 1;
+.cf-top-left { flex-shrink: 0; }
+.cf-rica {
+  font-family: 'Times New Roman', 'Georgia', serif;
+  font-size: 36px; font-weight: 400; letter-spacing: 0.12em;
+  color: #3b3530; line-height: 1;
 }
-.cf-logo-sub {
-  font-size: 7px;
-  letter-spacing: 0.3em;
-  color: #b0aba7;
-  margin-top: 2px;
+.cf-rica-sub {
+  font-size: 7px; letter-spacing: 0.22em;
+  color: #b0aba7; margin-top: 1px;
 }
-.cf-form-title {
-  font-size: 18px;
-  font-weight: 700;
-  color: #3b3530;
-  margin-top: 12px;
-  letter-spacing: 0.5em;
+.cf-title {
+  font-size: 20px; font-weight: 700; color: #3b3530;
+  letter-spacing: 0.45em; margin: 0 0 2px;
 }
 
-.cf-section {
-  margin-bottom: 24px;
+/* ---- Block ---- */
+.cf-block {
+  padding: 16px 24px 18px;
+  border-bottom: 1px solid #e8e4df;
 }
-.cf-section-label {
+.cf-block--tinted {
+  background: #f6f4f1;
+}
+
+/* ---- Tag (section label) ---- */
+.cf-tag {
   display: inline-block;
-  background: #b0a89e;
-  color: white;
-  font-size: 12px;
-  font-weight: 700;
-  padding: 4px 14px;
-  border-radius: 2px;
-  margin-bottom: 12px;
-  letter-spacing: 0.08em;
+  background: #a09388;
+  color: #fff;
+  font-size: 12px; font-weight: 700;
+  padding: 3px 14px;
+  border-radius: 1px;
+  margin-bottom: 14px;
+  letter-spacing: 0.1em;
 }
-.cf-field-row {
-  display: flex;
-  gap: 12px;
-  margin-bottom: 10px;
+
+/* ---- Row / Label / Input ---- */
+.cf-row {
+  display: flex; align-items: center; flex-wrap: wrap;
+  gap: 4px; margin-bottom: 10px;
 }
-.cf-field {
-  display: flex;
-  flex-direction: column;
+.cf-label {
+  font-size: 13px; font-weight: 700; color: #4a423d;
+  white-space: nowrap;
 }
-.cf-field label {
-  font-size: 12px;
-  font-weight: 600;
-  color: #655b55;
-  margin-bottom: 4px;
-}
-.cf-field input[type="text"],
-.cf-field input[type="tel"],
-.cf-field input[type="date"] {
-  border: none;
-  border-bottom: 1.5px solid #d4d0cc;
-  padding: 6px 2px;
-  font-size: 14px;
-  color: #3b3530;
-  background: transparent;
-  outline: none;
+.cf-input {
+  border: none; border-bottom: 1.5px solid #c4bfb8;
+  padding: 4px 4px 3px; font-size: 14px; color: #3b3530;
+  background: transparent; outline: none;
+  min-width: 60px;
   transition: border-color 0.15s;
 }
-.cf-field input:focus {
-  border-color: #655b55;
-}
+.cf-input:focus { border-color: #8c7e73; }
 
-.cf-radio-group {
-  display: flex;
-  gap: 16px;
-  padding-top: 6px;
+/* ---- Checkbox / Radio (paper style) ---- */
+.cf-ck {
+  display: inline-flex; align-items: center; gap: 4px;
+  cursor: pointer; font-size: 12px; color: #3b3530;
+  user-select: none; white-space: nowrap;
 }
-.cf-radio {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  cursor: pointer;
-}
-.cf-radio input[type="radio"] {
+.cf-ck input { display: none; }
+.cf-box {
+  display: inline-block;
   width: 16px; height: 16px;
-  accent-color: #655b55;
-  cursor: pointer;
-}
-.cf-radio span {
-  font-size: 13px;
-  color: #3b3530;
-}
-
-.cf-checkbox-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px 12px;
-}
-.cf-checkbox {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  cursor: pointer;
-  min-width: 140px;
-}
-.cf-checkbox input[type="checkbox"] {
-  width: 15px; height: 15px;
-  accent-color: #655b55;
-  cursor: pointer;
+  border: 1.5px solid #a09388;
+  border-radius: 50%;
+  background: #fff;
+  position: relative;
   flex-shrink: 0;
+  transition: all 0.12s;
 }
-.cf-checkbox span {
-  font-size: 12px;
-  color: #3b3530;
-  line-height: 1.3;
+.cf-box--sq {
+  border-radius: 2px;
 }
-.cf-hint {
-  font-size: 11px;
-  color: #b0aba7;
-  margin-top: 6px;
+.cf-box--lg {
+  width: 20px; height: 20px;
+}
+.cf-ck input:checked + .cf-box {
+  background: #8c7e73;
+  border-color: #8c7e73;
+}
+.cf-ck input:checked + .cf-box::after {
+  content: '';
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 6px; height: 10px;
+  border: solid #fff; border-width: 0 2px 2px 0;
+  transform: translate(-50%, -55%) rotate(45deg);
+}
+.cf-ck input:checked + .cf-box--lg::after {
+  width: 7px; height: 12px;
 }
 
-.cf-questions {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+/* ---- Hair grid ---- */
+.cf-hair-grid {
+  display: flex; flex-wrap: wrap; gap: 8px 16px;
 }
-.cf-question {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 8px;
+.cf-hair-grid .cf-ck {
+  min-width: 130px;
 }
+.cf-note-right {
+  font-size: 11px; color: #b0aba7; text-align: right; margin-top: 8px;
+}
+
+/* ---- 生理狀態 Questions ---- */
+.cf-yn-header {
+  display: flex; align-items: center;
+  padding-bottom: 6px; margin-bottom: 4px;
+  border-bottom: 1px solid #d8d3cc;
+}
+.cf-yn-header span:first-child { flex: 1; }
+.cf-yn-h {
+  width: 40px; text-align: center;
+  font-size: 13px; font-weight: 800; color: #6b5f57;
+}
+.cf-q-list {
+  display: flex; flex-direction: column;
+}
+.cf-q-row {
+  display: flex; align-items: flex-start;
+  padding: 9px 0;
+  border-bottom: 1px solid #eee9e4;
+}
+.cf-q-row:last-child { border-bottom: none; }
 .cf-q-text {
-  font-size: 12px;
-  color: #3b3530;
-  line-height: 1.5;
+  flex: 1; font-size: 12.5px; color: #3b3530; line-height: 1.6;
+}
+.cf-q-text strong {
+  color: #8c4a2f; font-weight: 700;
+}
+.cf-ck--yn {
+  width: 40px; display: flex; justify-content: center;
+  align-items: flex-start; padding-top: 2px;
+}
+
+/* ---- Consent ---- */
+.cf-consent-note {
+  font-size: 12px; color: #6b5f57; font-weight: 600;
+  margin-bottom: 12px; line-height: 1.6;
+}
+.cf-consent-list p {
+  font-size: 11.5px; color: #4a423d; line-height: 1.8;
+  margin-bottom: 10px; text-align: justify;
+}
+.cf-num {
+  font-weight: 800; color: #6b5f57; margin-right: 2px;
+}
+.cf-hl {
+  color: #8c4a2f; font-weight: 600;
+}
+.cf-warn {
+  color: #c0392b; font-weight: 700;
+}
+
+/* ---- Agree ---- */
+.cf-agree {
+  display: flex; align-items: center; gap: 10px;
+  margin-top: 14px; cursor: pointer;
+  padding: 14px 16px;
+  background: #f6f4f1;
+  border: 1.5px solid #d8d3cc;
+  border-radius: 6px;
+  transition: border-color 0.15s;
+}
+.cf-agree:has(input:checked) {
+  border-color: #8c7e73;
+  background: #f0ede8;
+}
+.cf-agree-text {
+  font-size: 13px; font-weight: 800; color: #3b3530;
+  letter-spacing: 0.04em;
+}
+
+/* ---- Signature ---- */
+.cf-sign-block {
+  border-bottom: none;
+}
+.cf-sign-row {
+  display: flex; gap: 20px;
+}
+.cf-sign-field {
   flex: 1;
 }
-.cf-yn {
-  display: flex;
-  gap: 10px;
-  flex-shrink: 0;
-  padding-top: 1px;
-}
-
-.cf-consent-intro {
-  font-size: 11px;
-  color: #655b55;
-  font-weight: 600;
-  margin-bottom: 12px;
-}
-.cf-consent-items p,
-.cf-consent-privacy p {
-  font-size: 11px;
-  color: #555;
-  line-height: 1.7;
-  margin-bottom: 8px;
-}
-.cf-agree-check {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 16px;
-  cursor: pointer;
-  padding: 12px;
-  background: #f8f7f5;
-  border-radius: 10px;
-}
-.cf-agree-check input {
-  width: 18px; height: 18px;
-  accent-color: #655b55;
-  cursor: pointer;
-  flex-shrink: 0;
-}
-.cf-agree-check span {
-  font-size: 13px;
-  font-weight: 700;
-  color: #3b3530;
-}
-
-.cf-signature-area {
+.cf-sign-canvas-wrap {
   position: relative;
-  border: 1.5px solid #d4d0cc;
-  border-radius: 10px;
-  overflow: hidden;
-  background: #fafaf8;
+  border-bottom: 1.5px solid #c4bfb8;
+  margin-top: 4px;
 }
-.cf-signature-canvas {
-  width: 100%;
-  height: 120px;
-  display: block;
-  touch-action: none;
+.cf-sign-canvas {
+  width: 100%; height: 100px;
+  display: block; touch-action: none;
+  background: transparent;
 }
 .cf-clear-sig {
-  position: absolute;
-  top: 8px; right: 8px;
-  background: rgba(0,0,0,0.06);
-  border: none;
-  font-size: 11px;
-  color: #655b55;
-  padding: 4px 12px;
-  border-radius: 12px;
-  cursor: pointer;
+  position: absolute; top: 4px; right: 4px;
+  background: rgba(0,0,0,0.05);
+  border: 1px solid #d8d3cc;
+  font-size: 10px; color: #8c7e73;
+  padding: 2px 10px; border-radius: 3px;
+  cursor: pointer; font-weight: 600;
 }
+.cf-clear-sig:active { background: rgba(0,0,0,0.1); }
 
-.cf-submit-btn {
-  display: block;
-  width: 100%;
+/* ---- Submit ---- */
+.cf-submit {
+  display: block; width: calc(100% - 48px);
+  margin: 20px auto 28px;
   padding: 14px;
-  border: none;
-  border-radius: 14px;
-  background: #3b3530;
-  color: white;
-  font-size: 15px;
-  font-weight: 800;
-  letter-spacing: 0.06em;
+  border: none; border-radius: 6px;
+  background: #3b3530; color: white;
+  font-size: 15px; font-weight: 800;
+  letter-spacing: 0.08em;
   cursor: pointer;
-  margin-top: 24px;
   transition: background 0.15s;
 }
-.cf-submit-btn:active {
-  background: #4a423d;
-}
-.cf-submit-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
+.cf-submit:active { background: #4a423d; }
+.cf-submit:disabled { opacity: 0.5; cursor: not-allowed; }
 </style>
