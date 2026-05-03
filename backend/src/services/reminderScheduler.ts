@@ -64,6 +64,9 @@ export function startReminderScheduler(prisma: PrismaClient) {
         },
       });
 
+      // 按客人分組，同一客人同一天只發送一次
+      const sentPhones = new Set<string>();
+
       for (const b of bookings) {
         // 計算預約結束時間 = 預約開始 + duration（預設 60 分鐘）
         const [h, m] = b.time.split(':').map(Number);
@@ -75,10 +78,26 @@ export function startReminderScheduler(prisma: PrismaClient) {
 
         if (nowMinutes < sendAfterMinutes) continue;
 
+        // 同一客人只發一次
+        if (sentPhones.has(b.phone)) {
+          // 標記已發送但不重複推播
+          await prisma.booking.update({
+            where: { id: b.id },
+            data: { aftercareSentAt: new Date() },
+          });
+          continue;
+        }
+
         // 找會員的推播 ID
         const member = await prisma.member.findUnique({ where: { phone: b.phone } });
         const pushUserId = member?.lineOaUserId ?? member?.lineUserId;
-        if (!pushUserId) continue;
+        if (!pushUserId) {
+          await prisma.booking.update({
+            where: { id: b.id },
+            data: { aftercareSentAt: new Date() },
+          });
+          continue;
+        }
 
         // 取得 Google 評論連結（存在 SystemSetting）
         const reviewSetting = await prisma.systemSetting.findUnique({ where: { key: 'googleReviewUrl' } });
@@ -86,6 +105,8 @@ export function startReminderScheduler(prisma: PrismaClient) {
         // 推播兩則訊息：保養須知 + 回饋邀請
         await pushToUser(pushUserId, buildAftercareMessage());
         await pushToUser(pushUserId, buildFeedbackMessage(b.name, reviewSetting?.value));
+
+        sentPhones.add(b.phone);
 
         // 標記已發送
         await prisma.booking.update({
