@@ -186,7 +186,7 @@ async function loadCalendarMonth(m: string) {
       slotsApi.listBlocked(m),
     ]);
     monthBookings.value = list;
-    allSlots.value = config.length > 0 ? config : defaultSlots;
+    allSlots.value = defaultSlots;
     blockedSlots.value = blocked;
   } catch { /* ignore */ }
 }
@@ -205,7 +205,7 @@ async function onCalendarDateSelect(date: string) {
       slotsApi.getConfig(),
       slotsApi.listBlocked(calendarMonth.value),
     ]);
-    allSlots.value = config.length > 0 ? config : defaultSlots;
+    allSlots.value = defaultSlots;
     blockedSlots.value = blocked;
   } finally { slotLoading.value = false; }
 }

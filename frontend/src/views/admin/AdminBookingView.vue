@@ -96,7 +96,8 @@ async function openSlotModal(date: string) {
       slotsApi.getConfig(),
       slotsApi.listBlocked(month.value),
     ]);
-    allSlots.value = config.length > 0 ? config : defaultSlots;
+    // 後台永遠使用完整時段範圍（含 10:00-10:30、20:30-21:30）
+    allSlots.value = defaultSlots;
     blockedSlots.value = blocked;
   } finally {
     slotLoading.value = false;
@@ -269,7 +270,7 @@ async function onFormCalendarSelect(date: string) {
       slotsApi.getConfig(),
       slotsApi.listBlocked(date.slice(0, 7)),
     ]);
-    allSlots.value = config.length > 0 ? config : defaultSlots;
+    allSlots.value = defaultSlots;
     blockedSlots.value = blocked;
   } catch { /* ignore */ }
 }
@@ -373,7 +374,7 @@ async function loadMonth(m: string) {
     ]);
     monthBookings.value = list;
     summary.value = sum;
-    allSlots.value = config.length > 0 ? config : defaultSlots;
+    allSlots.value = defaultSlots;
     blockedSlots.value = blocked;
   } finally {
     loading.value = false;
