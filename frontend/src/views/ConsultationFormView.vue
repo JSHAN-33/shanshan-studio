@@ -11,6 +11,7 @@ const toast = useToast();
 const loading = ref(true);
 const submitting = ref(false);
 const alreadyFilled = ref(false);
+const savedSignature = ref<string | null>(null);
 
 const form = ref({
   name: '',
@@ -65,6 +66,11 @@ onMounted(async () => {
       form.value.isSick = existing.isSick;
       form.value.hasAcne = existing.hasAcne;
       form.value.consentAgreed = existing.consentAgreed;
+      form.value.consent1 = existing.consentAgreed;
+      form.value.consent2 = existing.consentAgreed;
+      form.value.consent3 = existing.consentAgreed;
+      form.value.consent4 = existing.consentAgreed;
+      savedSignature.value = existing.signatureData ?? null;
     } else {
       form.value.name = auth.customer.name ?? '';
       form.value.mobile = auth.customer.phone ?? '';
@@ -72,7 +78,7 @@ onMounted(async () => {
     }
   } catch { /* ignore */ }
   loading.value = false;
-  setTimeout(initCanvas, 100);
+  if (!alreadyFilled.value) setTimeout(initCanvas, 100);
 });
 
 function initCanvas() {
@@ -188,7 +194,12 @@ async function submit() {
     </main>
 
     <main v-else class="flex-1 overflow-y-auto">
-      <div class="cf-paper">
+      <!-- 已填寫提示 -->
+      <div v-if="alreadyFilled" class="cf-filled-notice">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+        <span>諮詢表已填寫，無法再修改</span>
+      </div>
+      <div class="cf-paper" :class="{ 'cf-paper--readonly': alreadyFilled }">
 
         <!-- ===== 頂部 RICA + 標題 ===== -->
         <div class="cf-top">
@@ -204,20 +215,20 @@ async function submit() {
           <div class="cf-tag">基本資料</div>
           <div class="cf-row">
             <span class="cf-label">姓名：</span>
-            <input v-model="form.name" type="text" class="cf-input cf-input--center flex-1" placeholder="請填寫真名" />
+            <input v-model="form.name" type="text" class="cf-input cf-input--center flex-1" placeholder="請填寫真名" :disabled="alreadyFilled" />
             <span class="cf-label" style="margin-left:20px;">性別：</span>
-            <label class="cf-ck"><input type="radio" v-model="form.gender" value="男" /><span class="cf-box"></span> 男</label>
-            <label class="cf-ck"><input type="radio" v-model="form.gender" value="女" /><span class="cf-box"></span> 女</label>
+            <label class="cf-ck"><input type="radio" v-model="form.gender" value="男" :disabled="alreadyFilled" /><span class="cf-box"></span> 男</label>
+            <label class="cf-ck"><input type="radio" v-model="form.gender" value="女" :disabled="alreadyFilled" /><span class="cf-box"></span> 女</label>
           </div>
           <div class="cf-row">
             <span class="cf-label">生日：</span>
-            <input v-model="form.birthday" type="date" class="cf-input cf-input--center" style="width:160px;" />
+            <input v-model="form.birthday" type="date" class="cf-input cf-input--center" style="width:160px;" :disabled="alreadyFilled" />
           </div>
           <div class="cf-row">
             <span class="cf-label">手機：</span>
-            <input v-model="form.mobile" type="tel" class="cf-input cf-input--center" style="width:160px;" />
+            <input v-model="form.mobile" type="tel" class="cf-input cf-input--center" style="width:160px;" :disabled="alreadyFilled" />
             <span class="cf-label" style="margin-left:20px;">地址：</span>
-            <input v-model="form.address" type="text" class="cf-input cf-input--center flex-1" />
+            <input v-model="form.address" type="text" class="cf-input cf-input--center flex-1" :disabled="alreadyFilled" />
           </div>
         </div>
 
@@ -226,7 +237,7 @@ async function submit() {
           <div class="cf-tag">過往毛髮處理</div>
           <div class="cf-hair-grid">
             <label v-for="opt in hairOptions" :key="opt" class="cf-ck">
-              <input type="checkbox" :checked="form.hairRemoval.includes(opt)" @change="toggleHair(opt)" />
+              <input type="checkbox" :checked="form.hairRemoval.includes(opt)" @change="toggleHair(opt)" :disabled="alreadyFilled" />
               <span class="cf-box cf-box--sq"></span>
               <span>{{ opt }}</span>
             </label>
@@ -246,38 +257,38 @@ async function submit() {
           <div class="cf-q-list">
             <div class="cf-q-row">
               <span class="cf-q-text">· 本次是否為<strong>首次</strong>進行熱蠟除毛服務？</span>
-              <label class="cf-ck cf-ck--yn"><input type="radio" :value="true" v-model="form.isFirstWax" /><span class="cf-box cf-box--sq"></span></label>
-              <label class="cf-ck cf-ck--yn"><input type="radio" :value="false" v-model="form.isFirstWax" /><span class="cf-box cf-box--sq"></span></label>
+              <label class="cf-ck cf-ck--yn"><input type="radio" :value="true" v-model="form.isFirstWax" :disabled="alreadyFilled" /><span class="cf-box cf-box--sq"></span></label>
+              <label class="cf-ck cf-ck--yn"><input type="radio" :value="false" v-model="form.isFirstWax" :disabled="alreadyFilled" /><span class="cf-box cf-box--sq"></span></label>
             </div>
             <div class="cf-q-row">
               <span class="cf-q-text">· 是否為<strong>敏感體質</strong>？（熱敏感、食物敏感、保養品／彩妝品敏感、沙塵敏感…等）</span>
-              <label class="cf-ck cf-ck--yn"><input type="radio" :value="true" v-model="form.isSensitive" /><span class="cf-box cf-box--sq"></span></label>
-              <label class="cf-ck cf-ck--yn"><input type="radio" :value="false" v-model="form.isSensitive" /><span class="cf-box cf-box--sq"></span></label>
+              <label class="cf-ck cf-ck--yn"><input type="radio" :value="true" v-model="form.isSensitive" :disabled="alreadyFilled" /><span class="cf-box cf-box--sq"></span></label>
+              <label class="cf-ck cf-ck--yn"><input type="radio" :value="false" v-model="form.isSensitive" :disabled="alreadyFilled" /><span class="cf-box cf-box--sq"></span></label>
             </div>
             <div class="cf-q-row">
               <span class="cf-q-text">· 是否對<strong>酒精敏感</strong>？</span>
-              <label class="cf-ck cf-ck--yn"><input type="radio" :value="true" v-model="form.isAlcoholSensitive" /><span class="cf-box cf-box--sq"></span></label>
-              <label class="cf-ck cf-ck--yn"><input type="radio" :value="false" v-model="form.isAlcoholSensitive" /><span class="cf-box cf-box--sq"></span></label>
+              <label class="cf-ck cf-ck--yn"><input type="radio" :value="true" v-model="form.isAlcoholSensitive" :disabled="alreadyFilled" /><span class="cf-box cf-box--sq"></span></label>
+              <label class="cf-ck cf-ck--yn"><input type="radio" :value="false" v-model="form.isAlcoholSensitive" :disabled="alreadyFilled" /><span class="cf-box cf-box--sq"></span></label>
             </div>
             <div class="cf-q-row">
               <span class="cf-q-text">· 目前是否為<strong>生理期間</strong>？</span>
-              <label class="cf-ck cf-ck--yn"><input type="radio" :value="true" v-model="form.isPeriod" /><span class="cf-box cf-box--sq"></span></label>
-              <label class="cf-ck cf-ck--yn"><input type="radio" :value="false" v-model="form.isPeriod" /><span class="cf-box cf-box--sq"></span></label>
+              <label class="cf-ck cf-ck--yn"><input type="radio" :value="true" v-model="form.isPeriod" :disabled="alreadyFilled" /><span class="cf-box cf-box--sq"></span></label>
+              <label class="cf-ck cf-ck--yn"><input type="radio" :value="false" v-model="form.isPeriod" :disabled="alreadyFilled" /><span class="cf-box cf-box--sq"></span></label>
             </div>
             <div class="cf-q-row">
               <span class="cf-q-text">· 目前是否為<strong>懷孕期間</strong>？</span>
-              <label class="cf-ck cf-ck--yn"><input type="radio" :value="true" v-model="form.isPregnant" /><span class="cf-box cf-box--sq"></span></label>
-              <label class="cf-ck cf-ck--yn"><input type="radio" :value="false" v-model="form.isPregnant" /><span class="cf-box cf-box--sq"></span></label>
+              <label class="cf-ck cf-ck--yn"><input type="radio" :value="true" v-model="form.isPregnant" :disabled="alreadyFilled" /><span class="cf-box cf-box--sq"></span></label>
+              <label class="cf-ck cf-ck--yn"><input type="radio" :value="false" v-model="form.isPregnant" :disabled="alreadyFilled" /><span class="cf-box cf-box--sq"></span></label>
             </div>
             <div class="cf-q-row">
               <span class="cf-q-text">· 目前是否為<strong>生病期間</strong>或<strong>免疫力下降</strong>期間？</span>
-              <label class="cf-ck cf-ck--yn"><input type="radio" :value="true" v-model="form.isSick" /><span class="cf-box cf-box--sq"></span></label>
-              <label class="cf-ck cf-ck--yn"><input type="radio" :value="false" v-model="form.isSick" /><span class="cf-box cf-box--sq"></span></label>
+              <label class="cf-ck cf-ck--yn"><input type="radio" :value="true" v-model="form.isSick" :disabled="alreadyFilled" /><span class="cf-box cf-box--sq"></span></label>
+              <label class="cf-ck cf-ck--yn"><input type="radio" :value="false" v-model="form.isSick" :disabled="alreadyFilled" /><span class="cf-box cf-box--sq"></span></label>
             </div>
             <div class="cf-q-row">
               <span class="cf-q-text">· 本次除毛區域是否經常<strong>出油／長痘痘</strong>部位？</span>
-              <label class="cf-ck cf-ck--yn"><input type="radio" :value="true" v-model="form.hasAcne" /><span class="cf-box cf-box--sq"></span></label>
-              <label class="cf-ck cf-ck--yn"><input type="radio" :value="false" v-model="form.hasAcne" /><span class="cf-box cf-box--sq"></span></label>
+              <label class="cf-ck cf-ck--yn"><input type="radio" :value="true" v-model="form.hasAcne" :disabled="alreadyFilled" /><span class="cf-box cf-box--sq"></span></label>
+              <label class="cf-ck cf-ck--yn"><input type="radio" :value="false" v-model="form.hasAcne" :disabled="alreadyFilled" /><span class="cf-box cf-box--sq"></span></label>
             </div>
           </div>
         </div>
@@ -288,19 +299,19 @@ async function submit() {
           <p class="cf-consent-note">（請貴客戶確認下述事項後，於<span style="color:#8c4a2f;font-weight:700;">☑處打✓</span>）</p>
           <div class="cf-consent-list">
             <label class="cf-consent-item">
-              <input type="checkbox" v-model="form.consent1" /><span class="cf-box cf-box--sq"></span>
+              <input type="checkbox" v-model="form.consent1" :disabled="alreadyFilled" /><span class="cf-box cf-box--sq"></span>
               <p><span class="cf-num">1.</span> 本人確認接受熱蠟除毛部位之皮膚並無下列異常狀況，如：尚未復原或期復原之<span class="cf-hl">傷口疤痕</span>、<span class="cf-hl">瘀傷</span>、<span class="cf-hl">靜脈炎（靜脈曲張）</span>、<span class="cf-hl">傳染性皮膚疾病</span>、其他皮膚病變（包含糖尿病引起之皮膚問題）。</p>
             </label>
             <label class="cf-consent-item">
-              <input type="checkbox" v-model="form.consent2" /><span class="cf-box cf-box--sq"></span>
+              <input type="checkbox" v-model="form.consent2" :disabled="alreadyFilled" /><span class="cf-box cf-box--sq"></span>
               <p><span class="cf-num">2.</span> 本人確認接受熱蠟除毛部位之皮膚並無一週內接受下列醫療處置：<span class="cf-hl">皮下微整形注射</span>（如：肉毒桿菌、玻尿酸、膠原蛋白…等）、<span class="cf-hl">醫美煥膚</span>（果酸、杏仁酸、胜肽酸…等），以及使用皮膚科面部治療藥物（維他命A酸、維他命A、四環黴素、乙醯胺酚…等）。如有上述皮膚狀況但未於除毛前告知美容師，<span class="cf-warn">本人願自行負擔相關風險</span>。</p>
             </label>
             <label class="cf-consent-item">
-              <input type="checkbox" v-model="form.consent3" /><span class="cf-box cf-box--sq"></span>
+              <input type="checkbox" v-model="form.consent3" :disabled="alreadyFilled" /><span class="cf-box cf-box--sq"></span>
               <p><span class="cf-num">3.</span> 本人明白因為體質的不同，接受除毛後的皮膚，可能會出現暫時性的<span class="cf-hl">發紅</span>、<span class="cf-hl">毛囊水腫</span>、<span class="cf-hl">小紅疹</span>、<span class="cf-hl">瘀青</span>或是<span class="cf-hl">輕微脫皮</span>的狀況，同時本人後續願意遵照除毛後叮嚀之護理程序，以避免皮膚發炎之狀況產生。</p>
             </label>
             <label class="cf-consent-item">
-              <input type="checkbox" v-model="form.consent4" /><span class="cf-box cf-box--sq"></span>
+              <input type="checkbox" v-model="form.consent4" :disabled="alreadyFilled" /><span class="cf-box cf-box--sq"></span>
               <p><span class="cf-num">4.</span> 本人已詳細閱讀並同意遵照「<span class="cf-hl">肌膚照護指南</span>」小卡之注意事項。</p>
             </label>
           </div>
@@ -320,7 +331,12 @@ async function submit() {
           <div class="cf-sign-row">
             <div class="cf-sign-field">
               <span class="cf-label">簽名：</span>
-              <div class="cf-sign-canvas-wrap">
+              <!-- 已填寫：顯示已存簽名圖 -->
+              <div v-if="alreadyFilled && savedSignature" class="cf-sign-canvas-wrap">
+                <img :src="savedSignature" class="cf-sign-img" alt="簽名" />
+              </div>
+              <!-- 未填寫：畫布 -->
+              <div v-else-if="!alreadyFilled" class="cf-sign-canvas-wrap">
                 <canvas
                   ref="canvasRef"
                   class="cf-sign-canvas"
@@ -338,14 +354,15 @@ async function submit() {
           </div>
         </div>
 
-        <!-- Submit -->
+        <!-- Submit (只在未填寫時顯示) -->
         <button
+          v-if="!alreadyFilled"
           type="button"
           class="cf-submit"
           :disabled="submitting"
           @click="submit"
         >
-          {{ submitting ? '送出中…' : (alreadyFilled ? '更新諮詢表' : '送出諮詢表') }}
+          {{ submitting ? '送出中…' : '送出諮詢表' }}
         </button>
 
       </div>
@@ -603,4 +620,31 @@ async function submit() {
 }
 .cf-submit:active { background: #4a423d; }
 .cf-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ---- Filled notice ---- */
+.cf-filled-notice {
+  display: flex; align-items: center; gap: 8px;
+  max-width: 520px; margin: 12px auto 0;
+  padding: 10px 16px;
+  background: #e8f5e9;
+  border: 1px solid #c8e6c9;
+  border-radius: 8px;
+  font-size: 13px; font-weight: 700;
+  color: #2e7d32;
+}
+
+/* ---- Readonly state ---- */
+.cf-paper--readonly {
+  pointer-events: none;
+}
+.cf-paper--readonly .cf-input {
+  color: #3b3530;
+  opacity: 1;
+  -webkit-text-fill-color: #3b3530;
+}
+.cf-sign-img {
+  width: 100%; height: 100px;
+  object-fit: contain;
+  display: block;
+}
 </style>
