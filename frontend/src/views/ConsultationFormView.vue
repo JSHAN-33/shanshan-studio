@@ -204,20 +204,20 @@ async function submit() {
           <div class="cf-tag">基本資料</div>
           <div class="cf-row">
             <span class="cf-label">姓名：</span>
-            <input v-model="form.name" type="text" class="cf-input flex-1" placeholder="" />
+            <input v-model="form.name" type="text" class="cf-input cf-input--center flex-1" placeholder="請填寫真名" />
             <span class="cf-label" style="margin-left:20px;">性別：</span>
             <label class="cf-ck"><input type="radio" v-model="form.gender" value="男" /><span class="cf-box"></span> 男</label>
             <label class="cf-ck"><input type="radio" v-model="form.gender" value="女" /><span class="cf-box"></span> 女</label>
           </div>
           <div class="cf-row">
             <span class="cf-label">生日：</span>
-            <input v-model="form.birthday" type="date" class="cf-input" style="width:160px;" />
+            <input v-model="form.birthday" type="date" class="cf-input cf-input--center" style="width:160px;" />
           </div>
           <div class="cf-row">
             <span class="cf-label">手機：</span>
-            <input v-model="form.mobile" type="tel" class="cf-input" style="width:160px;" />
+            <input v-model="form.mobile" type="tel" class="cf-input cf-input--center" style="width:160px;" />
             <span class="cf-label" style="margin-left:20px;">地址：</span>
-            <input v-model="form.address" type="text" class="cf-input flex-1" />
+            <input v-model="form.address" type="text" class="cf-input cf-input--center flex-1" />
           </div>
         </div>
 
@@ -437,6 +437,7 @@ async function submit() {
   min-width: 60px;
   transition: border-color 0.15s;
 }
+.cf-input--center { text-align: center; }
 .cf-input:focus { border-color: #8c7e73; }
 
 /* ---- Checkbox / Radio (paper style) ---- */
@@ -480,10 +481,9 @@ async function submit() {
 
 /* ---- Hair grid ---- */
 .cf-hair-grid {
-  display: flex; flex-wrap: wrap; gap: 8px 16px;
-}
-.cf-hair-grid .cf-ck {
-  min-width: 130px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 16px;
 }
 .cf-note-right {
   font-size: 11px; color: #b0aba7; text-align: right; margin-top: 8px;
