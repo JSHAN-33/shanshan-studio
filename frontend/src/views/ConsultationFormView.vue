@@ -135,7 +135,6 @@ function toggleHair(opt: string) {
 async function submit() {
   if (!auth.customer?.phone) return;
   if (!form.value.name.trim()) { toast.show('請填寫姓名'); return; }
-  if (!form.value.consentAgreed) { toast.show('請勾選服務確認條款'); return; }
 
   submitting.value = true;
   try {
@@ -160,7 +159,7 @@ async function submit() {
       isPregnant: form.value.isPregnant ?? false,
       isSick: form.value.isSick ?? false,
       hasAcne: form.value.hasAcne ?? false,
-      consentAgreed: form.value.consentAgreed,
+      consentAgreed: form.value.consent1 && form.value.consent2 && form.value.consent3 && form.value.consent4,
       signatureData,
     });
     toast.show('諮詢表已送出');
@@ -311,20 +310,9 @@ async function submit() {
         <div class="cf-block">
           <div class="cf-tag">個人資料授權同意</div>
           <div class="cf-consent-list">
-            <label class="cf-consent-item">
-              <input type="checkbox" v-model="form.privacy1" /><span class="cf-box cf-box--sq"></span>
-              <p><span class="cf-num">1.</span> 為保障個人優惠權益，本人同意提供貴單位蒐集保存、電腦處理、利用本人之個人資料，並同意不定時接收優惠資訊。</p>
-            </label>
-            <label class="cf-consent-item">
-              <input type="checkbox" v-model="form.privacy2" /><span class="cf-box cf-box--sq"></span>
-              <p><span class="cf-num">2.</span> 後續如有需求，本人願意以<span class="cf-hl">書面</span>方式提出申請，終止利用或刪除個人資料之授權。</p>
-            </label>
+            <p><span class="cf-num">1.</span> 為保障個人優惠權益，本人同意提供貴單位蒐集保存、電腦處理、利用本人之個人資料，並同意不定時接收優惠資訊。</p>
+            <p><span class="cf-num">2.</span> 後續如有需求，本人願意以<span class="cf-hl">書面</span>方式提出申請，終止利用或刪除個人資料之授權。</p>
           </div>
-          <label class="cf-agree">
-            <input type="checkbox" v-model="form.consentAgreed" />
-            <span class="cf-box cf-box--sq cf-box--lg"></span>
-            <span class="cf-agree-text">我已閱讀並同意以上所有條款</span>
-          </label>
         </div>
 
         <!-- ===== 簽名 + 日期 ===== -->
@@ -545,6 +533,17 @@ async function submit() {
 .cf-consent-item > .cf-box {
   margin-top: 3px; flex-shrink: 0;
 }
+.cf-consent-item input:checked + .cf-box {
+  background: #8c7e73; border-color: #8c7e73;
+}
+.cf-consent-item input:checked + .cf-box::after {
+  content: '';
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 6px; height: 10px;
+  border: solid #fff; border-width: 0 2px 2px 0;
+  transform: translate(-50%, -55%) rotate(45deg);
+}
 .cf-consent-item p,
 .cf-consent-list p {
   font-size: 11.5px; color: #4a423d; line-height: 1.8;
@@ -558,25 +557,6 @@ async function submit() {
 }
 .cf-warn {
   color: #c0392b; font-weight: 700;
-}
-
-/* ---- Agree ---- */
-.cf-agree {
-  display: flex; align-items: center; gap: 10px;
-  margin-top: 14px; cursor: pointer;
-  padding: 14px 16px;
-  background: #f6f4f1;
-  border: 1.5px solid #d8d3cc;
-  border-radius: 6px;
-  transition: border-color 0.15s;
-}
-.cf-agree:has(input:checked) {
-  border-color: #8c7e73;
-  background: #f0ede8;
-}
-.cf-agree-text {
-  font-size: 13px; font-weight: 800; color: #3b3530;
-  letter-spacing: 0.04em;
 }
 
 /* ---- Signature ---- */
