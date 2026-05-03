@@ -104,24 +104,22 @@ onMounted(load);
         </div>
       </div>
 
-      <!-- 儲值優惠按鈕 -->
-      <button type="button" class="topup-btn" @click="showTopup = true">
-        <span class="topup-btn-icon">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 2v20M2 12h20"/></svg>
-        </span>
-        <span class="topup-btn-text">儲值優惠方案</span>
-        <svg class="topup-btn-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
-      </button>
-
-      <!-- 顧客諮詢表按鈕 -->
-      <button type="button" class="topup-btn" @click="router.push('/consultation-form')">
-        <span class="topup-btn-icon" style="background:rgba(255,255,255,0.08);">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-        </span>
-        <span class="topup-btn-text">{{ hasConsultation ? '查看／更新諮詢表' : '填寫顧客諮詢表' }}</span>
-        <span v-if="hasConsultation" style="font-size:9px;font-weight:700;color:#c8a96e;background:rgba(200,169,110,0.15);padding:2px 8px;border-radius:8px;margin-right:4px;">已填寫</span>
-        <svg class="topup-btn-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
-      </button>
+      <!-- 儲值優惠 + 諮詢表 按鈕（同一行） -->
+      <div class="flex gap-2.5">
+        <button type="button" class="action-btn flex-1" @click="showTopup = true">
+          <span class="action-btn-icon">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 2v20M2 12h20"/></svg>
+          </span>
+          <span class="action-btn-text">儲值方案</span>
+        </button>
+        <button type="button" class="action-btn flex-1" @click="router.push('/consultation-form')">
+          <span class="action-btn-icon">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          </span>
+          <span class="action-btn-text">{{ hasConsultation ? '諮詢表' : '諮詢表' }}</span>
+          <span v-if="hasConsultation" class="action-btn-badge">已填寫</span>
+        </button>
+      </div>
 
       <!-- 儲值優惠 Modal -->
       <div v-if="showTopup" class="fixed inset-0 z-40 flex items-center justify-center p-5" style="background:rgba(0,0,0,0.5);" @click.self="showTopup = false">
@@ -236,6 +234,52 @@ onMounted(load);
 </template>
 
 <style scoped>
+.action-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  background: #3b3530;
+  border: none;
+  border-radius: 18px;
+  padding: 14px 10px;
+  cursor: pointer;
+  transition: background 0.15s;
+  box-shadow: 0 4px 16px rgba(59,53,48,0.18);
+  position: relative;
+}
+.action-btn:active {
+  background: #4a423d;
+}
+.action-btn-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #c8a96e;
+  flex-shrink: 0;
+}
+.action-btn-text {
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.85);
+  letter-spacing: 0.03em;
+}
+.action-btn-badge {
+  font-size: 8px;
+  font-weight: 700;
+  color: #c8a96e;
+  background: rgba(200,169,110,0.15);
+  padding: 1px 6px;
+  border-radius: 6px;
+  position: absolute;
+  top: 8px;
+  right: 8px;
+}
+
 .topup-btn {
   display: flex;
   align-items: center;
