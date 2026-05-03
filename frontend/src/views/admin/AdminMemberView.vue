@@ -618,10 +618,10 @@ const { refreshing } = usePullRefresh(load);
           <span v-else-if="(m.bookingCount ?? 0) > 0" class="text-brand-300">無到訪紀錄</span>
         </div>
         <div class="flex gap-1.5 pt-0.5">
-          <button class="btn-outline text-xs !py-0.5 flex-1" @click="openEdit(m)">編輯</button>
-          <button class="btn-outline text-xs !py-0.5 flex-1" @click="openWallet(m)">儲值金</button>
-          <button class="btn-outline text-xs !py-0.5 flex-1" @click="openHistory(m)">消費紀錄</button>
-          <button class="btn-outline text-xs !py-0.5 flex-1" @click="openConsult(m)">諮詢表</button>
+          <button class="btn-outline text-xs !py-0.5 flex-1 whitespace-nowrap" @click="openEdit(m)">編輯</button>
+          <button class="btn-outline text-xs !py-0.5 flex-1 whitespace-nowrap" @click="openWallet(m)">儲值金</button>
+          <button class="btn-outline text-xs !py-0.5 flex-1 whitespace-nowrap" @click="openHistory(m)">消費紀錄</button>
+          <button class="btn-outline text-xs !py-0.5 flex-1 whitespace-nowrap" @click="openConsult(m)">諮詢表</button>
           <button class="w-7 h-7 rounded-full bg-red-50 flex items-center justify-center text-red-400 hover:bg-red-100 transition shrink-0" @click="removeMember(m)">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
           </button>
