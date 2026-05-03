@@ -24,14 +24,13 @@ const allSlots = ref<string[]>([]);
 const blockedSlots = ref<BlockedSlot[]>([]);
 const slotLoading = ref(false);
 
-// 生成 30 分鐘間隔的時段 (11:00 ~ 19:30)
+// 生成 30 分鐘間隔的時段 (10:00 ~ 21:30)
 const defaultSlots = (() => {
   const slots: string[] = [];
-  for (let h = 11; h <= 19; h++) {
+  for (let h = 10; h <= 21; h++) {
     slots.push(`${String(h).padStart(2, '0')}:00`);
-    slots.push(`${String(h).padStart(2, '0')}:30`);
+    if (h < 22) slots.push(`${String(h).padStart(2, '0')}:30`);
   }
-  slots.push('20:00');
   return slots;
 })();
 

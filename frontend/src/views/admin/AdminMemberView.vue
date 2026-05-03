@@ -142,11 +142,10 @@ function selectBday(date: string) {
 
 const defaultSlots = (() => {
   const s: string[] = [];
-  for (let h = 11; h <= 19; h++) {
+  for (let h = 10; h <= 21; h++) {
     s.push(`${String(h).padStart(2, '0')}:00`);
-    s.push(`${String(h).padStart(2, '0')}:30`);
+    if (h < 22) s.push(`${String(h).padStart(2, '0')}:30`);
   }
-  s.push('20:00');
   return s;
 })();
 
