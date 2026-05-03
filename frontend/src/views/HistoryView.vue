@@ -236,13 +236,13 @@ onMounted(load);
 <style scoped>
 .action-btn {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   background: #3b3530;
   border: none;
   border-radius: 18px;
-  padding: 14px 10px;
+  padding: 14px 16px;
   cursor: pointer;
   transition: background 0.15s;
   box-shadow: 0 4px 16px rgba(59,53,48,0.18);
