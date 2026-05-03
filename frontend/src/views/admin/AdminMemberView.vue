@@ -612,7 +612,7 @@ const { refreshing } = usePullRefresh(load);
           <span v-if="m.bday">🎂 {{ m.bday }}</span>
           <span v-if="m.gender">{{ m.gender === '女' ? '♀' : '♂' }} {{ m.gender }}</span>
           <span v-if="daysSinceVisit(m) !== null" :class="daysSinceVisit(m)! >= INACTIVE_DAYS ? 'text-red-500 font-bold' : ''">
-            {{ daysSinceVisit(m)! >= INACTIVE_DAYS ? '⚠️ ' : '' }}{{ daysSinceVisit(m) }} 天前到訪
+            {{ daysSinceVisit(m) }} 天前到訪
           </span>
           <span v-else-if="(m.bookingCount ?? 0) > 0" class="text-brand-300">無到訪紀錄</span>
         </div>
