@@ -263,7 +263,7 @@ async function confirmCheckout() {
     duration: newDuration > 0 ? newDuration : null,
     payMethod: method,
     walletUsed: wallet > 0 ? wallet : null,
-    ...(!isEditingPaid.value && { paidAt: new Date().toISOString() }),
+    ...(!isEditingPaid.value && { paidAt: new Date(`${target.value.date}T${target.value.time}:00`).toISOString() }),
     status: '已完成',
     total: finalTotal.value,
   });
