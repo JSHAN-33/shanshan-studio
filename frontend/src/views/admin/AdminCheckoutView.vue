@@ -62,11 +62,13 @@ const month = today.slice(0, 7);
 const pendingBookings = ref<Booking[]>([]);
 const paidBookings = ref<Booking[]>([]);
 
-const pending = computed(() =>
+const allPending = computed(() =>
   [...pendingBookings.value]
-    .filter((b) => b.status !== '已取消')
+    .filter((b) => b.status !== '已取消' && b.date <= today)
     .sort((a, b) => `${b.date}${b.time}`.localeCompare(`${a.date}${a.time}`))
 );
+const pendingToday = computed(() => allPending.value.filter((b) => b.date === today));
+const pendingPast = computed(() => allPending.value.filter((b) => b.date < today));
 const paid = computed(() =>
   [...paidBookings.value].sort((a, b) => (b.paidAt ?? '').localeCompare(a.paidAt ?? ''))
 );
@@ -290,6 +292,7 @@ async function removePaid(b: Booking) {
 
 // --- 收合/展開 ---
 const pendingExpanded = ref(true);
+const pastPendingExpanded = ref(true);
 const paidExpanded = ref(true);
 
 const payMethodOptions: { value: PayMethod; icon: string; label: string }[] = [
@@ -315,14 +318,14 @@ const payMethodOptions: { value: PayMethod; icon: string; label: string }[] = [
 
     <section>
       <button class="w-full flex items-center justify-between mb-2" @click="pendingExpanded = !pendingExpanded">
-        <h2 class="font-bold">待結帳<span v-if="pending.length" class="text-brand-400 font-normal text-sm ml-1">({{ pending.length }})</span></h2>
+        <h2 class="font-bold">當日待結帳<span v-if="pendingToday.length" class="text-brand-400 font-normal text-sm ml-1">({{ pendingToday.length }})</span></h2>
         <svg class="w-4 h-4 text-brand-400 transition-transform duration-200" :class="{ 'rotate-180': pendingExpanded }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
       </button>
       <div v-show="pendingExpanded">
         <p v-if="loading" class="text-center text-brand-400 py-4">載入中…</p>
-        <p v-else-if="!pending.length" class="text-center text-brand-400 py-4">目前沒有待結帳項目</p>
+        <p v-else-if="!pendingToday.length" class="text-center text-brand-400 py-4">今日沒有待結帳項目</p>
         <ul v-else class="space-y-1.5">
-          <li v-for="b in pending" :key="b.id" class="card !p-2.5 !rounded-xl flex justify-between items-center">
+          <li v-for="b in pendingToday" :key="b.id" class="card !p-2.5 !rounded-xl flex justify-between items-center">
             <div>
               <div class="font-bold text-xs">{{ b.name }}</div>
               <div class="text-[11px] text-brand-500">{{ b.date }} {{ b.time }}</div>
@@ -340,6 +343,31 @@ const payMethodOptions: { value: PayMethod; icon: string; label: string }[] = [
           </li>
         </ul>
       </div>
+    </section>
+
+    <section v-if="pendingPast.length">
+      <button class="w-full flex items-center justify-between mb-2" @click="pastPendingExpanded = !pastPendingExpanded">
+        <h2 class="font-bold">過去未結帳<span class="text-brand-400 font-normal text-sm ml-1">({{ pendingPast.length }})</span></h2>
+        <svg class="w-4 h-4 text-brand-400 transition-transform duration-200" :class="{ 'rotate-180': pastPendingExpanded }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+      <ul v-show="pastPendingExpanded" class="space-y-1.5">
+        <li v-for="b in pendingPast" :key="b.id" class="card !p-2.5 !rounded-xl flex justify-between items-center">
+          <div>
+            <div class="font-bold text-xs">{{ b.name }}</div>
+            <div class="text-[11px] text-brand-500">{{ b.date }} {{ b.time }}</div>
+            <div class="text-[10px] text-brand-400 mt-0.5">{{ b.items }}</div>
+          </div>
+          <div class="text-right">
+            <div class="text-brand-600 font-bold text-xs">${{ b.total }}</div>
+            <span class="badge text-[9px] mt-0.5" :class="{
+              'badge-pending': b.status === '待確認',
+              'badge-confirmed': b.status === '已確認',
+              'badge-done': b.status === '已完成',
+            }">{{ b.status }}</span>
+            <button class="btn-primary !text-[11px] !py-0.5 mt-0.5 block ml-auto" @click="openCheckout(b)">結帳</button>
+          </div>
+        </li>
+      </ul>
     </section>
 
     <section>
