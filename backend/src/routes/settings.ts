@@ -1,5 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { adminAuth } from '../middleware/adminAuth.js';
+import { buildDepositInfoMessage, pushToUser } from '../services/lineNotifyService.js';
 
 export async function settingsRoutes(app: FastifyInstance) {
   // GET /settings/deposit — 公開（前台需要知道是否啟用）
@@ -45,5 +46,34 @@ export async function settingsRoutes(app: FastifyInstance) {
     }
 
     return { ok: true };
+  });
+
+  // POST /settings/deposit/test — admin only：測試推送匯款 Flex 給指定會員
+  app.post('/deposit/test', { preHandler: adminAuth }, async (req, reply) => {
+    const { memberId } = (req.body ?? {}) as { memberId?: string };
+    if (!memberId) return reply.status(400).send({ error: 'memberId required' });
+
+    const member = await app.prisma.member.findUnique({ where: { id: memberId } });
+    if (!member) return reply.status(404).send({ error: 'member not found' });
+
+    const pushUid = member.lineOaUserId ?? member.lineUserId;
+    if (!pushUid) return reply.status(400).send({ error: 'member has no LINE userId' });
+
+    const bankSetting = await app.prisma.systemSetting.findUnique({ where: { key: 'depositBankInfo' } });
+    if (!bankSetting?.value) return reply.status(400).send({ error: 'depositBankInfo not set' });
+
+    const amountSetting = await app.prisma.systemSetting.findUnique({ where: { key: 'depositAmount' } });
+
+    await pushToUser(pushUid, buildDepositInfoMessage({
+      name: member.name,
+      date: '2026-05-05',
+      time: '14:00',
+      items: '測試項目',
+      total: 2000,
+      depositAmount: Number(amountSetting?.value ?? '500'),
+      bankInfo: bankSetting.value,
+    }));
+
+    return { ok: true, pushedTo: member.name };
   });
 }
