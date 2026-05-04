@@ -605,7 +605,7 @@ const { refreshing } = usePullRefresh(load);
             <div class="text-[11px] text-brand-500">{{ m.phone }}</div>
           </div>
           <div class="text-right shrink-0">
-            <div class="text-sm font-extrabold text-brand-600">NT$ {{ m.wallet }}</div>
+            <div v-if="m.wallet > 0" class="text-sm font-extrabold text-brand-600">NT$ {{ m.wallet }}</div>
           </div>
         </div>
         <div class="flex items-center gap-3 text-[10px] text-brand-400 pl-[42px]">

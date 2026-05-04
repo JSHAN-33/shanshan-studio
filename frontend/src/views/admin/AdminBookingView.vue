@@ -423,6 +423,18 @@ function closeNotifyModal() {
   newBookingCount.value = 0;
 }
 
+async function confirmAndJump(bk: Booking) {
+  await changeStatus(bk, '已確認');
+  // 跳到該預約的日期
+  const bookingMonth = bk.date.slice(0, 7);
+  if (month.value !== bookingMonth) {
+    await loadMonth(bookingMonth);
+  }
+  selectedDate.value = bk.date;
+  pendingNotifyBookings.value = pendingNotifyBookings.value.filter(b => b.id !== bk.id);
+  if (!pendingNotifyBookings.value.length) closeNotifyModal();
+}
+
 // --- 預約金設定 ---
 const depositSetting = ref<DepositSetting>({ enabled: false, amount: 500, bankInfo: '' });
 const showDepositModal = ref(false);
@@ -460,8 +472,8 @@ onMounted(async () => {
   await loadDepositSetting();
   // 初始化通知
   await checkNewBookings();
-  // 每 30 秒輪詢新預約
-  pollTimer = setInterval(checkNewBookings, 30000);
+  // 每 15 秒輪詢新預約
+  pollTimer = setInterval(checkNewBookings, 15000);
 });
 
 onUnmounted(() => {
@@ -1085,7 +1097,7 @@ const { refreshing } = usePullRefresh(() => loadMonth(month.value));
                   <button
                     class="mt-2 text-[10px] font-bold text-white px-3 py-1 rounded-full"
                     style="background:#655b55;"
-                    @click="changeStatus(bk, '已確認'); pendingNotifyBookings = pendingNotifyBookings.filter(b => b.id !== bk.id); if (!pendingNotifyBookings.length) closeNotifyModal();"
+                    @click="confirmAndJump(bk)"
                   >
                     確認
                   </button>
