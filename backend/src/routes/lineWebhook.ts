@@ -88,12 +88,7 @@ export async function lineWebhookRoutes(app: FastifyInstance) {
             { type: 'text', text: `${liffMember.name} 您好 ✨\n預約通知已自動啟用！之後所有預約相關訊息都會從這裡發送給您 💕` },
           ]);
         } else {
-          await replyMessage(event.replyToken!, [
-            {
-              type: 'text',
-              text: '歡迎加入 SHANSHAN.STUDIO ✨\n\n請輸入您的手機號碼（例如 0912345678），即可啟用預約通知功能 📲',
-            },
-          ]);
+          console.log(`[Webhook] New follower (no LIFF member found): ${userId}`);
         }
         continue;
       }
