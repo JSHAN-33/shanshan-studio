@@ -44,4 +44,30 @@ export async function slotsRoutes(app: FastifyInstance) {
     await app.prisma.blockedSlot.deleteMany({ where: input });
     return reply.status(204).send();
   });
+
+  // GET /slots/forced-open?month=YYYY-MM  —— admin only
+  app.get('/forced-open', { preHandler: adminAuth }, async (req) => {
+    const { month } = req.query as { month?: string };
+    const where = month ? { date: { startsWith: month } } : {};
+    const items = await app.prisma.forcedOpenSlot.findMany({ where });
+    return { forcedOpen: items };
+  });
+
+  // POST /slots/forced-open  —— admin only（強制開放已預約時段）
+  app.post('/forced-open', { preHandler: adminAuth }, async (req, reply) => {
+    const input = blockedSlotSchema.parse(req.body);
+    try {
+      const item = await app.prisma.forcedOpenSlot.create({ data: input });
+      return reply.status(201).send({ forcedOpen: item });
+    } catch {
+      return reply.status(409).send({ error: 'AlreadyForcedOpen' });
+    }
+  });
+
+  // DELETE /slots/forced-open  —— admin only
+  app.delete('/forced-open', { preHandler: adminAuth }, async (req, reply) => {
+    const input = blockedSlotSchema.parse(req.body);
+    await app.prisma.forcedOpenSlot.deleteMany({ where: input });
+    return reply.status(204).send();
+  });
 }

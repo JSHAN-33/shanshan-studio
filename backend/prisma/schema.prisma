@@ -99,6 +99,14 @@ model BlockedSlot {
   @@unique([date, time])
 }
 
+model ForcedOpenSlot {
+  id   String @id @default(cuid())
+  date String
+  time String
+
+  @@unique([date, time])
+}
+
 model SlotConfig {
   id    String @id @default(cuid())
   slots Json

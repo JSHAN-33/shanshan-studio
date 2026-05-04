@@ -22,4 +22,16 @@ export const slotsApi = {
   async unblock(date: string, time: string): Promise<void> {
     await http.delete('/slots/blocked', { data: { date, time } });
   },
+  async listForcedOpen(month?: string): Promise<BlockedSlot[]> {
+    const res = await http.get<{ forcedOpen: BlockedSlot[] }>('/slots/forced-open', {
+      params: month ? { month } : {},
+    });
+    return res.data.forcedOpen;
+  },
+  async forceOpen(date: string, time: string): Promise<void> {
+    await http.post('/slots/forced-open', { date, time });
+  },
+  async unforceOpen(date: string, time: string): Promise<void> {
+    await http.delete('/slots/forced-open', { data: { date, time } });
+  },
 };

@@ -124,6 +124,11 @@ export async function bookingsRoutes(app: FastifyInstance) {
       },
     });
 
+    // 新預約建立後，移除該時段的強制開放（避免第三位客人再預約）
+    await app.prisma.forcedOpenSlot.deleteMany({
+      where: { date: input.date, time: input.time },
+    });
+
     // 同步會員資料
     await upsertMemberFromBooking(app.prisma, {
       phone: input.phone,

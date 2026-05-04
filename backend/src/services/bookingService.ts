@@ -64,15 +64,17 @@ export async function getAvailableSlots(
     ? (config!.slots as string[])
     : [];
 
-  const [blocked, bookings] = await Promise.all([
+  const [blocked, bookings, forcedOpen] = await Promise.all([
     prisma.blockedSlot.findMany({ where: { date } }),
     prisma.booking.findMany({
       where: { date, status: { not: '已取消' } },
       select: { time: true, duration: true },
     }),
+    prisma.forcedOpenSlot.findMany({ where: { date } }),
   ]);
 
   const blockedSet = new Set(blocked.map((b) => b.time));
+  const forcedOpenSet = new Set(forcedOpen.map((f) => f.time));
 
   // 根據每筆預約的 duration 擴展封鎖時段（例：10:00 預約 60 分鐘 → 封鎖 10:00、10:30）
   const bookedSet = new Set<string>();
@@ -90,11 +92,12 @@ export async function getAvailableSlots(
     }
   }
 
-  // 先標記每個時段本身是否可用（過去 / 2 小時內 → 已過；再依序判斷 blocked / booked）
+  // 先標記每個時段本身是否可用
+  // 強制開放的時段即使有預約也視為可用（允許同時段再接一位客人）
   const baseSlots = allSlots.map((time) => {
     if (isPastTime(date, time)) return { time, available: false, reason: 'past' as const };
     if (blockedSet.has(time)) return { time, available: false, reason: 'blocked' as const };
-    if (bookedSet.has(time)) return { time, available: false, reason: 'booked' as const };
+    if (bookedSet.has(time) && !forcedOpenSet.has(time)) return { time, available: false, reason: 'booked' as const };
     return { time, available: true };
   });
 
@@ -137,7 +140,12 @@ export async function hasConflict(
   };
   if (excludeId) where.id = { not: excludeId };
 
-  const existing = await prisma.booking.findMany({ where, select: { time: true, duration: true } });
+  const [existing, forcedOpen] = await Promise.all([
+    prisma.booking.findMany({ where, select: { time: true, duration: true } }),
+    prisma.forcedOpenSlot.findMany({ where: { date } }),
+  ]);
+
+  const forcedOpenSet = new Set(forcedOpen.map((f) => f.time));
 
   const newStart = timeToMinutes(time);
   const newEnd = newStart + (duration || 30);
@@ -146,7 +154,11 @@ export async function hasConflict(
     const bStart = timeToMinutes(b.time);
     const bEnd = bStart + (b.duration ?? 30);
     // 兩區間重疊判定
-    if (newStart < bEnd && newEnd > bStart) return true;
+    if (newStart < bEnd && newEnd > bStart) {
+      // 如果重疊的時段有被強制開放，則不算衝突
+      if (forcedOpenSet.has(b.time)) continue;
+      return true;
+    }
   }
   return false;
 }

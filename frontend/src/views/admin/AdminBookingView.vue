@@ -22,6 +22,7 @@ const showSlotModal = ref(false);
 const slotDate = ref('');
 const allSlots = ref<string[]>([]);
 const blockedSlots = ref<BlockedSlot[]>([]);
+const forcedOpenSlots = ref<BlockedSlot[]>([]);
 const slotLoading = ref(false);
 
 // 生成 30 分鐘間隔的時段 (10:00 ~ 21:30)
@@ -64,8 +65,19 @@ const blockedTimesForDate = computed(() => {
   return set;
 });
 
-function getSlotStatus(time: string): 'booked' | 'blocked' | 'available' {
-  if (bookedTimesForDate.value.has(time)) return 'booked';
+const forcedOpenTimesForDate = computed(() => {
+  const set = new Set<string>();
+  for (const fo of forcedOpenSlots.value) {
+    if (fo.date === slotDate.value) set.add(fo.time);
+  }
+  return set;
+});
+
+function getSlotStatus(time: string): 'booked' | 'blocked' | 'available' | 'forced-open' {
+  if (bookedTimesForDate.value.has(time)) {
+    if (forcedOpenTimesForDate.value.has(time)) return 'forced-open';
+    return 'booked';
+  }
   if (blockedTimesForDate.value.has(time)) return 'blocked';
   return 'available';
 }
@@ -92,13 +104,15 @@ async function openSlotModal(date: string) {
   slotLoading.value = true;
   showSlotModal.value = true;
   try {
-    const [config, blocked] = await Promise.all([
+    const [config, blocked, forcedOpen] = await Promise.all([
       slotsApi.getConfig(),
       slotsApi.listBlocked(month.value),
+      slotsApi.listForcedOpen(month.value),
     ]);
     // 後台永遠使用完整時段範圍（含 10:00-10:30、20:30-21:30）
     allSlots.value = defaultSlots;
     blockedSlots.value = blocked;
+    forcedOpenSlots.value = forcedOpen;
   } finally {
     slotLoading.value = false;
   }
@@ -106,8 +120,17 @@ async function openSlotModal(date: string) {
 
 async function toggleSlot(time: string) {
   const status = getSlotStatus(time);
-  if (status === 'booked') return; // 已預約的不能操作
-  if (status === 'blocked') {
+  if (status === 'booked') {
+    // 已預約 → 強制開放（允許再接一位）
+    await slotsApi.forceOpen(slotDate.value, time);
+    forcedOpenSlots.value.push({ id: '', date: slotDate.value, time });
+  } else if (status === 'forced-open') {
+    // 強制開放 → 恢復已預約
+    await slotsApi.unforceOpen(slotDate.value, time);
+    forcedOpenSlots.value = forcedOpenSlots.value.filter(
+      (fo) => !(fo.date === slotDate.value && fo.time === time)
+    );
+  } else if (status === 'blocked') {
     await slotsApi.unblock(slotDate.value, time);
     blockedSlots.value = blockedSlots.value.filter(
       (bs) => !(bs.date === slotDate.value && bs.time === time)
@@ -788,9 +811,12 @@ const { refreshing } = usePullRefresh(() => loadMonth(month.value));
         </div>
 
         <!-- 圖例 -->
-        <div class="flex gap-4 mb-3 text-[10px] font-bold text-brand-400">
+        <div class="flex gap-3 mb-3 text-[10px] font-bold text-brand-400 flex-wrap">
           <span class="flex items-center gap-1.5">
             <span class="w-3 h-3 rounded-sm bg-brand-600"></span> 已預約
+          </span>
+          <span class="flex items-center gap-1.5">
+            <span class="w-3 h-3 rounded-sm bg-amber-400"></span> 可加約
           </span>
           <span class="flex items-center gap-1.5">
             <span class="w-3 h-3 rounded-sm bg-brand-200"></span> 關閉
@@ -828,7 +854,8 @@ const { refreshing } = usePullRefresh(() => loadMonth(month.value));
             type="button"
             class="flex flex-col items-center justify-center py-1.5 rounded-lg border transition-all active:scale-95"
             :class="{
-              'bg-brand-600 text-white border-brand-600 cursor-default': getSlotStatus(time) === 'booked' && !isSlotPast(time),
+              'bg-brand-600 text-white border-brand-600': getSlotStatus(time) === 'booked' && !isSlotPast(time),
+              'bg-amber-400 text-white border-amber-400': getSlotStatus(time) === 'forced-open' && !isSlotPast(time),
               'bg-brand-100 text-brand-400 border-brand-200': getSlotStatus(time) === 'blocked' && !isSlotPast(time),
               'bg-white text-brand-600 border-brand-100 hover:border-brand-300': getSlotStatus(time) === 'available' && !isSlotPast(time),
               'bg-white text-brand-200 border-brand-100 opacity-60 cursor-default': isSlotPast(time),
@@ -838,7 +865,7 @@ const { refreshing } = usePullRefresh(() => loadMonth(month.value));
           >
             <span class="text-xs font-bold">{{ time }}</span>
             <span class="text-[9px] leading-tight" :class="{
-              'text-white/70': getSlotStatus(time) === 'booked' && !isSlotPast(time),
+              'text-white/70': (getSlotStatus(time) === 'booked' || getSlotStatus(time) === 'forced-open') && !isSlotPast(time),
               'text-brand-300': getSlotStatus(time) === 'blocked' && !isSlotPast(time),
               'text-brand-400': getSlotStatus(time) === 'available' && !isSlotPast(time),
               'text-brand-200': isSlotPast(time),
@@ -846,6 +873,7 @@ const { refreshing } = usePullRefresh(() => loadMonth(month.value));
               {{
                 isSlotPast(time) ? '已過' :
                 getSlotStatus(time) === 'booked' ? '已預約' :
+                getSlotStatus(time) === 'forced-open' ? '可加約' :
                 getSlotStatus(time) === 'blocked' ? '關閉' : '空檔'
               }}
             </span>
