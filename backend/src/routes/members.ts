@@ -39,7 +39,7 @@ export async function membersRoutes(app: FastifyInstance) {
   app.get<{ Params: { phone: string } }>('/:phone', async (req, reply) => {
     const member = await app.prisma.member.findUnique({
       where: { phone: req.params.phone },
-      select: { name: true, phone: true, gender: true, bday: true, vip: true, wallet: true },
+      select: { name: true, phone: true, gender: true, bday: true, vip: true, wallet: true, pictureUrl: true, note: true },
     });
     if (!member) return reply.status(404).send({ error: 'NotFound' });
 
