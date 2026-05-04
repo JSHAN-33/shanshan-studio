@@ -28,6 +28,50 @@ const createdBooking = ref<Booking | null>(null);
 const needsBind = ref(false);
 const depositBankInfo = ref('');
 
+// 遮蔽銀行資訊：帳號只顯示前4後4碼，戶名中間用 x 遮蔽
+const maskedBankInfo = computed(() => {
+  if (!depositBankInfo.value) return '';
+  return depositBankInfo.value.split('\n').map((line) => {
+    const acctMatch = line.match(/帳號[：:]\s*(\d+)/);
+    if (acctMatch) {
+      const num = acctMatch[1];
+      const masked = num.length > 8
+        ? num.slice(0, 4) + '****'.repeat(Math.ceil((num.length - 8) / 4)) + num.slice(-4)
+        : num;
+      return line.replace(num, masked);
+    }
+    const nameMatch = line.match(/戶名[：:]\s*(.+)/);
+    if (nameMatch) {
+      const fullName = nameMatch[1].trim();
+      if (fullName.length >= 3) {
+        const maskedName = fullName[0] + 'x'.repeat(fullName.length - 2) + fullName[fullName.length - 1];
+        return line.replace(fullName, maskedName);
+      }
+    }
+    return line;
+  }).join('\n');
+});
+
+// 提取完整帳號用於複製
+const fullAccountNumber = computed(() => {
+  if (!depositBankInfo.value) return '';
+  for (const line of depositBankInfo.value.split('\n')) {
+    const m = line.match(/帳號[：:]\s*(\d+)/);
+    if (m) return m[1];
+  }
+  return '';
+});
+
+const copySuccess = ref(false);
+async function copyAccount() {
+  if (!fullAccountNumber.value) return;
+  try {
+    await navigator.clipboard.writeText(fullAccountNumber.value);
+    copySuccess.value = true;
+    setTimeout(() => { copySuccess.value = false; }, 2000);
+  } catch { /* fallback: 舊瀏覽器不支援 */ }
+}
+
 function todayStr(): string {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -234,7 +278,15 @@ function goHistory() {
           </p>
           <div v-if="depositBankInfo" class="p-3 mb-3" style="background: white; border-radius: 12px; border: 1px solid #ede9e5;">
             <p style="font-size:9px;font-weight:700;letter-spacing:0.14em;color:#b0aba7;margin:0 0 6px;text-transform:uppercase;">匯款資訊</p>
-            <p class="text-xs text-brand-600 leading-relaxed whitespace-pre-line font-bold">{{ depositBankInfo }}</p>
+            <p class="text-xs text-brand-600 leading-relaxed whitespace-pre-line font-bold">{{ maskedBankInfo }}</p>
+            <button
+              v-if="fullAccountNumber"
+              class="mt-2 w-full py-2 rounded-lg text-xs font-bold text-white"
+              style="background: #c8a96e;"
+              @click="copyAccount"
+            >
+              {{ copySuccess ? '已複製 ✓' : '複製完整帳號' }}
+            </button>
           </div>
           <div class="space-y-1.5">
             <p class="text-[11px] text-brand-500 leading-relaxed flex items-start gap-2">

@@ -312,7 +312,33 @@ export function buildDepositInfoMessage(booking: {
   bankInfo: string;
 }): object {
   const bankLines = booking.bankInfo.split('\n').filter(Boolean);
-  const bankContents: object[] = bankLines.map((line) => ({
+
+  // 提取完整帳號用於複製按鈕
+  let fullAccountNumber = '';
+  const maskedLines = bankLines.map((line) => {
+    // 遮蔽帳號：1785********5638
+    const acctMatch = line.match(/帳號[：:]\s*(\d+)/);
+    if (acctMatch) {
+      const num = acctMatch[1];
+      fullAccountNumber = num;
+      const masked = num.length > 8
+        ? num.slice(0, 4) + '****'.repeat(Math.ceil((num.length - 8) / 4)) + num.slice(-4)
+        : num;
+      return line.replace(num, masked);
+    }
+    // 遮蔽戶名：張x珊
+    const nameMatch = line.match(/戶名[：:]\s*(.+)/);
+    if (nameMatch) {
+      const fullName = nameMatch[1].trim();
+      if (fullName.length >= 3) {
+        const maskedName = fullName[0] + 'x'.repeat(fullName.length - 2) + fullName[fullName.length - 1];
+        return line.replace(fullName, maskedName);
+      }
+    }
+    return line;
+  });
+
+  const bankContents: object[] = maskedLines.map((line) => ({
     type: 'text', text: line, size: 'sm', color: '#4a423d', weight: 'bold', wrap: true,
   }));
 
@@ -368,6 +394,14 @@ export function buildDepositInfoMessage(booking: {
             contents: [
               { type: 'text', text: '匯款資訊', size: 'xxs', color: '#b0aba7', weight: 'bold' },
               ...bankContents,
+              ...(fullAccountNumber ? [{
+                type: 'button',
+                action: { type: 'clipboard', label: '複製完整帳號', clipboardText: fullAccountNumber },
+                style: 'primary',
+                color: '#c8a96e',
+                height: 'sm',
+                margin: 'md',
+              }] : []),
             ],
           },
           { type: 'separator', margin: 'lg' },
