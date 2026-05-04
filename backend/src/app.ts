@@ -2,6 +2,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import Fastify, { FastifyInstance } from 'fastify';
 import cors from '@fastify/cors';
+import helmet from '@fastify/helmet';
+import rateLimit from '@fastify/rate-limit';
 import fastifyStatic from '@fastify/static';
 import { ZodError } from 'zod';
 import { prismaPlugin } from './plugins/prisma.js';
@@ -33,6 +35,17 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(cors, {
     origin: origins.length === 1 && origins[0] === '*' ? true : origins,
     credentials: true,
+  });
+
+  // 安全標頭
+  await app.register(helmet, {
+    contentSecurityPolicy: false, // LIFF 內嵌需要，由前端 meta tag 處理
+  });
+
+  // 全域速率限制
+  await app.register(rateLimit, {
+    max: 100,
+    timeWindow: '1 minute',
   });
 
   await app.register(prismaPlugin);
@@ -76,7 +89,7 @@ export async function buildApp(): Promise<FastifyInstance> {
     });
   }
 
-  app.setErrorHandler((err, _req, reply) => {
+  app.setErrorHandler((err: Error & { statusCode?: number }, _req, reply) => {
     if (err instanceof ZodError) {
       return reply.status(400).send({
         error: 'ValidationError',
@@ -84,10 +97,10 @@ export async function buildApp(): Promise<FastifyInstance> {
       });
     }
     app.log.error(err);
-    const statusCode = (err as { statusCode?: number }).statusCode ?? 500;
+    const statusCode = err.statusCode ?? 500;
     return reply.status(statusCode).send({
       error: err.name || 'InternalServerError',
-      message: err.message,
+      message: statusCode >= 500 ? '伺服器內部錯誤' : err.message,
     });
   });
 

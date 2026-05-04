@@ -14,7 +14,11 @@ interface LineWebhookBody {
 
 function verifySignature(body: string, signature: string, secret: string): boolean {
   const hash = crypto.createHmac('SHA256', secret).update(body).digest('base64');
-  return hash === signature;
+  try {
+    return crypto.timingSafeEqual(Buffer.from(hash), Buffer.from(signature));
+  } catch {
+    return false;
+  }
 }
 
 async function replyMessage(replyToken: string, messages: object[]) {
@@ -52,10 +56,8 @@ export async function lineWebhookRoutes(app: FastifyInstance) {
     const signature = req.headers['x-line-signature'] as string;
     const secret = process.env.LINE_CHANNEL_SECRET;
 
-    if (secret && signature) {
-      if (!verifySignature(rawBody, signature, secret)) {
-        return reply.status(403).send({ error: 'Invalid signature' });
-      }
+    if (!secret || !signature || !verifySignature(rawBody, signature, secret)) {
+      return reply.status(403).send({ error: 'Invalid signature' });
     }
 
     const body: LineWebhookBody = JSON.parse(rawBody);

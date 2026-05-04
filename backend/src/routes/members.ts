@@ -35,9 +35,11 @@ export async function membersRoutes(app: FastifyInstance) {
   });
 
   // GET /members/:phone  —— 公開（顧客端判斷新客折扣用）
+  // 只回傳最少必要欄位，不���露 lineUserId 等敏感資訊
   app.get<{ Params: { phone: string } }>('/:phone', async (req, reply) => {
     const member = await app.prisma.member.findUnique({
       where: { phone: req.params.phone },
+      select: { name: true, phone: true, gender: true, bday: true, vip: true, wallet: true },
     });
     if (!member) return reply.status(404).send({ error: 'NotFound' });
 

@@ -9,6 +9,7 @@ import {
 } from '../schemas/booking.js';
 import { getAvailableSlots, hasConflict } from '../services/bookingService.js';
 import { upsertMemberFromBooking } from '../services/memberService.js';
+import { buildPhoneOwnerAuth } from '../middleware/phoneOwnerAuth.js';
 import {
   buildBindPromptMessage,
   buildBookingCancelledMessage,
@@ -46,6 +47,7 @@ export async function bookingsRoutes(app: FastifyInstance) {
   });
 
   // GET /bookings?phone=xxx  顧客查自己的；或 admin 全查
+  const phoneOwnerAuth = buildPhoneOwnerAuth(app);
   app.get('/', async (req, reply) => {
     const query = listBookingsQuery.parse(req.query);
 
@@ -55,6 +57,10 @@ export async function bookingsRoutes(app: FastifyInstance) {
       if (!token || token !== process.env.ADMIN_TOKEN) {
         return reply.status(401).send({ error: 'Unauthorized' });
       }
+    } else {
+      // 有 phone 時驗證身份：必須是本人或 admin
+      await phoneOwnerAuth(req, reply);
+      if (reply.sent) return;
     }
 
     const where: Record<string, unknown> = {};
@@ -79,7 +85,7 @@ export async function bookingsRoutes(app: FastifyInstance) {
   });
 
   // POST /bookings  —— 公開（顧客送出預約）
-  app.post('/', async (req, reply) => {
+  app.post('/', { config: { rateLimit: { max: 10, timeWindow: '1 minute' } } }, async (req, reply) => {
     const body = req.body as Record<string, unknown>;
     const inLiff = body.inLiff === true;
     const input = createBookingSchema.parse(body);

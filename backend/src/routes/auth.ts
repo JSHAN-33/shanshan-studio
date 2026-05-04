@@ -2,15 +2,18 @@ import type { FastifyInstance } from 'fastify';
 import { lineLoginSchema, registerSchema, credentialLoginSchema } from '../schemas/auth.js';
 import { pushToOa, buildNewMemberMessage } from '../services/lineNotifyService.js';
 
-const ADMIN_ACCOUNT = 'SHANSHAN.STUDIO';
-const ADMIN_PASSWORD = 'ASdf1127';
-
 export async function authRoutes(app: FastifyInstance) {
   // POST /auth/login — 帳號密碼登入（管理員用）
-  app.post('/login', async (req, reply) => {
+  app.post('/login', { config: { rateLimit: { max: 5, timeWindow: '1 minute' } } }, async (req, reply) => {
     const { account, password } = credentialLoginSchema.parse(req.body);
 
-    if (account === ADMIN_ACCOUNT && password === ADMIN_PASSWORD) {
+    const expectedAccount = process.env.ADMIN_ACCOUNT;
+    const expectedPassword = process.env.ADMIN_PASSWORD;
+    if (!expectedAccount || !expectedPassword) {
+      return reply.status(500).send({ error: 'ServerMisconfigured', message: 'ADMIN_ACCOUNT / ADMIN_PASSWORD not set' });
+    }
+
+    if (account === expectedAccount && password === expectedPassword) {
       const token = process.env.ADMIN_TOKEN ?? 'admin';
       return { ok: true, role: 'admin', token };
     }

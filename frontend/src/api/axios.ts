@@ -11,6 +11,9 @@ http.interceptors.request.use((config) => {
   if (auth.adminToken) {
     config.headers['X-Admin-Token'] = auth.adminToken;
   }
+  if (auth.profile?.userId) {
+    config.headers['X-Line-User-Id'] = auth.profile.userId;
+  }
   return config;
 });
 

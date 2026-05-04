@@ -5,11 +5,17 @@ import {
   updateServiceHistorySchema,
   listServiceHistoryQuery,
 } from '../schemas/serviceHistory.js';
+import { buildPhoneOwnerAuth } from '../middleware/phoneOwnerAuth.js';
 
 export async function serviceHistoryRoutes(app: FastifyInstance) {
-  // GET /service-history?phone=xxx  —— 公開（顧客查自己的）
-  app.get('/', async (req) => {
+  const phoneOwnerAuth = buildPhoneOwnerAuth(app);
+
+  // GET /service-history?phone=xxx  —— 顧客查自己的（需驗證身份）
+  app.get('/', async (req, reply) => {
     const { phone } = listServiceHistoryQuery.parse(req.query);
+    await phoneOwnerAuth(req, reply);
+    if (reply.sent) return;
+
     const items = await app.prisma.serviceHistory.findMany({
       where: { phone },
       orderBy: [{ date: 'desc' }, { createdAt: 'desc' }],
