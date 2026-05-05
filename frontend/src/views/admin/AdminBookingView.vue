@@ -416,7 +416,11 @@ const lastSeenIds = ref<Set<string>>(new Set());
 
 async function checkNewBookings() {
   try {
-    const all = await bookingsApi.listAll({ status: '待確認' });
+    const [pending, deposit] = await Promise.all([
+      bookingsApi.listAll({ status: '待確認' }),
+      bookingsApi.listAll({ status: '待付訂金' }),
+    ]);
+    const all = [...pending, ...deposit];
     const currentIds = new Set(all.map((b) => b.id));
 
     // 找出新增的預約
@@ -1100,7 +1104,7 @@ const { refreshing } = usePullRefresh(() => loadMonth(month.value));
         <div class="flex justify-between items-center shrink-0" style="padding: 22px 22px 10px;">
           <div class="flex items-center gap-2">
             <span class="w-8 h-8 rounded-full bg-red-500 flex items-center justify-center text-white text-sm font-extrabold">{{ pendingNotifyBookings.length }}</span>
-            <h3 class="font-bold text-base">待確認預約</h3>
+            <h3 class="font-bold text-base">新預約通知</h3>
           </div>
           <button class="w-8 h-8 rounded-full bg-brand-50 flex items-center justify-center text-brand-400 hover:bg-brand-100 transition" @click="closeNotifyModal">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
@@ -1119,6 +1123,7 @@ const { refreshing } = usePullRefresh(() => loadMonth(month.value));
                   <div class="text-[11px] text-brand-400 mt-0.5">{{ bk.phone }}</div>
                   <div class="text-[11px] text-brand-500 font-bold mt-1">{{ bk.date }} {{ bk.time }}</div>
                   <div class="text-[10px] text-brand-400 mt-0.5 truncate">{{ bk.items }}</div>
+                  <span v-if="bk.status === '待付訂金'" class="inline-block mt-1 text-[9px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-full">待付訂金</span>
                 </div>
                 <div class="text-right shrink-0">
                   <div class="text-sm font-extrabold text-brand-600">NT$ {{ bk.total.toLocaleString() }}</div>
