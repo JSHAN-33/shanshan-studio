@@ -57,7 +57,28 @@ const extraItems = computed(() =>
 );
 
 const today = new Date().toISOString().slice(0, 10);
-const month = today.slice(0, 7);
+const currentMonth = today.slice(0, 7);
+
+// 已結帳月份選擇（可往前翻月份）
+const paidMonth = ref(currentMonth);
+
+function paidMonthLabel(ym: string) {
+  const [y, m] = ym.split('-');
+  return `${y} 年 ${Number(m)} 月`;
+}
+function prevPaidMonth() {
+  const [y, m] = paidMonth.value.split('-').map(Number);
+  const d = new Date(y, m - 2, 1);
+  paidMonth.value = d.toISOString().slice(0, 7);
+  loadPaid();
+}
+function nextPaidMonth() {
+  const [y, m] = paidMonth.value.split('-').map(Number);
+  const d = new Date(y, m, 1);
+  if (d.toISOString().slice(0, 7) > currentMonth) return;
+  paidMonth.value = d.toISOString().slice(0, 7);
+  loadPaid();
+}
 
 const pendingBookings = ref<Booking[]>([]);
 const paidBookings = ref<Booking[]>([]);
@@ -176,12 +197,16 @@ function finishEditTotal() {
   isEditingTotal.value = false;
 }
 
+async function loadPaid() {
+  paidBookings.value = await bookingsApi.listAll({ paidMonth: paidMonth.value });
+}
+
 async function load() {
   loading.value = true;
   try {
     const [unpaidList, paidList, sum] = await Promise.all([
       bookingsApi.listAll({ paid: 'false' }), // 全部未結帳（跨月份）
-      bookingsApi.listAll({ paidMonth: month }), // 本月已結帳
+      bookingsApi.listAll({ paidMonth: paidMonth.value }),
       financeApi.summary(),
     ]);
     pendingBookings.value = unpaidList;
@@ -371,10 +396,28 @@ const payMethodOptions: { value: PayMethod; icon: string; label: string }[] = [
     </section>
 
     <section>
-      <button class="w-full flex items-center justify-between mb-2" @click="paidExpanded = !paidExpanded">
-        <h2 class="font-bold">已結帳（本月）<span v-if="paid.length" class="text-brand-400 font-normal text-sm ml-1">({{ paid.length }})</span></h2>
-        <svg class="w-4 h-4 text-brand-400 transition-transform duration-200" :class="{ 'rotate-180': paidExpanded }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
-      </button>
+      <div class="flex items-center justify-between mb-2">
+        <div class="flex items-center gap-2">
+          <button class="w-6 h-6 rounded-full bg-brand-50 flex items-center justify-center text-brand-400 hover:bg-brand-100 transition" @click.stop="prevPaidMonth">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg>
+          </button>
+          <h2 class="font-bold text-sm cursor-pointer" @click="paidExpanded = !paidExpanded">
+            已結帳 · {{ paidMonthLabel(paidMonth) }}
+            <span v-if="paid.length" class="text-brand-400 font-normal text-sm ml-1">({{ paid.length }})</span>
+          </h2>
+          <button
+            class="w-6 h-6 rounded-full flex items-center justify-center transition"
+            :class="paidMonth < currentMonth ? 'bg-brand-50 text-brand-400 hover:bg-brand-100' : 'bg-brand-50/50 text-brand-200 cursor-not-allowed'"
+            :disabled="paidMonth >= currentMonth"
+            @click.stop="nextPaidMonth"
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+          </button>
+        </div>
+        <button @click="paidExpanded = !paidExpanded">
+          <svg class="w-4 h-4 text-brand-400 transition-transform duration-200" :class="{ 'rotate-180': paidExpanded }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+      </div>
       <ul v-if="paid.length" v-show="paidExpanded" class="space-y-1.5">
         <li v-for="b in paid" :key="b.id" class="card !p-2.5 !rounded-xl">
           <div class="flex justify-between items-start gap-2">
