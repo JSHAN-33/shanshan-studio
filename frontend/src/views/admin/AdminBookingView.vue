@@ -550,7 +550,7 @@ function openCreate() {
 
 function openEdit(b: Booking) {
   editing.value = b;
-  editDepositAmount.value = b.depositAmount ?? depositSetting.amount ?? 0;
+  editDepositAmount.value = b.depositAmount ?? depositSetting.value.amount ?? 0;
   form.value = {
     id: b.id,
     name: b.name,
