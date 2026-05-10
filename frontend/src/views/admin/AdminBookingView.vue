@@ -179,6 +179,7 @@ async function unblockEntireDay() {
 // --- 預約 Modal ---
 const showModal = ref(false);
 const editing = ref<Booking | null>(null);
+const editDepositAmount = ref<number>(0);
 const form = ref({
   id: '',
   name: '',
@@ -493,9 +494,13 @@ async function confirmDeposit(b: Booking) {
 
 async function confirmDepositInEdit() {
   if (!editing.value) return;
-  await confirmDeposit(editing.value);
-  editing.value = { ...editing.value, depositStatus: '已付訂金' };
-  toast.show('已確認收款');
+  const amount = editDepositAmount.value;
+  const update: any = { depositStatus: '已付訂金', depositAmount: amount };
+  if (editing.value.status === '待付訂金') update.status = '待確認';
+  await bookingsApi.update(editing.value.id, update);
+  editing.value = { ...editing.value, depositStatus: '已付訂金', depositAmount: amount };
+  toast.show(`已確認收款 $${amount}`);
+  await loadMonth(month.value);
 }
 
 let pollTimer: ReturnType<typeof setInterval> | null = null;
@@ -545,6 +550,7 @@ function openCreate() {
 
 function openEdit(b: Booking) {
   editing.value = b;
+  editDepositAmount.value = b.depositAmount ?? depositSetting.amount ?? 0;
   form.value = {
     id: b.id,
     name: b.name,
@@ -951,8 +957,14 @@ const { refreshing } = usePullRefresh(() => loadMonth(month.value));
             </div>
 
             <!-- 預約金確認收款 -->
-            <div v-if="editing && editing.depositStatus === '待付訂金'" class="flex items-center justify-between px-3 py-2 rounded-xl" style="background:#fef3e2;">
-              <span class="text-[11px] font-bold" style="color:#8b6914;">待付預約金 ${{ editing.depositAmount ?? depositSetting.amount }}</span>
+            <div v-if="editing && editing.depositStatus === '已付訂金'" class="flex items-center px-3 py-2 rounded-xl" style="background:#e8f5e9;">
+              <span class="text-[11px] font-bold" style="color:#2e7d32;">✓ 已收預約金 ${{ editing.depositAmount ?? 0 }}</span>
+            </div>
+            <div v-else-if="editing && editing.status !== '已完成'" class="flex items-center justify-between px-3 py-2 rounded-xl" style="background:#fef3e2;">
+              <div class="flex items-center gap-1.5">
+                <span class="text-[11px] font-bold shrink-0" style="color:#8b6914;">預約金</span>
+                <input v-model.number="editDepositAmount" type="number" class="w-16 text-[11px] font-bold text-center rounded-lg border border-amber-300 py-0.5" style="color:#8b6914;" />
+              </div>
               <button type="button" class="text-[10px] font-bold px-3 py-1 rounded-full bg-brand-600 text-white active:scale-95" @click="confirmDepositInEdit()">確認收款</button>
             </div>
 
