@@ -485,7 +485,9 @@ async function saveDepositSettings() {
 }
 
 async function confirmDeposit(b: Booking) {
-  await bookingsApi.update(b.id, { status: '待確認', depositStatus: '已付訂金' } as any);
+  const update: any = { depositStatus: '已付訂金' };
+  if (b.status === '待付訂金') update.status = '待確認';
+  await bookingsApi.update(b.id, update);
   await loadMonth(month.value);
 }
 
@@ -761,7 +763,7 @@ const { refreshing } = usePullRefresh(() => loadMonth(month.value));
             <span class="badge" :class="statusClass[b.status]">{{ b.status }}</span>
           </div>
           <!-- 預約金提示 -->
-          <div v-if="b.status === '待付訂金'" class="flex items-center justify-between mt-1 px-2 py-1 rounded-lg" style="background:#fef3e2;">
+          <div v-if="b.depositStatus === '待付訂金'" class="flex items-center justify-between mt-1 px-2 py-1 rounded-lg" style="background:#fef3e2;">
             <span class="text-[10px] font-bold" style="color:#8b6914;">待付預約金 ${{ b.depositAmount ?? depositSetting.amount }}</span>
             <button class="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-brand-600 text-white active:scale-95" @click="confirmDeposit(b)">確認收款</button>
           </div>
