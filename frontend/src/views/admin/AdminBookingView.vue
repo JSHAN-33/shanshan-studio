@@ -491,6 +491,13 @@ async function confirmDeposit(b: Booking) {
   await loadMonth(month.value);
 }
 
+async function confirmDepositInEdit() {
+  if (!editing.value) return;
+  await confirmDeposit(editing.value);
+  editing.value = { ...editing.value, depositStatus: '已付訂金' };
+  toast.show('已確認收款');
+}
+
 let pollTimer: ReturnType<typeof setInterval> | null = null;
 
 onMounted(async () => {
@@ -941,6 +948,12 @@ const { refreshing } = usePullRefresh(() => loadMonth(month.value));
                   {{ s }}
                 </button>
               </div>
+            </div>
+
+            <!-- 預約金確認收款 -->
+            <div v-if="editing && editing.depositStatus === '待付訂金'" class="flex items-center justify-between px-3 py-2 rounded-xl" style="background:#fef3e2;">
+              <span class="text-[11px] font-bold" style="color:#8b6914;">待付預約金 ${{ editing.depositAmount ?? depositSetting.amount }}</span>
+              <button type="button" class="text-[10px] font-bold px-3 py-1 rounded-full bg-brand-600 text-white active:scale-95" @click="confirmDepositInEdit()">確認收款</button>
             </div>
 
             <textarea v-model="form.remarks" class="booking-field w-full resize-none text-xs" rows="2" placeholder="備註..." />
