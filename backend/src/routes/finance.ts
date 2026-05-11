@@ -5,6 +5,7 @@ import {
   getFinanceSummary,
   getYearSummary,
   getMonthSummary,
+  getDailySummary,
 } from '../services/financeService.js';
 import { getAnalytics } from '../services/analyticsService.js';
 
@@ -26,6 +27,12 @@ export async function financeRoutes(app: FastifyInstance) {
   app.get('/month', { preHandler: adminAuth }, async (req) => {
     const { month } = monthQuery.parse(req.query);
     return getMonthSummary(app.prisma, month);
+  });
+
+  // 指定月份的每日營收摘要
+  app.get('/daily', { preHandler: adminAuth }, async (req) => {
+    const { month } = monthQuery.parse(req.query);
+    return getDailySummary(app.prisma, month);
   });
 
   // 數據分析：本月總預約數、熱門時段、熱門服務

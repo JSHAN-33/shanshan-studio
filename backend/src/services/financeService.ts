@@ -264,6 +264,84 @@ export async function getFinanceSummary(prisma: PrismaClient): Promise<FinanceSu
   };
 }
 
+export interface DailyEntry {
+  date: string; // YYYY-MM-DD
+  revenue: number;
+  bookings: number;
+  byPayMethod: PayMethodBreakdown;
+}
+
+export interface DailySummary {
+  month: string; // YYYY-MM
+  days: DailyEntry[];
+  totalRevenue: number;
+  totalBookings: number;
+}
+
+/**
+ * 指定月份（YYYY-MM）的每日營收摘要。
+ */
+export async function getDailySummary(
+  prisma: PrismaClient,
+  month: string
+): Promise<DailySummary> {
+  const [yStr, mStr] = month.split('-');
+  const y = Number(yStr);
+  const m = Number(mStr);
+  const start = new Date(y, m - 1, 1);
+  const end = new Date(y, m, 1);
+
+  const paidRows = await prisma.booking.findMany({
+    where: { paidAt: { gte: start, lt: end } },
+    select: {
+      id: true,
+      name: true,
+      phone: true,
+      items: true,
+      total: true,
+      date: true,
+      time: true,
+      paidAt: true,
+      payMethod: true,
+      walletUsed: true,
+    },
+    orderBy: { paidAt: 'asc' },
+  });
+
+  // Group by day (using paidAt date)
+  const dayMap = new Map<string, PaidBookingRow[]>();
+  // Pre-fill all days in the month
+  const daysInMonth = new Date(y, m, 0).getDate();
+  for (let d = 1; d <= daysInMonth; d++) {
+    const key = `${yStr}-${mStr}-${String(d).padStart(2, '0')}`;
+    dayMap.set(key, []);
+  }
+  for (const r of paidRows) {
+    if (!r.paidAt) continue;
+    const key = ymd(r.paidAt);
+    if (!dayMap.has(key)) dayMap.set(key, []);
+    dayMap.get(key)!.push(r);
+  }
+
+  const days: DailyEntry[] = Array.from(dayMap.entries())
+    .sort((a, b) => b[0].localeCompare(a[0])) // newest first
+    .map(([date, rows]) => ({
+      date,
+      revenue: rows.reduce((s, r) => s + r.total, 0),
+      bookings: rows.length,
+      byPayMethod: buildBreakdown(rows),
+    }));
+
+  const totalRevenue = paidRows.reduce((s, r) => s + r.total, 0);
+
+  return {
+    month,
+    days,
+    totalRevenue,
+    totalBookings: paidRows.length,
+  };
+}
+
 /**
  * 回傳資料庫中有收入紀錄的年份清單（依 paidAt 判斷），以及當前年份做保底。
  * 用於 UI 顯示可切換的年份。

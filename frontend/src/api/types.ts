@@ -177,6 +177,20 @@ export interface MonthSummary {
   byPayMethod: PayMethodBreakdown;
 }
 
+export interface DailyEntry {
+  date: string; // YYYY-MM-DD
+  revenue: number;
+  bookings: number;
+  byPayMethod: PayMethodBreakdown;
+}
+
+export interface DailySummary {
+  month: string;
+  days: DailyEntry[];
+  totalRevenue: number;
+  totalBookings: number;
+}
+
 export interface AnalyticsSummary {
   monthlyBookings: number;
   popularTimeSlots: Array<{ time: string; count: number }>;

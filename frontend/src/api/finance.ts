@@ -1,5 +1,5 @@
 import { http } from './axios';
-import type { FinanceSummary, YearSummary, MonthSummary, AnalyticsSummary } from './types';
+import type { FinanceSummary, YearSummary, MonthSummary, DailySummary, AnalyticsSummary } from './types';
 
 export const financeApi = {
   async summary(): Promise<FinanceSummary> {
@@ -12,6 +12,10 @@ export const financeApi = {
   },
   async month(month: string): Promise<MonthSummary> {
     const res = await http.get<MonthSummary>('/finance/month', { params: { month } });
+    return res.data;
+  },
+  async daily(month: string): Promise<DailySummary> {
+    const res = await http.get<DailySummary>('/finance/daily', { params: { month } });
     return res.data;
   },
   async analytics(): Promise<AnalyticsSummary> {
