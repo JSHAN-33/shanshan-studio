@@ -374,6 +374,7 @@ async function saveEditCost() {
 }
 
 // --- 每日業績 ---
+const showDailyModal = ref(false);
 const dailyMonth = ref(new Date().toISOString().slice(0, 7));
 const dailyData = ref<DailySummary | null>(null);
 const dailyLoading = ref(false);
@@ -386,6 +387,12 @@ async function loadDaily(month: string) {
   } finally {
     dailyLoading.value = false;
   }
+}
+
+async function openDaily() {
+  showDailyModal.value = true;
+  expandedDay.value = null;
+  if (!dailyData.value) await loadDaily(dailyMonth.value);
 }
 
 async function shiftDailyMonth(delta: number) {
@@ -497,88 +504,17 @@ const { refreshing } = usePullRefresh(load);
       </div>
     </div>
 
-    <!-- 每日業績 -->
-    <section class="card !p-3">
-      <div class="flex items-center justify-between mb-3">
-        <p class="section-label">每日業績</p>
-        <div class="flex items-center gap-3">
-          <button type="button" class="w-6 h-6 rounded-full bg-brand-50 flex items-center justify-center text-brand-400 active:bg-brand-100" @click="shiftDailyMonth(-1)">
-            <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg>
-          </button>
-          <span class="text-xs font-bold text-brand-600 min-w-[80px] text-center">{{ formatMonthLabel(dailyMonth) }}</span>
-          <button type="button" class="w-6 h-6 rounded-full bg-brand-50 flex items-center justify-center text-brand-400 active:bg-brand-100" @click="shiftDailyMonth(1)">
-            <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
-          </button>
+    <!-- 每日業績按鈕 -->
+    <button type="button" class="card !py-2 w-full text-left hover:bg-brand-50 transition" @click="openDaily">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="section-label">每日業績</p>
+          <p class="text-sm font-extrabold text-brand-600 leading-none tracking-tight mt-1">NT$ {{ (dailyData?.totalRevenue ?? 0).toLocaleString() }}</p>
+          <p class="text-[10px] text-brand-400 mt-0.5">本月 {{ dailyData?.totalBookings ?? 0 }} 筆</p>
         </div>
+        <svg class="w-3.5 h-3.5 text-brand-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
       </div>
-
-      <p v-if="dailyLoading" class="text-center text-brand-400 text-[10px] py-4">載入中…</p>
-      <div v-else-if="dailyData">
-        <!-- 月總計 -->
-        <div class="flex justify-between items-center px-2 py-1.5 mb-2 rounded-xl bg-brand-50">
-          <span class="text-[10px] font-bold text-brand-400">本月合計</span>
-          <div class="text-right">
-            <span class="text-xs font-extrabold text-brand-600">NT$ {{ dailyData.totalRevenue.toLocaleString() }}</span>
-            <span class="text-[10px] text-brand-400 ml-1.5">{{ dailyData.totalBookings }} 筆</span>
-          </div>
-        </div>
-
-        <p v-if="!activeDays.length" class="text-center text-brand-400 text-[10px] py-3">本月尚無業績</p>
-        <div v-else class="space-y-1 max-h-[320px] overflow-y-auto no-scrollbar">
-          <div v-for="day in activeDays" :key="day.date">
-            <!-- Day row -->
-            <button
-              type="button"
-              class="w-full flex items-center justify-between px-2.5 py-2 rounded-xl transition-all"
-              :class="expandedDay === day.date ? 'bg-brand-600 text-white' : 'bg-white hover:bg-brand-50'"
-              @click="toggleDay(day.date)"
-            >
-              <div class="flex items-center gap-2">
-                <span class="text-[11px] font-bold" :class="expandedDay === day.date ? 'text-white/70' : 'text-brand-400'">{{ dayLabel(day.date) }}</span>
-                <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-full" :class="expandedDay === day.date ? 'bg-white/20 text-white' : 'bg-brand-50 text-brand-400'">{{ day.bookings }} 筆</span>
-              </div>
-              <span class="text-xs font-extrabold">NT$ {{ day.revenue.toLocaleString() }}</span>
-            </button>
-
-            <!-- Expanded detail -->
-            <div v-if="expandedDay === day.date" class="mt-1 mb-2 px-2">
-              <!-- Payment method breakdown -->
-              <div class="grid grid-cols-2 gap-1.5 mb-2">
-                <div v-for="pm in (['現金', '轉帳', '儲值金', '空檔費'] as const)" :key="pm">
-                  <div v-if="day.byPayMethod[pm].count > 0" class="px-2 py-1.5 rounded-lg bg-brand-50">
-                    <p class="text-[9px] text-brand-400 font-bold">{{ pm }}</p>
-                    <p class="text-[11px] font-extrabold text-brand-600">NT$ {{ day.byPayMethod[pm].total.toLocaleString() }}</p>
-                  </div>
-                </div>
-              </div>
-              <!-- Booking list -->
-              <div class="space-y-1">
-                <div
-                  v-for="pm in (['現金', '轉帳', '儲值金', '空檔費'] as const)"
-                  :key="'list-' + pm"
-                >
-                  <div
-                    v-for="b in day.byPayMethod[pm].bookings"
-                    :key="b.id"
-                    class="flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-white border border-brand-100"
-                  >
-                    <div>
-                      <span class="text-[10px] font-bold text-brand-600">{{ b.name }}</span>
-                      <span class="text-[9px] text-brand-400 ml-1">{{ b.time }}</span>
-                      <p class="text-[9px] text-brand-400 truncate max-w-[160px]">{{ b.items }}</p>
-                    </div>
-                    <div class="text-right shrink-0">
-                      <p class="text-[11px] font-extrabold text-brand-600">NT$ {{ b.total }}</p>
-                      <p class="text-[8px] text-brand-400">{{ pm }}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
+    </button>
 
     <!-- 年營收卡片 -->
     <button type="button" class="card !py-2 w-full text-left hover:bg-brand-50 transition" @click="openYear">
@@ -835,6 +771,98 @@ const { refreshing } = usePullRefresh(load);
           <p class="text-[10px] text-brand-400 mt-4 leading-relaxed">
             * 以已結帳（有 paidAt）的預約計算；「空檔費」為結帳時選擇空檔費的補貼收入（臨時取消或放鳥）
           </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Daily Revenue Modal -->
+    <div v-if="showDailyModal" class="fixed inset-0 z-40 flex items-center justify-center p-4" style="background:rgba(0,0,0,0.5);" @click.self="showDailyModal = false">
+      <div class="bg-white w-full max-w-[360px] flex flex-col" style="border-radius:24px; max-height: 88dvh; overflow: hidden;">
+        <div class="flex justify-between items-start shrink-0" style="padding: 24px 24px 12px;">
+          <div>
+            <h3 class="font-bold text-lg">每日業績</h3>
+            <p class="text-[10px] text-brand-400 font-bold mt-0.5">DAILY REVENUE</p>
+          </div>
+          <button class="w-8 h-8 rounded-full bg-brand-50 flex items-center justify-center text-brand-400 hover:bg-brand-100 transition" @click="showDailyModal = false">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+        <!-- 月份切換 -->
+        <div class="flex items-center justify-between shrink-0" style="padding: 0 24px 8px;">
+          <button class="w-7 h-7 rounded-full bg-brand-50 flex items-center justify-center text-brand-500 hover:bg-brand-100 transition" :disabled="dailyLoading" @click="shiftDailyMonth(-1)">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg>
+          </button>
+          <p class="text-sm font-extrabold text-brand-700">{{ formatMonthLabel(dailyMonth) }}</p>
+          <button class="w-7 h-7 rounded-full bg-brand-50 flex items-center justify-center text-brand-500 hover:bg-brand-100 transition" :disabled="dailyLoading" @click="shiftDailyMonth(1)">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+          </button>
+        </div>
+        <div class="flex-1 overflow-y-auto no-scrollbar" style="padding: 0 20px 24px;">
+          <p v-if="dailyLoading" class="text-center text-brand-400 text-xs py-8">載入中…</p>
+          <div v-else-if="dailyData">
+            <!-- 月總計 -->
+            <div class="flex justify-between items-center p-4 mb-3" style="background:#f5f3f1;border-radius:16px;">
+              <div>
+                <p class="text-[10px] font-bold text-brand-400">共 {{ dailyData.totalBookings }} 筆</p>
+                <p class="text-[10px] text-brand-400 mt-0.5">本月合計</p>
+              </div>
+              <p class="text-base font-extrabold text-brand-700">NT$ {{ dailyData.totalRevenue.toLocaleString() }}</p>
+            </div>
+
+            <p v-if="!activeDays.length" class="text-center text-brand-400 text-xs py-6">本月尚無業績</p>
+            <div v-else class="space-y-1.5">
+              <div v-for="day in activeDays" :key="day.date">
+                <button
+                  type="button"
+                  class="w-full flex items-center justify-between px-3 py-2.5 rounded-2xl transition-all"
+                  :class="expandedDay === day.date ? 'bg-brand-600 text-white' : 'bg-white border border-brand-100 hover:bg-brand-50'"
+                  @click="toggleDay(day.date)"
+                >
+                  <div class="flex items-center gap-2.5">
+                    <span class="text-xs font-bold" :class="expandedDay === day.date ? 'text-white/70' : 'text-brand-400'">{{ dayLabel(day.date) }}</span>
+                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-full" :class="expandedDay === day.date ? 'bg-white/20 text-white' : 'bg-brand-50 text-brand-400'">{{ day.bookings }} 筆</span>
+                  </div>
+                  <div class="flex items-center gap-1.5">
+                    <span class="text-xs font-extrabold">NT$ {{ day.revenue.toLocaleString() }}</span>
+                    <svg class="w-3 h-3 transition-transform" :class="[expandedDay === day.date ? 'rotate-90 text-white/60' : 'text-brand-300']" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+                  </div>
+                </button>
+
+                <!-- Expanded detail -->
+                <div v-if="expandedDay === day.date" class="mt-1.5 mb-1 space-y-1.5 pl-2">
+                  <!-- Payment method breakdown -->
+                  <div class="grid grid-cols-2 gap-1.5 mb-2">
+                    <template v-for="pm in (['現金', '轉帳', '儲值金', '空檔費'] as const)" :key="pm">
+                      <div v-if="day.byPayMethod[pm].count > 0" class="px-2.5 py-1.5 rounded-xl bg-brand-50">
+                        <p class="text-[9px] text-brand-400 font-bold">{{ pm }}</p>
+                        <p class="text-xs font-extrabold text-brand-600">NT$ {{ day.byPayMethod[pm].total.toLocaleString() }}</p>
+                      </div>
+                    </template>
+                  </div>
+                  <!-- Booking list -->
+                  <template v-for="pm in (['現金', '轉帳', '儲值金', '空檔費'] as const)" :key="'list-' + pm">
+                    <div
+                      v-for="b in day.byPayMethod[pm].bookings"
+                      :key="b.id"
+                      class="flex items-center justify-between px-3 py-2 rounded-xl bg-white border border-brand-100"
+                    >
+                      <div class="min-w-0 flex-1">
+                        <div class="flex items-center gap-1.5">
+                          <span class="text-[11px] font-extrabold text-brand-700">{{ b.name }}</span>
+                          <span class="text-[9px] text-brand-400">{{ b.time }}</span>
+                        </div>
+                        <p class="text-[9px] text-brand-400 truncate">{{ b.items }}</p>
+                      </div>
+                      <div class="text-right shrink-0 ml-2">
+                        <p class="text-[11px] font-extrabold text-brand-600">NT$ {{ b.total }}</p>
+                        <p class="text-[8px] text-brand-400">{{ pm }}</p>
+                      </div>
+                    </div>
+                  </template>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
