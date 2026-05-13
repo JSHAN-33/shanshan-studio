@@ -165,7 +165,6 @@ const autoTotal = computed(() => {
   if (newCustomerDiscount.value) {
     amount -= newCustomerAmount.value;
   }
-  amount -= depositPaid.value;
   return Math.max(0, amount);
 });
 
@@ -174,16 +173,19 @@ const finalTotal = computed(() => {
   return autoTotal.value;
 });
 
+// 現場應付金額（總消費 - 已付預約金）
+const amountDue = computed(() => Math.max(0, finalTotal.value - depositPaid.value));
+
 // 實際可從儲值金扣的金額
 const walletDeduction = computed(() => {
   if (!useWallet.value || !checkoutMember.value) return 0;
   const eligible = Math.round(walletEligibleTotal.value * discountRate.value);
-  return Math.min(eligible, checkoutMember.value.wallet);
+  return Math.min(eligible, checkoutMember.value.wallet, amountDue.value);
 });
 
 // 還需現金/轉帳付的金額
 const remainAfterWallet = computed(() => {
-  return Math.max(0, finalTotal.value - walletDeduction.value);
+  return Math.max(0, amountDue.value - walletDeduction.value);
 });
 
 const discountDiff = computed(() => originalTotal.value - finalTotal.value);
@@ -611,9 +613,9 @@ const payMethodOptions: { value: PayMethod; icon: string; label: string }[] = [
             <p v-if="comboTotal > 0" class="text-[10px] text-amber-500 mt-1.5 ml-1">* 套餐項目不可使用儲值金折抵</p>
           </div>
 
-          <!-- 應付金額 -->
+          <!-- 總消費金額 -->
           <div class="flex items-end justify-between mb-1">
-            <span class="text-sm font-bold text-brand-500">應付金額</span>
+            <span class="text-sm font-bold text-brand-500">總消費金額</span>
             <div v-if="!isEditingTotal" class="text-right flex items-end gap-1 cursor-pointer" @click="startEditTotal">
               <span class="text-sm text-brand-400">NT$</span>
               <span class="text-2xl font-extrabold text-brand-700">{{ finalTotal.toLocaleString() }}</span>
@@ -634,6 +636,16 @@ const payMethodOptions: { value: PayMethod; icon: string; label: string }[] = [
           <div class="text-right mb-1">
             <span v-if="discountDiff > 0" class="text-xs text-brand-400 line-through">原價 NT$ {{ originalTotal.toLocaleString() }}</span>
           </div>
+
+          <!-- 現場應付（有預約金時顯示） -->
+          <div v-if="depositPaid > 0" class="flex items-end justify-between mt-2 mb-1">
+            <span class="text-sm font-bold text-brand-500">現場應付</span>
+            <div class="text-right">
+              <span class="text-sm text-brand-400">NT$</span>
+              <span class="text-xl font-extrabold text-brand-700">{{ amountDue.toLocaleString() }}</span>
+            </div>
+          </div>
+
           <div v-if="useWallet && walletDeduction > 0 && remainAfterWallet > 0" class="text-right mb-1">
             <span class="text-xs text-green-600 font-bold">儲值金折抵 -NT$ {{ walletDeduction.toLocaleString() }}，尚需付 NT$ {{ remainAfterWallet.toLocaleString() }}</span>
           </div>
