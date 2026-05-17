@@ -26,11 +26,12 @@ export function startReminderScheduler(prisma: PrismaClient) {
       console.log(`[Reminder] Found ${bookings.length} bookings for ${tomorrowStr}`);
 
       for (const b of bookings) {
-        // 用 phone 找會員的 lineOaUserId（由 @903zzutx webhook 頭像配對綁定）
+        // 用 phone 找會員的推播 ID（優先 OA，fallback LIFF）
         const member = await prisma.member.findUnique({ where: { phone: b.phone } });
-        if (!member?.lineOaUserId) continue;
+        const pushUserId = member?.lineOaUserId ?? member?.lineUserId;
+        if (!pushUserId) continue;
 
-        await pushToUser(member.lineOaUserId, buildBookingReminderMessage(b));
+        await pushToUser(pushUserId, buildBookingReminderMessage(b));
         console.log(`[Reminder] Sent to ${b.name} (${b.phone})`);
       }
 
