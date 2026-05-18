@@ -82,6 +82,9 @@ export async function buildApp(): Promise<FastifyInstance> {
     const hasToken = !!process.env.LINE_CHANNEL_ACCESS_TOKEN;
     const hasSecret = !!process.env.LINE_CHANNEL_SECRET;
 
+    // 檢查今天是否已發送提醒
+    const sentFlag = await app.prisma.systemSetting.findUnique({ where: { key: `reminder_sent_${tomorrowStr}` } });
+
     return {
       serverUtcNow: now.toISOString(),
       taiwanNow: twNow.toISOString().slice(0, 19) + '+08:00',
@@ -95,6 +98,8 @@ export async function buildApp(): Promise<FastifyInstance> {
       noMemberRecord: noMember,
       lineTokenSet: hasToken,
       lineSecretSet: hasSecret,
+      reminderAlreadySent: !!sentFlag,
+      reminderSentCount: sentFlag?.value ?? null,
     };
   });
 
