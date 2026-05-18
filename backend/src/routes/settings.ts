@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { adminAuth } from '../middleware/adminAuth.js';
-import { buildDepositInfoMessage, pushToUser } from '../services/lineNotifyService.js';
+import { buildDepositInfoMessage, buildBookingReminderMessage, pushToUser } from '../services/lineNotifyService.js';
 
 export async function settingsRoutes(app: FastifyInstance) {
   // GET /settings/deposit — 公開（前台需要知道是否啟用）
@@ -75,5 +75,65 @@ export async function settingsRoutes(app: FastifyInstance) {
     }));
 
     return { ok: true, pushedTo: member.name };
+  });
+
+  // POST /settings/reminder/debug — admin only：診斷預約提醒，可手動觸發
+  app.post('/reminder/debug', { preHandler: adminAuth }, async (req) => {
+    const { send } = (req.body ?? {}) as { send?: boolean };
+
+    // 用台灣時間計算明天日期
+    const now = new Date();
+    const twNow = new Date(now.getTime() + 8 * 60 * 60 * 1000);
+    const tomorrowTw = new Date(twNow.getTime() + 24 * 60 * 60 * 1000);
+    const tomorrowStr = tomorrowTw.toISOString().slice(0, 10);
+
+    // 也計算 cron 的舊邏輯算出的日期（用來比對）
+    const cronTomorrow = new Date();
+    cronTomorrow.setDate(cronTomorrow.getDate() + 1);
+    const cronTomorrowStr = cronTomorrow.toISOString().slice(0, 10);
+
+    const bookings = await app.prisma.booking.findMany({
+      where: { date: tomorrowStr, status: { not: '已取消' } },
+    });
+
+    const results = [];
+    for (const b of bookings) {
+      const member = await app.prisma.member.findUnique({ where: { phone: b.phone } });
+      const pushUserId = member?.lineOaUserId ?? member?.lineUserId;
+      const entry: Record<string, unknown> = {
+        bookingId: b.id,
+        name: b.name,
+        phone: b.phone,
+        date: b.date,
+        time: b.time,
+        status: b.status,
+        memberFound: !!member,
+        lineOaUserId: member?.lineOaUserId ?? null,
+        lineUserId: member?.lineUserId ?? null,
+        pushUserId: pushUserId ?? null,
+        sent: false,
+      };
+
+      if (send && pushUserId) {
+        try {
+          await pushToUser(pushUserId, buildBookingReminderMessage(b));
+          entry.sent = true;
+        } catch (err) {
+          entry.error = String(err);
+        }
+      }
+      results.push(entry);
+    }
+
+    return {
+      serverUtcNow: now.toISOString(),
+      taiwanNow: twNow.toISOString().replace('Z', '+08:00'),
+      tomorrowDate: tomorrowStr,
+      cronOldLogicDate: cronTomorrowStr,
+      dateMismatch: tomorrowStr !== cronTomorrowStr,
+      totalBookings: bookings.length,
+      sendMode: !!send,
+      results,
+    };
   });
 }
