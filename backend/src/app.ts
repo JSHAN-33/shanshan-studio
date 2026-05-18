@@ -53,6 +53,51 @@ export async function buildApp(): Promise<FastifyInstance> {
   // 健康檢查
   app.get('/health', async () => ({ ok: true, ts: new Date().toISOString() }));
 
+  // 預約提醒診斷（不含個資，僅統計）
+  app.get('/debug/reminder', async () => {
+    const now = new Date();
+    const twNow = new Date(now.getTime() + 8 * 60 * 60 * 1000);
+    const tomorrowTw = new Date(twNow.getTime() + 24 * 60 * 60 * 1000);
+    const tomorrowStr = tomorrowTw.toISOString().slice(0, 10);
+
+    // cron 舊邏輯的日期
+    const cronTomorrow = new Date();
+    cronTomorrow.setDate(cronTomorrow.getDate() + 1);
+    const cronStr = cronTomorrow.toISOString().slice(0, 10);
+
+    const bookings = await app.prisma.booking.findMany({
+      where: { date: tomorrowStr, status: { not: '已取消' } },
+      select: { id: true, phone: true, status: true },
+    });
+
+    let withOa = 0, withLiff = 0, noLine = 0, noMember = 0;
+    for (const b of bookings) {
+      const m = await app.prisma.member.findUnique({ where: { phone: b.phone }, select: { lineOaUserId: true, lineUserId: true } });
+      if (!m) { noMember++; continue; }
+      if (m.lineOaUserId) withOa++;
+      else if (m.lineUserId) withLiff++;
+      else noLine++;
+    }
+
+    const hasToken = !!process.env.LINE_CHANNEL_ACCESS_TOKEN;
+    const hasSecret = !!process.env.LINE_CHANNEL_SECRET;
+
+    return {
+      serverUtcNow: now.toISOString(),
+      taiwanNow: twNow.toISOString().slice(0, 19) + '+08:00',
+      tomorrowTw: tomorrowStr,
+      cronOldLogic: cronStr,
+      dateMismatch: tomorrowStr !== cronStr,
+      bookingsForTomorrow: bookings.length,
+      withLineOa: withOa,
+      withLineLiff: withLiff,
+      noLineId: noLine,
+      noMemberRecord: noMember,
+      lineTokenSet: hasToken,
+      lineSecretSet: hasSecret,
+    };
+  });
+
   // LINE Webhook（獨立路由，不走 /api prefix）
   await app.register(lineWebhookRoutes, { prefix: '/line' });
 
