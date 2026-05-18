@@ -80,13 +80,17 @@ export function startReminderScheduler(prisma: PrismaClient) {
 
   console.log('[Reminder] Scheduler started — daily at 17:00 (Asia/Taipei)');
 
-  // === Startup 補發：如果已過 17:00 但今天還沒發，立即補發 ===
+  // === Startup 補發：如果已過 17:00，強制重新發送（清除舊標記避免 token 過期時的假成功） ===
   (async () => {
     try {
       const twNow = getTaiwanNow();
       const twHour = twNow.getUTCHours();
       if (twHour >= 17) {
-        console.log('[Reminder] Startup check: past 17:00 TW, checking if reminder was sent...');
+        const tomorrowStr = getTomorrowTw();
+        const settingKey = `reminder_sent_${tomorrowStr}`;
+        // 清除舊標記，確保每次重啟都會重新發送（pushToUser 內部不會重複推播給同一人造成困擾）
+        await prisma.systemSetting.deleteMany({ where: { key: settingKey } });
+        console.log('[Reminder] Startup check: past 17:00 TW, resending reminders...');
         await sendDailyReminder(prisma);
       } else {
         console.log(`[Reminder] Startup check: only ${twHour}:xx TW, not yet 17:00, skipping.`);

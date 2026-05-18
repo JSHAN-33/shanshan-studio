@@ -37,8 +37,8 @@ async function getClient(): Promise<InstanceType<typeof MessagingApiClient> | nu
   let token = process.env.LINE_CHANNEL_ACCESS_TOKEN;
   if (!token) return null;
 
-  // Auto-refresh if close to expiry
-  if (tokenExpiresAt > 0 && Date.now() > tokenExpiresAt) {
+  // 首次使用或接近到期時自動 refresh token
+  if (tokenExpiresAt === 0 || Date.now() > tokenExpiresAt) {
     token = await refreshToken() ?? token;
   }
 
