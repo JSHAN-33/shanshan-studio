@@ -66,7 +66,75 @@ export async function pushToUser(userId: string, message: string | object): Prom
     });
   } catch (err) {
     console.error('[LINE] pushToUser failed', err);
+    // Token 可能過期，強制 refresh 後重試一次
+    const newToken = await refreshToken();
+    if (newToken) {
+      try {
+        const retryClient = await getClient();
+        if (retryClient) {
+          const msg = typeof message === 'string' ? { type: 'text' as const, text: message } : message;
+          await retryClient.pushMessage({ to: userId, messages: [msg as any] });
+          console.log('[LINE] pushToUser retry succeeded after token refresh');
+          return;
+        }
+      } catch (retryErr) {
+        console.error('[LINE] pushToUser retry also failed', retryErr);
+      }
+    }
   }
+}
+
+/**
+ * 診斷 LINE 推播狀態（供 debug 端點使用）
+ */
+export async function diagnoseLine(): Promise<Record<string, unknown>> {
+  const hasToken = !!process.env.LINE_CHANNEL_ACCESS_TOKEN;
+  const hasSecret = !!process.env.LINE_CHANNEL_SECRET;
+  const hasChannelId = !!process.env.LINE_CHANNEL_ID;
+  const ownerUserId = process.env.LINE_OWNER_USER_ID;
+
+  const result: Record<string, unknown> = {
+    hasToken,
+    hasSecret,
+    hasChannelId,
+    hasOwnerUserId: !!ownerUserId,
+    tokenExpiresAt: tokenExpiresAt > 0 ? new Date(tokenExpiresAt).toISOString() : 'never set (0)',
+    clientInitialized: !!client,
+  };
+
+  // 嘗試 refresh token
+  try {
+    const newToken = await refreshToken();
+    result.tokenRefreshOk = !!newToken;
+    if (!newToken) result.tokenRefreshNote = 'refreshToken returned null — check LINE_CHANNEL_SECRET';
+  } catch (err) {
+    result.tokenRefreshOk = false;
+    result.tokenRefreshError = String(err);
+  }
+
+  // 嘗試推播測試訊息給店家
+  if (ownerUserId) {
+    try {
+      const c = await getClient();
+      if (c) {
+        await c.pushMessage({
+          to: ownerUserId,
+          messages: [{ type: 'text', text: '🔧 LINE 推播測試成功' }],
+        });
+        result.testPushOk = true;
+      } else {
+        result.testPushOk = false;
+        result.testPushNote = 'getClient() returned null';
+      }
+    } catch (err: any) {
+      result.testPushOk = false;
+      result.testPushError = err?.message ?? String(err);
+      result.testPushStatusCode = err?.statusCode;
+      result.testPushBody = err?.body;
+    }
+  }
+
+  return result;
 }
 
 /**

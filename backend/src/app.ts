@@ -53,6 +53,12 @@ export async function buildApp(): Promise<FastifyInstance> {
   // 健康檢查
   app.get('/health', async () => ({ ok: true, ts: new Date().toISOString() }));
 
+  // LINE 推播診斷
+  app.get('/debug/line', async () => {
+    const { diagnoseLine } = await import('./services/lineNotifyService.js');
+    return diagnoseLine();
+  });
+
   // 預約提醒診斷（不含個資，僅統計）
   app.get('/debug/reminder', async () => {
     const now = new Date();
