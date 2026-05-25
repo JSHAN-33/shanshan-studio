@@ -275,6 +275,33 @@ export async function bookingsRoutes(app: FastifyInstance) {
     return { booking };
   });
 
+  // POST /bookings/:id/send-deposit  —— admin 手動發送預約金 Flex 訊息給客人
+  app.post<{ Params: { id: string } }>('/:id/send-deposit', { preHandler: adminAuth }, async (req, reply) => {
+    const { id } = req.params;
+    const booking = await app.prisma.booking.findUnique({ where: { id } });
+    if (!booking) return reply.status(404).send({ error: 'NotFound' });
+
+    const mem = await app.prisma.member.findUnique({ where: { phone: booking.phone } });
+    const pushUid = mem?.lineOaUserId ?? mem?.lineUserId;
+    if (!pushUid) return reply.status(400).send({ error: 'NoLineUser', message: '找不到客人的 LINE 帳號' });
+
+    const bankSetting = await app.prisma.systemSetting.findUnique({ where: { key: 'depositBankInfo' } });
+    if (!bankSetting?.value) return reply.status(400).send({ error: 'NoBankInfo', message: '尚未設定匯款資訊' });
+
+    const depositAmount = booking.depositAmount ?? 500;
+    await pushToUser(pushUid, buildDepositInfoMessage({
+      name: booking.name,
+      date: booking.date,
+      time: booking.time,
+      items: booking.items,
+      total: booking.total,
+      depositAmount,
+      bankInfo: bankSetting.value,
+    }));
+
+    return { ok: true };
+  });
+
   // DELETE /bookings/:id  —— admin only
   app.delete<{ Params: { id: string } }>('/:id', { preHandler: adminAuth }, async (req, reply) => {
     const { id } = req.params;

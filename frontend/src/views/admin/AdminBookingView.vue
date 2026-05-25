@@ -485,6 +485,16 @@ async function saveDepositSettings() {
   showDepositModal.value = false;
 }
 
+async function sendDeposit(b: Booking) {
+  try {
+    await bookingsApi.sendDeposit(b.id);
+    toast.show('已發送預約金訊息');
+  } catch (e: any) {
+    const msg = e?.response?.data?.message ?? '發送失敗';
+    toast.show(msg);
+  }
+}
+
 async function confirmDeposit(b: Booking) {
   const update: any = { depositStatus: '已付訂金' };
   if (b.status === '待付訂金') update.status = '待確認';
@@ -794,6 +804,7 @@ const { refreshing } = usePullRefresh(() => loadMonth(month.value));
               {{ s }}
             </button>
             <button class="btn-outline !text-[10px] !py-0.5 !px-2 ml-auto" @click="openEdit(b)">編輯</button>
+            <button class="btn-outline !text-[10px] !py-0.5 !px-2 !text-amber-600 !border-amber-200" @click="sendDeposit(b)">發送預約金</button>
             <button class="btn-outline !text-[10px] !py-0.5 !px-2 !text-red-600 !border-red-200" @click="remove(b)">刪除</button>
           </div>
         </li>

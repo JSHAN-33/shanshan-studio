@@ -95,6 +95,9 @@ export const bookingsApi = {
   async remove(id: string): Promise<void> {
     await http.delete(`/bookings/${id}`);
   },
+  async sendDeposit(id: string): Promise<void> {
+    await http.post(`/bookings/${id}/send-deposit`);
+  },
   async cancel(id: string): Promise<Booking> {
     return this.update(id, { status: '已取消' });
   },
