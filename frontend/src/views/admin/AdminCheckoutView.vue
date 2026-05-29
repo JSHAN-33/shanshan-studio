@@ -56,7 +56,8 @@ const extraItems = computed(() =>
   services.value.filter((s) => extraServices.value.has(s.id))
 );
 
-const today = new Date().toISOString().slice(0, 10);
+const now = new Date();
+const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 const currentMonth = today.slice(0, 7);
 
 // 已結帳月份選擇（可往前翻月份）
@@ -66,17 +67,21 @@ function paidMonthLabel(ym: string) {
   const [y, m] = ym.split('-');
   return `${y} 年 ${Number(m)} 月`;
 }
+function formatYM(d: Date) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
 function prevPaidMonth() {
   const [y, m] = paidMonth.value.split('-').map(Number);
   const d = new Date(y, m - 2, 1);
-  paidMonth.value = d.toISOString().slice(0, 7);
+  paidMonth.value = formatYM(d);
   loadPaid();
 }
 function nextPaidMonth() {
   const [y, m] = paidMonth.value.split('-').map(Number);
   const d = new Date(y, m, 1);
-  if (d.toISOString().slice(0, 7) > currentMonth) return;
-  paidMonth.value = d.toISOString().slice(0, 7);
+  const next = formatYM(d);
+  if (next > currentMonth) return;
+  paidMonth.value = next;
   loadPaid();
 }
 
