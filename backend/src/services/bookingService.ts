@@ -116,7 +116,8 @@ export async function getAvailableSlots(
       const needMin = startMin + i * 30;
       const needTime = `${String(Math.floor(needMin / 60)).padStart(2, '0')}:${String(needMin % 60).padStart(2, '0')}`;
       const nextSlot = baseSlots.find((s) => s.time === needTime);
-      if (!nextSlot || !nextSlot.available) {
+      // 若後續時段存在於設定中但不可用 → 封鎖；若超出營業時段（不存在）→ 允許（方案 A）
+      if (nextSlot && !nextSlot.available) {
         return { time: slot.time, available: false, reason: 'blocked' as const };
       }
     }
