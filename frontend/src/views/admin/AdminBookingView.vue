@@ -811,7 +811,18 @@ const { refreshing } = usePullRefresh(() => loadMonth(month.value));
       </ul>
     </section>
 
-    <!-- 下月預估 -->
+    <!-- 本月 / 下月預估 -->
+    <div v-if="summary" class="card !p-2.5 !rounded-xl">
+      <h3 class="font-bold text-xs mb-1">本月預估業績</h3>
+      <div class="flex justify-between text-[11px]">
+        <span class="text-brand-500">預約筆數</span>
+        <span class="font-bold">{{ summary.currentMonthEstimate.bookings }}</span>
+      </div>
+      <div class="flex justify-between text-[11px] mt-0.5">
+        <span class="text-brand-500">預估營收</span>
+        <span class="font-bold text-brand-600">${{ summary.currentMonthEstimate.revenue }}</span>
+      </div>
+    </div>
     <div v-if="summary" class="card !p-2.5 !rounded-xl">
       <h3 class="font-bold text-xs mb-1">下月業績預估</h3>
       <div class="flex justify-between text-[11px]">

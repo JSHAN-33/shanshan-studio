@@ -157,6 +157,7 @@ export interface FinanceSummary {
   today: { revenue: number; cost: number; net: number; bookings: number; byPayMethod: PayMethodBreakdown };
   month: { revenue: number; cost: number; net: number; bookings: number; byPayMethod: PayMethodBreakdown };
   year: { year: number; revenue: number; bookings: number; byMonth: YearMonthEntry[] };
+  currentMonthEstimate: { bookings: number; revenue: number };
   nextMonthEstimate: { bookings: number; revenue: number };
 }
 

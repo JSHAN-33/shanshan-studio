@@ -60,6 +60,7 @@ export interface FinanceSummary {
   today: { revenue: number; cost: number; net: number; bookings: number; byPayMethod: PayMethodBreakdown };
   month: { revenue: number; cost: number; net: number; bookings: number; byPayMethod: PayMethodBreakdown };
   year: { year: number; revenue: number; bookings: number; byMonth: YearMonthEntry[] };
+  currentMonthEstimate: { bookings: number; revenue: number };
   nextMonthEstimate: { bookings: number; revenue: number };
 }
 
@@ -150,7 +151,7 @@ export async function getFinanceSummary(prisma: PrismaClient): Promise<FinanceSu
     nextMonthStart.getMonth() + 1
   ).padStart(2, '0')}`;
 
-  const [todayPaidRows, monthPaidRows, yearPaidRows, todayCosts, monthCosts, nextMonthBookings] = await Promise.all([
+  const [todayPaidRows, monthPaidRows, yearPaidRows, todayCosts, monthCosts, currentMonthBookings, nextMonthBookings] = await Promise.all([
     prisma.booking.findMany({
       where: { paidAt: { gte: todayStart, lt: tomorrowStart } },
       select: {
@@ -200,6 +201,13 @@ export async function getFinanceSummary(prisma: PrismaClient): Promise<FinanceSu
     }),
     prisma.booking.findMany({
       where: {
+        date: { startsWith: monthPrefix },
+        status: { not: '已取消' },
+      },
+      select: { total: true },
+    }),
+    prisma.booking.findMany({
+      where: {
         date: { startsWith: nextMonthPrefix },
         status: { not: '已取消' },
       },
@@ -211,6 +219,7 @@ export async function getFinanceSummary(prisma: PrismaClient): Promise<FinanceSu
   const monthRevenue = monthPaidRows.reduce((s, b) => s + b.total, 0);
   const todayCost = todayCosts._sum.amount ?? 0;
   const monthCost = monthCosts._sum.amount ?? 0;
+  const currentMonthEstRevenue = currentMonthBookings.reduce((s, b) => s + b.total, 0);
   const nextMonthRevenue = nextMonthBookings.reduce((s, b) => s + b.total, 0);
 
   // 年營收按月份分類（以 paidAt 判斷）
@@ -256,6 +265,10 @@ export async function getFinanceSummary(prisma: PrismaClient): Promise<FinanceSu
       revenue: yearRevenue,
       bookings: yearPaidRows.length,
       byMonth,
+    },
+    currentMonthEstimate: {
+      bookings: currentMonthBookings.length,
+      revenue: currentMonthEstRevenue,
     },
     nextMonthEstimate: {
       bookings: nextMonthBookings.length,
