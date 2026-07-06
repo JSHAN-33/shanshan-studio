@@ -181,7 +181,7 @@ onMounted(load);
           <div class="topup-notes">
             <p>· 儲值金無使用期限</p>
             <p>· 限本人使用，不可轉讓</p>
-            <p>· 不可與其他優惠併用</p>
+            <p>· 不可與套餐及其他優惠使用</p>
             <p>· 如需儲值請透過 LINE 聯繫小編</p>
           </div>
         </div>
