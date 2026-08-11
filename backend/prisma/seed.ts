@@ -47,7 +47,7 @@ const services = [
   { id: 'p-rica-rose', name: 'RICA玫瑰精華噴霧', nameEn: 'Rose After Wax Lotion', cat: 'products', price: 1680, sortOrder: 15 },
 ];
 
-const defaultSlots = ['11:00', '11:30', '12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00', '17:30', '18:00', '18:30', '19:00', '19:30', '20:00'];
+const defaultSlots = ['10:00', '10:30', '11:00', '11:30', '12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00', '17:30', '18:00', '18:30', '19:00', '19:30', '20:00'];
 
 async function main() {
   console.log('[seed] upserting services…');
@@ -61,7 +61,9 @@ async function main() {
 
   console.log('[seed] ensuring default SlotConfig…');
   const existing = await prisma.slotConfig.findFirst();
-  if (!existing) {
+  if (existing) {
+    await prisma.slotConfig.update({ where: { id: existing.id }, data: { slots: defaultSlots } });
+  } else {
     await prisma.slotConfig.create({ data: { slots: defaultSlots } });
   }
 
