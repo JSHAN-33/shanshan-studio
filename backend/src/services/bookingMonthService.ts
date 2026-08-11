@@ -60,7 +60,7 @@ export interface BookingMonthStatus {
  */
 export async function getBookingMonthStatuses(
   prisma: PrismaClient,
-  count = 4,
+  count = 12,
 ): Promise<BookingMonthStatus[]> {
   const { year, month, day } = getTaipeiDate();
   const result: BookingMonthStatus[] = [];
