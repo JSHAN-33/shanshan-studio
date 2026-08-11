@@ -82,7 +82,7 @@ function proceed() {
     </div>
 
     <!-- 可滾動的內容區域 -->
-    <main class="flex-1 overflow-y-auto px-4 pt-4 pb-48">
+    <main class="flex-1 overflow-y-auto px-5 pt-4 pb-48">
       <!-- Skeleton Loading -->
       <div v-if="loading" class="flex flex-col gap-3">
         <div v-for="i in 4" :key="i" class="card animate-pulse">

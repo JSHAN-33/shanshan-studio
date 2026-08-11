@@ -23,7 +23,7 @@ function logout() {
 <template>
   <div class="min-h-screen bg-brand-50" style="padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px));">
     <!-- Header -->
-    <div class="flex justify-between items-center px-4 pt-4 mb-4">
+    <div class="flex justify-between items-center px-5 pt-4 mb-4">
       <h1 class="text-base font-bold text-brand-800">後台管理</h1>
       <button
         class="text-[10px] bg-white px-3.5 py-1.5 rounded-full text-brand-400 font-bold shadow-sm active:scale-95 transition"
@@ -34,7 +34,7 @@ function logout() {
     </div>
 
     <!-- Admin pill tabs -->
-    <div class="flex mx-4 mb-5 p-1 overflow-x-auto no-scrollbar" style="background: #eeebe8; border-radius: 18px;">
+    <div class="flex mx-5 mb-5 p-1 overflow-x-auto no-scrollbar" style="background: #eeebe8; border-radius: 18px;">
       <RouterLink
         v-for="t in tabs"
         :key="t.name"
@@ -49,7 +49,7 @@ function logout() {
       </RouterLink>
     </div>
 
-    <main class="px-4">
+    <main class="px-5">
       <RouterView />
     </main>
   </div>

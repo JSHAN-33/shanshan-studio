@@ -62,7 +62,7 @@ onMounted(load);
     </header>
 
     <!-- 可滾動的內容區域 -->
-    <main class="flex-1 overflow-y-auto px-4 pt-4 pb-24 space-y-4">
+    <main class="flex-1 overflow-y-auto px-5 pt-4 pb-24 space-y-4">
       <!-- Member card (dark style) -->
       <div style="border-radius: 28px; overflow: hidden; box-shadow: 0 8px 32px rgba(59,53,48,0.28);">
         <div style="background: #3b3530; padding: 24px 24px 26px; position: relative; overflow: hidden;">
