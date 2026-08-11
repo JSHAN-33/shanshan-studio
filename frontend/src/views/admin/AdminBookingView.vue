@@ -731,7 +731,7 @@ const { refreshing } = usePullRefresh(() => loadMonth(month.value));
   <div class="space-y-4">
     <!-- KPI -->
     <div class="grid grid-cols-2 gap-2">
-      <div class="card !p-2.5 !rounded-xl relative cursor-pointer" @click="newBookingCount > 0 ? (showNotifyModal = true) : undefined">
+      <div class="card !py-1.5 !px-2.5 !rounded-xl relative cursor-pointer" @click="newBookingCount > 0 ? (showNotifyModal = true) : undefined">
         <p class="section-label mb-0.5">今日預約</p>
         <p class="text-base font-extrabold text-brand-600 leading-none">{{ summary?.today.bookings ?? 0 }}</p>
         <p class="section-label mt-0.5">筆</p>
@@ -743,7 +743,7 @@ const { refreshing } = usePullRefresh(() => loadMonth(month.value));
           +{{ newBookingCount }}
         </span>
       </div>
-      <div class="card !p-2.5 !rounded-xl">
+      <div class="card !py-1.5 !px-2.5 !rounded-xl">
         <p class="section-label mb-0.5">今日營收</p>
         <p class="text-xs font-extrabold text-brand-600 leading-none tracking-tight">NT$ {{ summary?.today.revenue ?? 0 }}</p>
         <p class="section-label mt-0.5">已結帳</p>
@@ -771,7 +771,7 @@ const { refreshing } = usePullRefresh(() => loadMonth(month.value));
     </div>
 
     <!-- 月份預約開關 -->
-    <div v-if="bookingMonths.length" class="card !p-3 !rounded-xl">
+    <div v-if="bookingMonths.length" class="card !py-2 !px-3 !rounded-xl">
       <h3 class="font-bold text-xs mb-2 flex items-center gap-1.5">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
         月份預約開放
@@ -844,7 +844,7 @@ const { refreshing } = usePullRefresh(() => loadMonth(month.value));
       <p v-if="loading" class="text-center text-brand-400 py-6">載入中…</p>
       <p v-else-if="!dayBookings.length" class="text-center text-brand-400 py-6">本日無預約</p>
       <ul v-else class="space-y-1.5">
-        <li v-for="b in dayBookings" :key="b.id" class="card !p-2.5 !rounded-xl">
+        <li v-for="b in dayBookings" :key="b.id" class="card !py-1.5 !px-2.5 !rounded-xl">
           <div class="flex justify-between items-start">
             <div>
               <div class="text-[11px] text-brand-500">{{ b.time }}</div>
@@ -881,7 +881,7 @@ const { refreshing } = usePullRefresh(() => loadMonth(month.value));
     </section>
 
     <!-- 本月 / 下月預估 -->
-    <div v-if="summary" class="card !p-2.5 !rounded-xl">
+    <div v-if="summary" class="card !py-1.5 !px-2.5 !rounded-xl">
       <h3 class="font-bold text-xs mb-1">本月預估業績</h3>
       <div class="flex justify-between text-[11px]">
         <span class="text-brand-500">預約筆數</span>
@@ -892,7 +892,7 @@ const { refreshing } = usePullRefresh(() => loadMonth(month.value));
         <span class="font-bold text-brand-600">${{ summary.currentMonthEstimate.revenue }}</span>
       </div>
     </div>
-    <div v-if="summary" class="card !p-2.5 !rounded-xl">
+    <div v-if="summary" class="card !py-1.5 !px-2.5 !rounded-xl">
       <h3 class="font-bold text-xs mb-1">下月業績預估</h3>
       <div class="flex justify-between text-[11px]">
         <span class="text-brand-500">預約筆數</span>

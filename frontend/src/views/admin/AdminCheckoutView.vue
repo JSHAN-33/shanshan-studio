@@ -337,12 +337,12 @@ const payMethodOptions: { value: PayMethod; icon: string; label: string }[] = [
 <template>
   <div class="space-y-4">
     <div class="grid grid-cols-2 gap-2">
-      <div class="card !p-2.5 !rounded-xl">
+      <div class="card !py-1.5 !px-2.5 !rounded-xl">
         <p class="section-label mb-0.5">本月結帳</p>
         <p class="text-base font-extrabold text-brand-600 leading-none">{{ summary?.month.bookings ?? 0 }}</p>
         <p class="section-label mt-0.5">筆</p>
       </div>
-      <div class="card !p-2.5 !rounded-xl">
+      <div class="card !py-1.5 !px-2.5 !rounded-xl">
         <p class="section-label mb-0.5">本月營收</p>
         <p class="text-xs font-extrabold text-brand-600 leading-none tracking-tight">NT$ {{ summary?.month.revenue ?? 0 }}</p>
       </div>
@@ -357,7 +357,7 @@ const payMethodOptions: { value: PayMethod; icon: string; label: string }[] = [
         <p v-if="loading" class="text-center text-brand-400 py-4">載入中…</p>
         <p v-else-if="!pendingToday.length" class="text-center text-brand-400 py-4">今日沒有待結帳項目</p>
         <ul v-else class="space-y-1.5">
-          <li v-for="b in pendingToday" :key="b.id" class="card !p-2.5 !rounded-xl flex justify-between items-center">
+          <li v-for="b in pendingToday" :key="b.id" class="card !py-1.5 !px-2.5 !rounded-xl flex justify-between items-center">
             <div>
               <div class="font-bold text-xs">{{ b.name }}</div>
               <div class="text-[11px] text-brand-500">{{ b.date }} {{ b.time }}</div>
@@ -383,7 +383,7 @@ const payMethodOptions: { value: PayMethod; icon: string; label: string }[] = [
         <svg class="w-4 h-4 text-brand-400 transition-transform duration-200" :class="{ 'rotate-180': pastPendingExpanded }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
       </button>
       <ul v-show="pastPendingExpanded" class="space-y-1.5">
-        <li v-for="b in pendingPast" :key="b.id" class="card !p-2.5 !rounded-xl flex justify-between items-center">
+        <li v-for="b in pendingPast" :key="b.id" class="card !py-1.5 !px-2.5 !rounded-xl flex justify-between items-center">
           <div>
             <div class="font-bold text-xs">{{ b.name }}</div>
             <div class="text-[11px] text-brand-500">{{ b.date }} {{ b.time }}</div>
@@ -426,7 +426,7 @@ const payMethodOptions: { value: PayMethod; icon: string; label: string }[] = [
         </button>
       </div>
       <ul v-if="paid.length" v-show="paidExpanded" class="space-y-1.5">
-        <li v-for="b in paid" :key="b.id" class="card !p-2.5 !rounded-xl">
+        <li v-for="b in paid" :key="b.id" class="card !py-1.5 !px-2.5 !rounded-xl">
           <div class="flex justify-between items-start gap-2">
             <div class="min-w-0 flex-1">
               <div class="font-bold text-xs">{{ b.name }}</div>
