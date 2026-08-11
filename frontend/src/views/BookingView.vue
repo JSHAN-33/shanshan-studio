@@ -105,8 +105,8 @@ async function loadMonthAvailability(month: string) {
   if (!(month in monthOpenCache.value)) {
     await loadBookingMonths();
   }
-  // 檢查月份是否開放
-  if (monthOpenCache.value[month] === false) {
+  // 檢查月份是否開放（不在快取中的也視為未開放）
+  if (monthOpenCache.value[month] !== true) {
     monthClosed.value = true;
     fullyUnavailableDates.value = [];
     return;

@@ -516,9 +516,10 @@ async function confirmDepositInEdit() {
 // --- 月份預約開關 ---
 const bookingMonths = ref<BookingMonthStatus[]>([]);
 
-const currentMonthStatus = computed(() =>
-  bookingMonths.value.find((bm) => bm.yearMonth === month.value) ?? null
-);
+const currentMonthStatus = computed((): BookingMonthStatus => {
+  const found = bookingMonths.value.find((bm) => bm.yearMonth === month.value);
+  return found ?? { yearMonth: month.value, isOpen: false, source: 'auto' };
+});
 
 async function loadBookingMonths() {
   try {
@@ -775,7 +776,7 @@ const { refreshing } = usePullRefresh(() => loadMonth(month.value));
     </div>
 
     <!-- 月份預約開關 (月曆上方) -->
-    <div v-if="currentMonthStatus" class="flex items-center justify-between px-1 mb-1">
+    <div class="flex items-center justify-between px-1 mb-1">
       <div class="flex items-center gap-2">
         <span class="text-[11px] font-bold" :class="currentMonthStatus.isOpen ? 'text-green-600' : 'text-amber-600'">
           {{ month }} 預約{{ currentMonthStatus.isOpen ? '開放中' : '未開放' }}
