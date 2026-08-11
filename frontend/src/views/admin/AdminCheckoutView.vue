@@ -100,34 +100,49 @@ const paid = computed(() =>
 );
 
 // 解析項目名稱，從 services 中找到對應價格和是否為套餐
-// 同名服務可能在不同分類有不同價格（如女生小腿 vs 男士小腿），
-// 透過比對預約總金額來選出正確的服務組合
+// 同名服務可能在不同分類有不同價格（如女生眉毛 $800 vs 男士眉毛 $1000），
+// 優先在同一分類內匹配，再用總金額驗證
 const parsedItems = computed(() => {
   if (!target.value) return [];
   const names = target.value.items.split('、').map((n) => n.trim()).filter(Boolean);
   const bookingTotal = target.value.total;
 
-  // 每個名稱找出所有候選服務
-  const allCandidates = names.map((name) => services.value.filter((s) => s.name === name));
+  // 1. 優先嘗試在同一分類內匹配所有項目
+  const cats: Array<'women' | 'men' | 'eyelash' | 'products'> = ['women', 'men', 'eyelash', 'products'];
+  let bestMatch: (Service | undefined)[] | null = null;
 
-  // 嘗試找出總價符合預約金額的組合（考慮新客折 $200）
-  function solve(idx: number, sum: number, chosen: (Service | undefined)[]): (Service | undefined)[] | null {
-    if (idx === names.length) {
-      if (sum === bookingTotal || sum === bookingTotal + 200) return chosen;
-      return null;
+  for (const cat of cats) {
+    const catServices = services.value.filter((s) => s.cat === cat);
+    const found = names.map((name) => catServices.find((s) => s.name === name));
+    if (found.every((s) => s != null)) {
+      const sum = found.reduce((acc, s) => acc + s!.price, 0);
+      if (sum === bookingTotal || sum === bookingTotal + 200) {
+        bestMatch = found;
+        break;
+      }
     }
-    const candidates = allCandidates[idx];
-    if (candidates.length === 0) {
-      return solve(idx + 1, sum, [...chosen, undefined]);
-    }
-    for (const svc of candidates) {
-      const result = solve(idx + 1, sum + svc.price, [...chosen, svc]);
-      if (result) return result;
-    }
-    return null;
   }
 
-  const bestMatch = solve(0, 0, []);
+  // 2. fallback: 跨分類 solve（處理混合項目）
+  if (!bestMatch) {
+    const allCandidates = names.map((name) => services.value.filter((s) => s.name === name));
+    function solve(idx: number, sum: number, chosen: (Service | undefined)[]): (Service | undefined)[] | null {
+      if (idx === names.length) {
+        if (sum === bookingTotal || sum === bookingTotal + 200) return chosen;
+        return null;
+      }
+      const candidates = allCandidates[idx];
+      if (candidates.length === 0) {
+        return solve(idx + 1, sum, [...chosen, undefined]);
+      }
+      for (const svc of candidates) {
+        const result = solve(idx + 1, sum + svc.price, [...chosen, svc]);
+        if (result) return result;
+      }
+      return null;
+    }
+    bestMatch = solve(0, 0, []);
+  }
 
   const original = names.map((name, i) => {
     const svc = bestMatch?.[i] ?? services.value.find((s) => s.name === name);
