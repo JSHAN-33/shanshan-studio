@@ -516,6 +516,10 @@ async function confirmDepositInEdit() {
 // --- 月份預約開關 ---
 const bookingMonths = ref<BookingMonthStatus[]>([]);
 
+const currentMonthStatus = computed(() =>
+  bookingMonths.value.find((bm) => bm.yearMonth === month.value) ?? null
+);
+
 async function loadBookingMonths() {
   try {
     bookingMonths.value = await slotsApi.getBookingMonths();
@@ -770,51 +774,38 @@ const { refreshing } = usePullRefresh(() => loadMonth(month.value));
       </button>
     </div>
 
-    <!-- 月份預約開關 -->
-    <div v-if="bookingMonths.length" class="card !py-2 !px-3 !rounded-xl">
-      <h3 class="font-bold text-xs mb-2 flex items-center gap-1.5">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-        月份預約開放
-      </h3>
-      <div class="space-y-1.5">
-        <div
-          v-for="bm in bookingMonths"
-          :key="bm.yearMonth"
-          class="flex items-center justify-between px-3 py-2 rounded-xl"
-          :style="{ background: bm.isOpen ? '#f0fdf4' : '#fef3e2' }"
+    <!-- 月份預約開關 (月曆上方) -->
+    <div v-if="currentMonthStatus" class="flex items-center justify-between px-1 mb-1">
+      <div class="flex items-center gap-2">
+        <span class="text-[11px] font-bold" :class="currentMonthStatus.isOpen ? 'text-green-600' : 'text-amber-600'">
+          {{ month }} 預約{{ currentMonthStatus.isOpen ? '開放中' : '未開放' }}
+        </span>
+        <span
+          class="text-[9px] font-bold px-1.5 py-0.5 rounded-full"
+          :class="currentMonthStatus.source === 'manual' ? 'bg-brand-200 text-brand-600' : 'bg-brand-100 text-brand-400'"
         >
-          <div class="flex items-center gap-2">
-            <span class="text-sm font-extrabold text-brand-700">{{ bm.yearMonth }}</span>
-            <span
-              class="text-[9px] font-bold px-1.5 py-0.5 rounded-full"
-              :class="bm.source === 'manual' ? 'bg-brand-200 text-brand-600' : 'bg-brand-100 text-brand-400'"
-            >
-              {{ bm.source === 'manual' ? '手動' : '自動' }}
-            </span>
-          </div>
-          <div class="flex items-center gap-2">
-            <button
-              v-if="bm.source === 'manual'"
-              type="button"
-              class="text-[9px] font-bold text-brand-400 underline"
-              @click="resetBookingMonth(bm.yearMonth)"
-            >
-              恢復自動
-            </button>
-            <button
-              type="button"
-              class="shrink-0 w-[40px] h-[22px] rounded-full transition-colors relative"
-              :class="bm.isOpen ? 'bg-green-500' : 'bg-brand-200'"
-              @click="toggleBookingMonth(bm.yearMonth, bm.isOpen)"
-            >
-              <span
-                class="absolute top-[2px] left-[2px] w-[18px] h-[18px] bg-white rounded-full shadow transition-transform duration-200"
-                :style="bm.isOpen ? 'transform: translateX(18px)' : ''"
-              ></span>
-            </button>
-          </div>
-        </div>
+          {{ currentMonthStatus.source === 'manual' ? '手動' : '自動' }}
+        </span>
+        <button
+          v-if="currentMonthStatus.source === 'manual'"
+          type="button"
+          class="text-[9px] font-bold text-brand-400 underline"
+          @click="resetBookingMonth(currentMonthStatus.yearMonth)"
+        >
+          恢復自動
+        </button>
       </div>
+      <button
+        type="button"
+        class="shrink-0 w-[40px] h-[22px] rounded-full transition-colors relative"
+        :class="currentMonthStatus.isOpen ? 'bg-green-500' : 'bg-brand-200'"
+        @click="toggleBookingMonth(currentMonthStatus.yearMonth, currentMonthStatus.isOpen)"
+      >
+        <span
+          class="absolute top-[2px] left-[2px] w-[18px] h-[18px] bg-white rounded-full shadow transition-transform duration-200"
+          :style="currentMonthStatus.isOpen ? 'transform: translateX(18px)' : ''"
+        ></span>
+      </button>
     </div>
 
     <SharedCalendar

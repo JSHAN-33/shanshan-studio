@@ -434,27 +434,28 @@ function goHistory() {
         <!-- Date -->
         <div>
           <label class="label">選擇日期</label>
-          <SharedCalendar
-            v-model="selectedDate"
-            :min-date="today"
-            :grayed-dates="fullyUnavailableDates"
-            grayed-disabled
-            @month-change="loadMonthAvailability"
-          />
+          <div class="relative">
+            <SharedCalendar
+              v-model="selectedDate"
+              :min-date="today"
+              :grayed-dates="fullyUnavailableDates"
+              grayed-disabled
+              @month-change="loadMonthAvailability"
+            />
+            <!-- 月份未開放遮罩 -->
+            <div v-if="monthClosed" class="month-closed-overlay">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#b0aba7" stroke-width="1.6"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+              <p class="text-sm font-bold text-brand-500 mt-2">此月份尚未開放預約</p>
+              <p class="text-[11px] text-brand-400 mt-1">請留意我們的公告通知</p>
+            </div>
+          </div>
         </div>
 
-        <!-- Time slots -->
-        <div>
+        <!-- Time slots (月份開放時才顯示) -->
+        <div v-if="!monthClosed">
           <label class="label">選擇時段</label>
-          <div v-if="monthClosed" class="text-center py-6 px-4" style="background: #f8f7f5; border-radius: 16px;">
-            <svg class="mx-auto mb-2" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#b0aba7" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-            <p class="text-sm font-bold text-brand-500">此月份尚未開放預約</p>
-            <p class="text-[11px] text-brand-400 mt-1">請留意我們的公告通知</p>
-          </div>
-          <template v-else>
-            <p v-if="loadingSlots" class="text-[11px] text-brand-400 text-center py-3">載入中…</p>
-            <TimeSlotGrid v-else :slots="slots" :selected="selectedTime" @select="(t) => (selectedTime = t)" />
-          </template>
+          <p v-if="loadingSlots" class="text-[11px] text-brand-400 text-center py-3">載入中…</p>
+          <TimeSlotGrid v-else :slots="slots" :selected="selectedTime" @select="(t) => (selectedTime = t)" />
         </div>
 
         <!-- Remarks -->
@@ -683,6 +684,20 @@ function goHistory() {
 }
 .notice-agree-btn:active {
   background: #4a423d;
+}
+
+/* 月份未開放遮罩 */
+.month-closed-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.88);
+  border-radius: 20px;
+  z-index: 10;
+  backdrop-filter: blur(2px);
 }
 
 /* Google Map 連結 */
