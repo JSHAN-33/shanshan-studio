@@ -686,16 +686,19 @@ function goHistory() {
   background: #4a423d;
 }
 
-/* 月份未開放遮罩 */
+/* 月份未開放遮罩 — 只蓋日期格子，保留上方導航可操作 */
 .month-closed-overlay {
   position: absolute;
-  inset: 0;
+  top: 76px;
+  left: 0;
+  right: 0;
+  bottom: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.88);
-  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 0 0 20px 20px;
   z-index: 10;
   backdrop-filter: blur(2px);
 }
