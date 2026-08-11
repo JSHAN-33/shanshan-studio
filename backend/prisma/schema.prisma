@@ -112,6 +112,11 @@ model SlotConfig {
   slots Json
 }
 
+model BookingMonth {
+  yearMonth String  @id // "2026-09"
+  isOpen    Boolean @default(false)
+}
+
 model ConsultationForm {
   id              String   @id @default(cuid())
   phone           String   @unique

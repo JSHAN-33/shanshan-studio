@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router';
 import SharedCalendar from '@/components/SharedCalendar.vue';
 import TimeSlotGrid from '@/components/TimeSlotGrid.vue';
 import { bookingsApi } from '@/api/bookings';
+import { slotsApi } from '@/api/slots';
 import { settingsApi } from '@/api/settings';
 import { useBookingStore } from '@/stores/booking';
 import { useAuthStore } from '@/stores/auth';
@@ -81,9 +82,42 @@ const today = todayStr();
 // 整日無空檔（皆已被預約 / 被關閉 / 已過時）的日期 — 在日曆上反灰不可選
 const fullyUnavailableDates = ref<string[]>([]);
 const viewMonth = ref(today.slice(0, 7));
+const monthClosed = ref(false); // 此月份尚未開放預約
+
+// 月份開放狀態快取
+const monthOpenCache = ref<Record<string, boolean>>({});
+
+async function loadBookingMonths() {
+  try {
+    const statuses = await slotsApi.getBookingMonths();
+    for (const s of statuses) {
+      monthOpenCache.value[s.yearMonth] = s.isOpen;
+    }
+  } catch { /* ignore */ }
+}
 
 async function loadMonthAvailability(month: string) {
   viewMonth.value = month;
+  selectedDate.value = null;
+  slots.value = [];
+
+  // 檢查月份是否開放
+  if (monthOpenCache.value[month] === false) {
+    monthClosed.value = true;
+    fullyUnavailableDates.value = [];
+    return;
+  }
+  // 沒在快取裡的重新抓一次
+  if (!(month in monthOpenCache.value)) {
+    await loadBookingMonths();
+    if (monthOpenCache.value[month] === false) {
+      monthClosed.value = true;
+      fullyUnavailableDates.value = [];
+      return;
+    }
+  }
+  monthClosed.value = false;
+
   const [yStr, mStr] = month.split('-');
   const y = Number(yStr);
   const mon = Number(mStr);
@@ -109,7 +143,8 @@ async function loadMonthAvailability(month: string) {
   }
 }
 
-loadMonthAvailability(viewMonth.value);
+// 初始化
+loadBookingMonths().then(() => loadMonthAvailability(viewMonth.value));
 
 watch(selectedDate, async (d) => {
   selectedTime.value = null;
@@ -416,8 +451,15 @@ function goHistory() {
         <!-- Time slots -->
         <div>
           <label class="label">選擇時段</label>
-          <p v-if="loadingSlots" class="text-[11px] text-brand-400 text-center py-3">載入中…</p>
-          <TimeSlotGrid v-else :slots="slots" :selected="selectedTime" @select="(t) => (selectedTime = t)" />
+          <div v-if="monthClosed" class="text-center py-6 px-4" style="background: #f8f7f5; border-radius: 16px;">
+            <svg class="mx-auto mb-2" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#b0aba7" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+            <p class="text-sm font-bold text-brand-500">此月份尚未開放預約</p>
+            <p class="text-[11px] text-brand-400 mt-1">請留意我們的公告通知</p>
+          </div>
+          <template v-else>
+            <p v-if="loadingSlots" class="text-[11px] text-brand-400 text-center py-3">載入中…</p>
+            <TimeSlotGrid v-else :slots="slots" :selected="selectedTime" @select="(t) => (selectedTime = t)" />
+          </template>
         </div>
 
         <!-- Remarks -->

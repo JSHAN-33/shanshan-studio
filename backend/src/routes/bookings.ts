@@ -8,6 +8,7 @@ import {
   listBookingsQuery,
 } from '../schemas/booking.js';
 import { getAvailableSlots, hasConflict } from '../services/bookingService.js';
+import { isMonthOpen } from '../services/bookingMonthService.js';
 import { upsertMemberFromBooking } from '../services/memberService.js';
 import { buildPhoneOwnerAuth } from '../middleware/phoneOwnerAuth.js';
 import {
@@ -24,6 +25,13 @@ export async function bookingsRoutes(app: FastifyInstance) {
   // GET /bookings/available-slots?date=YYYY-MM-DD&duration=60  —— 公開
   app.get('/available-slots', async (req) => {
     const { date, duration } = availableSlotsQuery.parse(req.query);
+    // 非 admin 請求時，檢查月份是否開放
+    const isAdmin = req.headers['x-admin-token'] === process.env.ADMIN_TOKEN;
+    if (!isAdmin) {
+      const yearMonth = date.slice(0, 7);
+      const open = await isMonthOpen(app.prisma, yearMonth);
+      if (!open) return { date, slots: [], monthClosed: true };
+    }
     const slots = await getAvailableSlots(app.prisma, date, duration);
     return { date, slots };
   });
@@ -34,11 +42,29 @@ export async function bookingsRoutes(app: FastifyInstance) {
     const { startDate, endDate, duration } = bulkAvailableSlotsQuery.parse(req.query);
     const result: Record<string, string[]> = {};
 
+    const isAdmin = req.headers['x-admin-token'] === process.env.ADMIN_TOKEN;
+
     // 以 UTC 基準遍歷，避免本地時區偏移造成日期錯位
     const start = new Date(`${startDate}T00:00:00Z`);
     const end = new Date(`${endDate}T00:00:00Z`);
+
+    // 快取月份開放狀態，避免同月重複查詢
+    const monthOpenCache = new Map<string, boolean>();
+
     for (let d = new Date(start); d <= end; d = new Date(d.getTime() + 86400000)) {
       const dateStr = d.toISOString().slice(0, 10);
+      const ym = dateStr.slice(0, 7);
+
+      if (!isAdmin) {
+        if (!monthOpenCache.has(ym)) {
+          monthOpenCache.set(ym, await isMonthOpen(app.prisma, ym));
+        }
+        if (!monthOpenCache.get(ym)) {
+          result[dateStr] = [];
+          continue;
+        }
+      }
+
       const slots = await getAvailableSlots(app.prisma, dateStr, duration);
       result[dateStr] = slots.filter((s) => s.available).map((s) => s.time);
     }

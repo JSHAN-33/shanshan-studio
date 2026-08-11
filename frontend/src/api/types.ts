@@ -192,6 +192,13 @@ export interface DailySummary {
   totalBookings: number;
 }
 
+export interface BookingMonthStatus {
+  yearMonth: string;
+  isOpen: boolean;
+  source: 'manual' | 'auto';
+  autoOpenDate?: string;
+}
+
 export interface AnalyticsSummary {
   monthlyBookings: number;
   popularTimeSlots: Array<{ time: string; count: number }>;

@@ -1,5 +1,5 @@
 import { http } from './axios';
-import type { BlockedSlot } from './types';
+import type { BlockedSlot, BookingMonthStatus } from './types';
 
 export const slotsApi = {
   async getConfig(): Promise<string[]> {
@@ -33,5 +33,15 @@ export const slotsApi = {
   },
   async unforceOpen(date: string, time: string): Promise<void> {
     await http.delete('/slots/forced-open', { data: { date, time } });
+  },
+  async getBookingMonths(): Promise<BookingMonthStatus[]> {
+    const res = await http.get<{ months: BookingMonthStatus[] }>('/slots/booking-months');
+    return res.data.months;
+  },
+  async setBookingMonth(yearMonth: string, isOpen: boolean): Promise<void> {
+    await http.put(`/slots/booking-months/${yearMonth}`, { isOpen });
+  },
+  async resetBookingMonth(yearMonth: string): Promise<void> {
+    await http.delete(`/slots/booking-months/${yearMonth}`);
   },
 };

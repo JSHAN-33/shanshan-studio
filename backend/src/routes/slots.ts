@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { adminAuth } from '../middleware/adminAuth.js';
 import { blockedSlotSchema, slotConfigSchema } from '../schemas/slot.js';
+import { getBookingMonthStatuses } from '../services/bookingMonthService.js';
 
 export async function slotsRoutes(app: FastifyInstance) {
   // GET /slots/config  —— 公開（前端需要知道可預約時段）
@@ -70,4 +71,37 @@ export async function slotsRoutes(app: FastifyInstance) {
     await app.prisma.forcedOpenSlot.deleteMany({ where: input });
     return reply.status(204).send();
   });
+
+  // GET /slots/booking-months  —— 公開（前端判斷月份是否開放預約）
+  app.get('/booking-months', async () => {
+    const statuses = await getBookingMonthStatuses(app.prisma, 4);
+    return { months: statuses };
+  });
+
+  // PUT /slots/booking-months/:yearMonth  —— admin only（手動開關月份預約）
+  app.put<{ Params: { yearMonth: string } }>(
+    '/booking-months/:yearMonth',
+    { preHandler: adminAuth },
+    async (req) => {
+      const { yearMonth } = req.params;
+      const { isOpen } = req.body as { isOpen: boolean };
+      const result = await app.prisma.bookingMonth.upsert({
+        where: { yearMonth },
+        update: { isOpen },
+        create: { yearMonth, isOpen },
+      });
+      return { month: result };
+    },
+  );
+
+  // DELETE /slots/booking-months/:yearMonth  —— admin only（恢復為自動判斷）
+  app.delete<{ Params: { yearMonth: string } }>(
+    '/booking-months/:yearMonth',
+    { preHandler: adminAuth },
+    async (req, reply) => {
+      const { yearMonth } = req.params;
+      await app.prisma.bookingMonth.deleteMany({ where: { yearMonth } });
+      return reply.status(204).send();
+    },
+  );
 }

@@ -9,7 +9,7 @@ import { slotsApi } from '@/api/slots';
 import { servicesApi } from '@/api/services';
 import { membersApi } from '@/api/members';
 import { settingsApi } from '@/api/settings';
-import type { Booking, BookingStatus, DepositSetting, FinanceSummary, BlockedSlot, Service, ServiceCat, Member } from '@/api/types';
+import type { Booking, BookingStatus, BookingMonthStatus, DepositSetting, FinanceSummary, BlockedSlot, Service, ServiceCat, Member } from '@/api/types';
 
 const selectedDate = ref<string | null>(new Date().toISOString().slice(0, 10));
 const month = ref<string>(new Date().toISOString().slice(0, 7));
@@ -513,6 +513,27 @@ async function confirmDepositInEdit() {
   await loadMonth(month.value);
 }
 
+// --- 月份預約開關 ---
+const bookingMonths = ref<BookingMonthStatus[]>([]);
+
+async function loadBookingMonths() {
+  try {
+    bookingMonths.value = await slotsApi.getBookingMonths();
+  } catch { /* ignore */ }
+}
+
+async function toggleBookingMonth(ym: string, currentOpen: boolean) {
+  await slotsApi.setBookingMonth(ym, !currentOpen);
+  toast.show(!currentOpen ? `${ym} 已開放預約` : `${ym} 已關閉預約`);
+  await loadBookingMonths();
+}
+
+async function resetBookingMonth(ym: string) {
+  await slotsApi.resetBookingMonth(ym);
+  toast.show(`${ym} 已恢復自動判斷`);
+  await loadBookingMonths();
+}
+
 let pollTimer: ReturnType<typeof setInterval> | null = null;
 
 onMounted(async () => {
@@ -521,6 +542,7 @@ onMounted(async () => {
   services.value = svc;
   allMembers.value = mem;
   await loadDepositSetting();
+  await loadBookingMonths();
   // 初始化通知
   await checkNewBookings();
   // 每 15 秒輪詢新預約
@@ -746,6 +768,53 @@ const { refreshing } = usePullRefresh(() => loadMonth(month.value));
         <span>💰</span>
         <span>預約金{{ depositSetting.enabled ? ' ON' : ' OFF' }}</span>
       </button>
+    </div>
+
+    <!-- 月份預約開關 -->
+    <div v-if="bookingMonths.length" class="card !p-3 !rounded-xl">
+      <h3 class="font-bold text-xs mb-2 flex items-center gap-1.5">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+        月份預約開放
+      </h3>
+      <div class="space-y-1.5">
+        <div
+          v-for="bm in bookingMonths"
+          :key="bm.yearMonth"
+          class="flex items-center justify-between px-3 py-2 rounded-xl"
+          :style="{ background: bm.isOpen ? '#f0fdf4' : '#fef3e2' }"
+        >
+          <div class="flex items-center gap-2">
+            <span class="text-sm font-extrabold text-brand-700">{{ bm.yearMonth }}</span>
+            <span
+              class="text-[9px] font-bold px-1.5 py-0.5 rounded-full"
+              :class="bm.source === 'manual' ? 'bg-brand-200 text-brand-600' : 'bg-brand-100 text-brand-400'"
+            >
+              {{ bm.source === 'manual' ? '手動' : '自動' }}
+            </span>
+          </div>
+          <div class="flex items-center gap-2">
+            <button
+              v-if="bm.source === 'manual'"
+              type="button"
+              class="text-[9px] font-bold text-brand-400 underline"
+              @click="resetBookingMonth(bm.yearMonth)"
+            >
+              恢復自動
+            </button>
+            <button
+              type="button"
+              class="shrink-0 w-[40px] h-[22px] rounded-full transition-colors relative"
+              :class="bm.isOpen ? 'bg-green-500' : 'bg-brand-200'"
+              @click="toggleBookingMonth(bm.yearMonth, bm.isOpen)"
+            >
+              <span
+                class="absolute top-[2px] left-[2px] w-[18px] h-[18px] bg-white rounded-full shadow transition-transform duration-200"
+                :style="bm.isOpen ? 'transform: translateX(18px)' : ''"
+              ></span>
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <SharedCalendar
