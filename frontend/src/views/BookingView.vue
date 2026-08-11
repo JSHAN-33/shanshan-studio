@@ -85,7 +85,7 @@ const viewMonth = ref(today.slice(0, 7));
 const monthClosed = ref(false); // 此月份尚未開放預約
 
 // 月份開放狀態快取
-const monthOpenCache = ref<Record<string, boolean>>({});
+const monthOpenCache = ref<Record<string, boolean | undefined>>({});
 
 async function loadBookingMonths() {
   try {
@@ -101,20 +101,15 @@ async function loadMonthAvailability(month: string) {
   selectedDate.value = null;
   slots.value = [];
 
+  // 沒在快取裡的先抓一次
+  if (!(month in monthOpenCache.value)) {
+    await loadBookingMonths();
+  }
   // 檢查月份是否開放
   if (monthOpenCache.value[month] === false) {
     monthClosed.value = true;
     fullyUnavailableDates.value = [];
     return;
-  }
-  // 沒在快取裡的重新抓一次
-  if (!(month in monthOpenCache.value)) {
-    await loadBookingMonths();
-    if (monthOpenCache.value[month] === false) {
-      monthClosed.value = true;
-      fullyUnavailableDates.value = [];
-      return;
-    }
   }
   monthClosed.value = false;
 
