@@ -599,11 +599,36 @@ function openEdit(b: Booking) {
     status: b.status,
     remarks: b.remarks ?? '',
   };
-  // 回填已選服務
-  const itemNames = b.items.split('、').map((n) => n.trim());
+  // 回填已選服務 — 用 total 消歧義同名項目（如「腋下」同時存在女生/男生）
+  const itemNames = b.items.split('、').map((n) => n.trim()).filter(Boolean);
+  const candidates = itemNames.map((name) => services.value.filter((s) => s.name === name));
   const set = new Set<string>();
-  for (const s of services.value) {
-    if (itemNames.includes(s.name)) set.add(s.id);
+
+  if (candidates.some((c) => c.length > 1) && candidates.every((c) => c.length > 0)) {
+    // 有同名項目，嘗試所有組合找出 total 吻合的
+    function solve(idx: number, ids: string[], sum: number): string[] | null {
+      if (idx === candidates.length) return sum === b.total ? ids : null;
+      for (const s of candidates[idx]) {
+        const r = solve(idx + 1, [...ids, s.id], sum + s.price);
+        if (r) return r;
+      }
+      return null;
+    }
+    const result = solve(0, [], 0);
+    if (result) {
+      result.forEach((id) => set.add(id));
+    } else {
+      // fallback: 每個名稱只取第一個
+      for (const name of itemNames) {
+        const s = services.value.find((sv) => sv.name === name);
+        if (s) set.add(s.id);
+      }
+    }
+  } else {
+    for (const name of itemNames) {
+      const s = services.value.find((sv) => sv.name === name);
+      if (s) set.add(s.id);
+    }
   }
   selectedServices.value = set;
   showModal.value = true;
