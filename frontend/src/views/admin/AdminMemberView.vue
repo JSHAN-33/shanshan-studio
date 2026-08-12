@@ -314,6 +314,7 @@ async function save() {
       phone: form.value.phone,
       date: bookingDate.value,
       time: bookingTime.value,
+      duration: totalDuration.value || null,
       items: selectedItemsLabel.value,
       total: selectedTotal.value,
     });
@@ -380,6 +381,13 @@ const historyFilteredServices = computed(() =>
   services.value.filter((s) => s.cat === historyServiceTab.value)
 );
 const historyManualEdit = ref(false); // 若使用者手動改過 items/total，停止自動覆寫
+const historyDuration = computed(() => {
+  let sum = 0;
+  for (const s of services.value) {
+    if (historySelectedServices.value.has(s.id)) sum += (s.duration ?? 0);
+  }
+  return sum;
+});
 
 function toggleHistoryService(id: string) {
   const set = new Set(historySelectedServices.value);
@@ -490,11 +498,13 @@ async function saveHistory() {
   const trimmedTime = (time || '12:00').trim();
   historySaving.value = true;
   try {
+    const dur = historySelectedServices.value.size > 0 ? (historyDuration.value || null) : null;
     if (id) {
       // 編輯既有預約（不異動 paidAt / status）
       await bookingsApi.update(id, {
         date,
         time: trimmedTime,
+        duration: dur,
         items: items.trim(),
         total: Number(total),
         remarks: remarks.trim() || null,
@@ -509,6 +519,7 @@ async function saveHistory() {
         lineUserId: historyTarget.value.lineUserId ?? null,
         date,
         time: trimmedTime,
+        duration: dur,
         items: items.trim(),
         total: Number(total),
         remarks: remarks.trim() || null,
