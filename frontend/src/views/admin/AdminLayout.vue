@@ -43,7 +43,7 @@ function logout() {
         :class="route.name === t.name
           ? 'bg-brand-600 text-white shadow-md'
           : 'text-brand-300'"
-        :style="{ borderRadius: '14px', margin: '2px', minWidth: '70px' }"
+        :style="{ borderRadius: '14px', margin: '2px' }"
       >
         {{ t.label }}
       </RouterLink>
