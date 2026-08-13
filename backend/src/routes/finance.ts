@@ -7,7 +7,7 @@ import {
   getMonthSummary,
   getDailySummary,
 } from '../services/financeService.js';
-import { getAnalytics } from '../services/analyticsService.js';
+import { getAnalytics, getColdSlots } from '../services/analyticsService.js';
 
 const yearQuery = z.object({ year: z.coerce.number().int().min(2000).max(2100) });
 const monthQuery = z.object({ month: z.string().regex(/^\d{4}-\d{2}$/) });
@@ -38,5 +38,11 @@ export async function financeRoutes(app: FastifyInstance) {
   // 數據分析：本月總預約數、熱門時段、熱門服務
   app.get('/analytics', { preHandler: adminAuth }, async () => {
     return getAnalytics(app.prisma);
+  });
+
+  // 冷門時段分析：過去 N 個月從未被預約的時段
+  app.get('/cold-slots', { preHandler: adminAuth }, async (req) => {
+    const { months } = z.object({ months: z.coerce.number().int().min(1).max(24).default(6) }).parse(req.query);
+    return getColdSlots(app.prisma, months);
   });
 }
