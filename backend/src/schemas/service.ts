@@ -11,6 +11,7 @@ export const createServiceSchema = z.object({
   oldPrice: z.number().int().nonnegative().optional().nullable(),
   duration: z.number().int().nonnegative().optional().nullable(),
   note: z.string().optional().nullable(),
+  description: z.string().optional().nullable(),
   isCombo: z.boolean().optional(),
   isActive: z.boolean().optional(),
   sortOrder: z.number().int().optional(),

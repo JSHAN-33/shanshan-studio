@@ -23,7 +23,7 @@ const services = [
   { id: 'w-bikini', name: '比基尼線', nameEn: 'Bikini', cat: 'women', price: 1200, duration: 45, note: '部分V.I.O', sortOrder: 40 },
   { id: 'w-french', name: '法式除毛', nameEn: 'French', cat: 'women', price: 1600, duration: 60, note: '保留V全除I.O', sortOrder: 41 },
   { id: 'w-brazilian', name: '私密肌全除', nameEn: 'Brazilian', cat: 'women', price: 1800, duration: 60, note: '全除V.I.O', sortOrder: 42 },
-  { id: 'w-facial', name: '煥白明亮護理軟糖膜', nameEn: 'Brightening Facial Treatment', cat: 'women', price: 400, note: '熱蠟後必敷', sortOrder: 50 },
+  { id: 'w-facial', name: '煥白明亮護理軟糖膜', nameEn: 'Brightening Facial Treatment', cat: 'women', price: 400, note: '熱蠟後必敷', description: '一部位 / NT$400', sortOrder: 50 },
   // 男士除毛
   { id: 'm-nose', name: '鼻毛', nameEn: 'Nose', cat: 'men', price: 300, duration: 10, sortOrder: 10 },
   { id: 'm-eyebrow', name: '眉毛', nameEn: 'Eyebrow', cat: 'men', price: 1000, duration: 30, sortOrder: 11 },
@@ -37,7 +37,7 @@ const services = [
   { id: 'm-calf', name: '小腿', nameEn: 'Calf', cat: 'men', price: 1400, duration: 60, sortOrder: 40 },
   { id: 'm-thigh', name: '大腿', nameEn: 'Thigh', cat: 'men', price: 2000, duration: 30, sortOrder: 41 },
   { id: 'm-full-legs', name: '全腿', nameEn: 'Full Legs', cat: 'men', price: 3400, duration: 60, sortOrder: 42 },
-  { id: 'm-facial', name: '煥白明亮護理軟糖膜', nameEn: 'Brightening Facial Treatment', cat: 'men', price: 400, note: '熱蠟後必敷', sortOrder: 50 },
+  { id: 'm-facial', name: '煥白明亮護理軟糖膜', nameEn: 'Brightening Facial Treatment', cat: 'men', price: 400, note: '熱蠟後必敷', description: '一部位 / NT$400', sortOrder: 50 },
   // 產品
   { id: 'p-bs-serum', name: 'BS睫毛精華', nameEn: 'MHH Awesome', cat: 'products', price: 680, sortOrder: 10 },
   { id: 'p-rica-opuntia', name: 'RICA仙女油', nameEn: 'Opuntia Oil Treatment', cat: 'products', price: 2000, sortOrder: 11 },

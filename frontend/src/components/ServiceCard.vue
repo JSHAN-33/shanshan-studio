@@ -39,6 +39,10 @@ defineEmits<{
           :class="selected ? 'text-white/50' : 'text-brand-400'">
           {{ service.note }}
         </p>
+        <p v-if="service.description" class="text-[10px] mt-0.5"
+          :class="selected ? 'text-white/50' : 'text-brand-400'">
+          {{ service.description }}
+        </p>
       </div>
       <div class="text-right shrink-0">
         <div v-if="service.oldPrice" class="text-[10px] line-through"

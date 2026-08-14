@@ -57,6 +57,7 @@ export interface Service {
   oldPrice?: number | null;
   duration?: number | null;
   note?: string | null;
+  description?: string | null;
   isCombo: boolean;
   isActive: boolean;
   sortOrder: number;
