@@ -19,7 +19,7 @@ defineEmits<{
     :class="selected
       ? 'bg-brand-600 border-brand-600 text-white shadow-lg'
       : 'bg-white border-brand-100 hover:border-brand-200'"
-    style="border-radius: 11px; padding: 9px 12px; border-width: 1px; cursor: pointer;"
+    style="border-radius: 11px; padding: 10px 14px; border-width: 1px; cursor: pointer;"
     @click="$emit('toggle', service)"
   >
     <div class="flex justify-between items-center gap-3">
