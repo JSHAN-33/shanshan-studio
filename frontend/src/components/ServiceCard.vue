@@ -19,41 +19,43 @@ defineEmits<{
     :class="selected
       ? 'bg-brand-600 border-brand-600 text-white shadow-lg'
       : 'bg-white border-brand-100 hover:border-brand-200'"
-    style="border-radius: 12px; padding: 8px 12px; border-width: 1px; cursor: pointer;"
+    style="border-radius: 10px; padding: 6px 12px; border-width: 1px; cursor: pointer;"
     @click="$emit('toggle', service)"
   >
-    <div class="flex justify-between items-start gap-3">
+    <div class="flex justify-between items-center gap-3">
       <div class="min-w-0">
-        <h3 class="font-bold text-sm truncate" :class="selected ? 'text-white' : 'text-brand-700'">
+        <h3 class="font-bold text-xs truncate" :class="selected ? 'text-white' : 'text-brand-700'">
           {{ service.name }}
         </h3>
-        <p v-if="service.nameEn" class="text-[10px] truncate mt-0.5"
+        <p v-if="service.nameEn" class="text-[9px] truncate leading-tight"
           :class="selected ? 'text-white/60' : 'text-brand-300'">
           {{ service.nameEn }}
         </p>
-        <p v-if="service.duration" class="text-[10px] mt-1"
-          :class="selected ? 'text-white/50' : 'text-brand-400'">
-          約 {{ service.duration }} 分鐘
-        </p>
-        <p v-if="service.note && !hideNote" class="text-[10px] mt-0.5"
-          :class="selected ? 'text-white/50' : 'text-brand-400'">
-          {{ service.note }}
-        </p>
-        <p v-if="service.description" class="text-[10px] mt-0.5"
-          :class="selected ? 'text-white/50' : 'text-brand-400'">
-          {{ service.description }}
-        </p>
+        <div class="flex items-center gap-2 mt-0.5">
+          <span v-if="service.duration" class="text-[9px] leading-tight"
+            :class="selected ? 'text-white/50' : 'text-brand-400'">
+            約 {{ service.duration }} 分鐘
+          </span>
+          <span v-if="service.note && !hideNote" class="text-[9px] leading-tight"
+            :class="selected ? 'text-white/50' : 'text-brand-400'">
+            {{ service.note }}
+          </span>
+          <span v-if="service.description" class="text-[9px] leading-tight"
+            :class="selected ? 'text-white/50' : 'text-brand-400'">
+            {{ service.description }}
+          </span>
+        </div>
       </div>
       <div class="text-right shrink-0">
-        <div v-if="service.oldPrice" class="text-[10px] line-through"
+        <div v-if="service.oldPrice" class="text-[9px] line-through"
           :class="selected ? 'text-white/40' : 'text-brand-300'">
           NT$ {{ service.oldPrice }}
         </div>
-        <div class="font-extrabold text-sm" :class="selected ? 'text-white' : 'text-brand-600'">
+        <div class="font-extrabold text-xs" :class="selected ? 'text-white' : 'text-brand-600'">
           NT$ {{ service.price }}
         </div>
         <div v-if="service.oldPrice || service.isCombo"
-          class="inline-flex items-center mt-1 px-2 py-0.5 rounded-full text-[9px] font-bold"
+          class="inline-flex items-center px-2 py-0.5 rounded-full text-[8px] font-bold"
           :class="selected ? 'bg-white/20 text-white' : 'bg-amber-50 text-amber-600'">
           OFFER
         </div>
