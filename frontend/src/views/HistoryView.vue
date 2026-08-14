@@ -192,13 +192,15 @@ onMounted(load);
         <div class="section-label mb-3 ml-2">SERVICE HISTORY / 消費紀錄</div>
         <ul class="space-y-3">
           <li v-for="h in serviceHistory" :key="h.id" class="card">
-            <div class="flex justify-between items-start">
+            <div class="flex justify-between items-center">
               <div class="min-w-0 flex-1">
-                <div class="text-xs text-brand-400">{{ h.date }}</div>
-                <div class="font-bold text-sm mt-1 text-brand-700">{{ h.items }}</div>
-                <div class="text-brand-600 font-extrabold mt-1">NT$ {{ h.total.toLocaleString() }}</div>
-                <div v-if="h.remarks" class="text-[10px] text-brand-400 mt-2">備註：{{ h.remarks }}</div>
+                <div class="font-bold text-[13px] text-brand-700 truncate">{{ h.items }}</div>
+                <div class="flex items-center gap-2 mt-0.5">
+                  <span class="text-[10px] text-brand-400">{{ h.date }}</span>
+                  <span v-if="h.remarks" class="text-[10px] text-brand-400">{{ h.remarks }}</span>
+                </div>
               </div>
+              <div class="font-extrabold text-[13px] text-brand-600 shrink-0">NT$ {{ h.total.toLocaleString() }}</div>
             </div>
           </li>
         </ul>
@@ -214,15 +216,17 @@ onMounted(load);
         <p v-else-if="!bookings.length" class="text-center text-brand-400 py-6 text-xs">尚無預約紀錄</p>
         <ul v-else class="space-y-3">
           <li v-for="b in bookings" :key="b.id" class="card">
-            <div class="flex justify-between items-start">
-              <div>
-                <div class="text-xs text-brand-400">{{ b.date }} {{ b.time }}</div>
-                <div class="font-bold text-sm mt-1 text-brand-700">{{ b.items }}</div>
-                <div class="text-brand-600 font-extrabold mt-1">NT$ {{ b.total }}</div>
+            <div class="flex justify-between items-center">
+              <div class="min-w-0 flex-1">
+                <div class="font-bold text-[13px] text-brand-700 truncate">{{ b.items }}</div>
+                <div class="flex items-center gap-2 mt-0.5">
+                  <span class="text-[10px] text-brand-400">{{ b.date }} {{ b.time }}</span>
+                  <span class="badge" :class="badgeClass[b.status]">{{ b.status }}</span>
+                </div>
+                <div v-if="b.remarks" class="text-[10px] text-brand-400 mt-0.5">備註：{{ b.remarks }}</div>
               </div>
-              <span class="badge" :class="badgeClass[b.status]">{{ b.status }}</span>
+              <div class="font-extrabold text-[13px] text-brand-600 shrink-0">NT$ {{ b.total }}</div>
             </div>
-            <div v-if="b.remarks" class="text-[10px] text-brand-400 mt-2">備註：{{ b.remarks }}</div>
           </li>
         </ul>
         <p class="text-[11px] text-brand-400 text-center mt-4 leading-relaxed">

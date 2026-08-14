@@ -59,8 +59,10 @@
 
   /* ── Cards ── */
   .card {
-    @apply bg-white py-2 px-2.5;
-    border-radius: 12px;
+    @apply bg-white px-3;
+    padding-top: 9px;
+    padding-bottom: 9px;
+    border-radius: 11px;
     border: 1px solid #f0efed;
     box-shadow: 0 2px 6px rgba(0,0,0,0.015);
   }
