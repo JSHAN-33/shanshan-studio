@@ -447,11 +447,11 @@ const { refreshing } = usePullRefresh(load);
       <div v-if="analytics.popularTimeSlots.length > 1 || analytics.popularServices.length > 1" class="space-y-2 pt-2" style="border-top: 1px dashed #e5e2df;">
         <div v-if="analytics.popularTimeSlots.length > 1">
           <p class="text-[9px] text-brand-400 font-bold mb-1">熱門時段 TOP {{ analytics.popularTimeSlots.length }}</p>
-          <div class="flex flex-wrap gap-1.5">
+          <div class="flex gap-1.5 overflow-x-auto">
             <span
               v-for="(slot, i) in analytics.popularTimeSlots"
               :key="slot.time"
-              class="text-[10px] font-bold px-2 py-0.5 rounded-full"
+              class="text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap"
               :class="i === 0 ? 'bg-brand-600 text-white' : 'bg-brand-50 text-brand-500'"
             >
               {{ slot.time }} ({{ slot.count }})
