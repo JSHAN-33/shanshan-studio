@@ -179,27 +179,23 @@ async function submit() {
     needsBind.value = result.needsBind ?? false;
     // 透過 liff.sendMessages 把通知卡片 + 手機號碼發到 OA 聊天室
     // 若 OA 尚未綁定，手機號碼會觸發 webhook 自動綁定
+    // 若 liff.sendMessages 失敗（例如非從 OA 聊天室開啟），由後端補發
+    const flexMsg = buildNewBookingFlex({
+      name: auth.customer.name,
+      phone: auth.customer.phone,
+      date: selectedDate.value!,
+      time: selectedTime.value!,
+      items: booking.itemsLabel,
+      total: booking.total,
+    });
+    let sent = false;
     if (needsBind.value) {
-      sendFlexAndLinkPhone(
-        buildNewBookingFlex({
-          name: auth.customer.name,
-          phone: auth.customer.phone,
-          date: selectedDate.value!,
-          time: selectedTime.value!,
-          items: booking.itemsLabel,
-          total: booking.total,
-        }),
-        auth.customer.phone,
-      );
+      sent = await sendFlexAndLinkPhone(flexMsg, auth.customer.phone);
     } else {
-      sendFlexToChat(buildNewBookingFlex({
-        name: auth.customer.name,
-        phone: auth.customer.phone,
-        date: selectedDate.value!,
-        time: selectedTime.value!,
-        items: booking.itemsLabel,
-        total: booking.total,
-      }));
+      sent = await sendFlexToChat(flexMsg);
+    }
+    if (!sent) {
+      bookingsApi.notifyOa(result.id).catch(() => {});
     }
     // 若需付預約金，取得銀行資訊
     if (result.depositStatus === '待付訂金') {

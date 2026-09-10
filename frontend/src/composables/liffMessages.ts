@@ -105,13 +105,15 @@ export function buildNewMemberFlex(member: {
  * 訊息會顯示在左邊（客人發的），店家在 OA Manager 看到。
  * 僅在 LIFF 環境內有效，失敗時靜默降級。
  */
-export async function sendFlexToChat(message: ReturnType<typeof flexCard>): Promise<void> {
+export async function sendFlexToChat(message: ReturnType<typeof flexCard>): Promise<boolean> {
   try {
-    if (!liff.isInClient()) return;
+    if (!liff.isInClient()) return false;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await liff.sendMessages([message as any]);
+    return true;
   } catch (err) {
     console.warn('[liffMessages] sendMessages failed (降級為後端推播)', err);
+    return false;
   }
 }
 
@@ -120,15 +122,17 @@ export async function sendFlexToChat(message: ReturnType<typeof flexCard>): Prom
  * 手機號碼會觸發 webhook 自動綁定 lineOaUserId，
  * 讓推播功能不需要客人額外操作就能啟用。
  */
-export async function sendFlexAndLinkPhone(message: ReturnType<typeof flexCard>, phone: string): Promise<void> {
+export async function sendFlexAndLinkPhone(message: ReturnType<typeof flexCard>, phone: string): Promise<boolean> {
   try {
-    if (!liff.isInClient()) return;
+    if (!liff.isInClient()) return false;
     await liff.sendMessages([
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       message as any,
       { type: 'text' as const, text: phone },
     ]);
+    return true;
   } catch (err) {
     console.warn('[liffMessages] sendMessages+link failed (降級為後端推播)', err);
+    return false;
   }
 }

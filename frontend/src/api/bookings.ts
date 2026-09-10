@@ -98,6 +98,9 @@ export const bookingsApi = {
   async sendDeposit(id: string): Promise<void> {
     await http.post(`/bookings/${id}/send-deposit`);
   },
+  async notifyOa(id: string): Promise<void> {
+    await http.post(`/bookings/${id}/notify-oa`);
+  },
   async cancel(id: string): Promise<Booking> {
     return this.update(id, { status: '已取消' });
   },

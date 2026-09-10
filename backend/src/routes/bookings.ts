@@ -206,6 +206,24 @@ export async function bookingsRoutes(app: FastifyInstance) {
     return reply.status(201).send({ booking, needsBind });
   });
 
+  // POST /bookings/:id/notify-oa  —— liff.sendMessages 失敗時的備案，由後端推播通知給店家
+  app.post<{ Params: { id: string } }>('/:id/notify-oa', async (req, reply) => {
+    const { id } = req.params;
+    const booking = await app.prisma.booking.findUnique({ where: { id } });
+    if (!booking) return reply.status(404).send({ error: 'NotFound' });
+
+    await pushToOa(buildNewBookingMessage({
+      name: booking.name,
+      phone: booking.phone,
+      date: booking.date,
+      time: booking.time,
+      items: booking.items,
+      total: booking.total,
+    }));
+
+    return { ok: true };
+  });
+
   // POST /bookings/admin  —— admin only；手動補建預約（例如補登過往消費，進入「未結帳」列表）
   // 不做時段衝突檢查、不推播 LINE
   app.post('/admin', { preHandler: adminAuth }, async (req, reply) => {
