@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch, onMounted, onUnmounted } from 'vue';
+import { computed, ref, watch, nextTick, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import SharedCalendar from '@/components/SharedCalendar.vue';
 import TimeSlotGrid from '@/components/TimeSlotGrid.vue';
@@ -28,6 +28,7 @@ const showNotice = ref(false);
 const createdBooking = ref<Booking | null>(null);
 const needsBind = ref(false);
 const depositBankInfo = ref('');
+const timeSlotsRef = ref<HTMLElement | null>(null);
 
 // 遮蔽銀行資訊：帳號只顯示前4後4碼，戶名中間用 x 遮蔽
 const maskedBankInfo = computed(() => {
@@ -155,7 +156,17 @@ watch(selectedDate, async (d) => {
   try {
     slots.value = await bookingsApi.availableSlots(d, booking.totalDuration || undefined);
   } catch (err) { console.error(err); }
-  finally { loadingSlots.value = false; }
+  finally {
+    loadingSlots.value = false;
+    await nextTick();
+    const el = timeSlotsRef.value;
+    if (el) {
+      // 延遲一點讓 DOM 完全渲染，LINE 瀏覽器需要
+      setTimeout(() => {
+        el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }, 100);
+    }
+  }
 });
 
 watch(selectedTime, (t) => {
@@ -455,7 +466,7 @@ function goHistory() {
         </div>
 
         <!-- Time slots (月份開放時才顯示) -->
-        <div v-if="!monthClosed">
+        <div v-if="!monthClosed" ref="timeSlotsRef">
           <label class="label">選擇時段</label>
           <p v-if="loadingSlots" class="text-[11px] text-brand-400 text-center py-3">載入中…</p>
           <TimeSlotGrid v-else :slots="slots" :selected="selectedTime" @select="(t) => (selectedTime = t)" />
