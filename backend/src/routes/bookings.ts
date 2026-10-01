@@ -23,7 +23,8 @@ import {
 
 export async function bookingsRoutes(app: FastifyInstance) {
   // GET /bookings/available-slots?date=YYYY-MM-DD&duration=60  —— 公開
-  app.get('/available-slots', async (req) => {
+  app.get('/available-slots', async (req, reply) => {
+    reply.header('Cache-Control', 'no-store');
     const { date, duration } = availableSlotsQuery.parse(req.query);
     // 非 admin 請求時，檢查月份是否開放
     const isAdmin = req.headers['x-admin-token'] === process.env.ADMIN_TOKEN;
@@ -38,7 +39,8 @@ export async function bookingsRoutes(app: FastifyInstance) {
 
   // GET /bookings/available-slots/bulk?startDate=...&endDate=...&duration=60  —— 公開
   // 回傳 { [date]: ['11:00', '13:30', ...] }（只含 available 的時段，不含預約隱私資訊）
-  app.get('/available-slots/bulk', async (req) => {
+  app.get('/available-slots/bulk', async (req, reply) => {
+    reply.header('Cache-Control', 'no-store');
     const { startDate, endDate, duration } = bulkAvailableSlotsQuery.parse(req.query);
     const result: Record<string, string[]> = {};
 

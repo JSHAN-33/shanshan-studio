@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { computed, ref, watch, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import SharedCalendar from '@/components/SharedCalendar.vue';
 import TimeSlotGrid from '@/components/TimeSlotGrid.vue';
@@ -101,10 +101,8 @@ async function loadMonthAvailability(month: string) {
   selectedDate.value = null;
   slots.value = [];
 
-  // 沒在快取裡的先抓一次
-  if (!(month in monthOpenCache.value)) {
-    await loadBookingMonths();
-  }
+  // 每次都重新抓取月份開放狀態，避免快取過期
+  await loadBookingMonths();
   // 檢查月份是否開放（不在快取中的也視為未開放）
   if (monthOpenCache.value[month] !== true) {
     monthClosed.value = true;
@@ -139,7 +137,16 @@ async function loadMonthAvailability(month: string) {
 }
 
 // 初始化
-loadBookingMonths().then(() => loadMonthAvailability(viewMonth.value));
+loadMonthAvailability(viewMonth.value);
+
+// 當使用者切回頁面時重新抓取最新時段（避免 LINE 瀏覽器快取造成顯示過期資料）
+function onVisibilityChange() {
+  if (document.visibilityState === 'visible' && !submitted.value) {
+    loadMonthAvailability(viewMonth.value);
+  }
+}
+onMounted(() => document.addEventListener('visibilitychange', onVisibilityChange));
+onUnmounted(() => document.removeEventListener('visibilitychange', onVisibilityChange));
 
 watch(selectedDate, async (d) => {
   selectedTime.value = null;

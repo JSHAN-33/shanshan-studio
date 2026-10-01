@@ -23,7 +23,7 @@ export const bookingsApi = {
     if (duration) params.duration = duration;
     const res = await http.get<{ date: string; slots: AvailableSlot[] }>(
       '/bookings/available-slots',
-      { params }
+      { params, headers: { 'Cache-Control': 'no-cache' } }
     );
     return res.data.slots;
   },
@@ -36,7 +36,7 @@ export const bookingsApi = {
     if (duration) params.duration = duration;
     const res = await http.get<{ slotsByDate: Record<string, string[]> }>(
       '/bookings/available-slots/bulk',
-      { params }
+      { params, headers: { 'Cache-Control': 'no-cache' } }
     );
     return res.data.slotsByDate;
   },
