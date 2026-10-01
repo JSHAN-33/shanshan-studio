@@ -163,7 +163,7 @@ watch(selectedDate, async (d) => {
     if (el) {
       // 延遲一點讓 DOM 完全渲染，LINE 瀏覽器需要
       setTimeout(() => {
-        el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }, 100);
     }
   }
