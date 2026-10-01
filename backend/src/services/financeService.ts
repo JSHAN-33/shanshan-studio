@@ -360,15 +360,26 @@ export async function getDailySummary(
  * 用於 UI 顯示可切換的年份。
  */
 export async function getAvailableYears(prisma: PrismaClient): Promise<number[]> {
-  const rows = await prisma.booking.findMany({
-    where: { paidAt: { not: null } },
-    select: { paidAt: true },
-  });
-  const set = new Set<number>();
-  for (const r of rows) {
-    if (r.paidAt) set.add(r.paidAt.getFullYear());
+  // 只查最早和最晚的 paidAt，推算年份範圍（取代撈全部資料）
+  const [earliest, latest] = await Promise.all([
+    prisma.booking.findFirst({
+      where: { paidAt: { not: null } },
+      orderBy: { paidAt: 'asc' },
+      select: { paidAt: true },
+    }),
+    prisma.booking.findFirst({
+      where: { paidAt: { not: null } },
+      orderBy: { paidAt: 'desc' },
+      select: { paidAt: true },
+    }),
+  ]);
+  const currentYear = new Date().getFullYear();
+  const set = new Set<number>([currentYear]);
+  if (earliest?.paidAt && latest?.paidAt) {
+    for (let y = earliest.paidAt.getFullYear(); y <= latest.paidAt.getFullYear(); y++) {
+      set.add(y);
+    }
   }
-  set.add(new Date().getFullYear());
   return Array.from(set).sort((a, b) => b - a);
 }
 

@@ -51,23 +51,34 @@ export async function bookingsRoutes(app: FastifyInstance) {
     // 快取月份開放狀態，避免同月重複查詢
     const monthOpenCache = new Map<string, boolean>();
 
+    // 收集所有日期
+    const dates: string[] = [];
     for (let d = new Date(start); d <= end; d = new Date(d.getTime() + 86400000)) {
-      const dateStr = d.toISOString().slice(0, 10);
-      const ym = dateStr.slice(0, 7);
-
-      if (!isAdmin) {
-        if (!monthOpenCache.has(ym)) {
-          monthOpenCache.set(ym, await isMonthOpen(app.prisma, ym));
-        }
-        if (!monthOpenCache.get(ym)) {
-          result[dateStr] = [];
-          continue;
-        }
-      }
-
-      const slots = await getAvailableSlots(app.prisma, dateStr, duration);
-      result[dateStr] = slots.filter((s) => s.available).map((s) => s.time);
+      dates.push(d.toISOString().slice(0, 10));
     }
+
+    // 預先快取所有需要的月份開放狀態
+    if (!isAdmin) {
+      const uniqueMonths = [...new Set(dates.map((d) => d.slice(0, 7)))];
+      await Promise.all(
+        uniqueMonths.map(async (ym) => {
+          monthOpenCache.set(ym, await isMonthOpen(app.prisma, ym));
+        })
+      );
+    }
+
+    // 並行查詢所有日期的可用時段
+    await Promise.all(
+      dates.map(async (dateStr) => {
+        const ym = dateStr.slice(0, 7);
+        if (!isAdmin && !monthOpenCache.get(ym)) {
+          result[dateStr] = [];
+          return;
+        }
+        const slots = await getAvailableSlots(app.prisma, dateStr, duration);
+        result[dateStr] = slots.filter((s) => s.available).map((s) => s.time);
+      })
+    );
 
     return { slotsByDate: result };
   });
@@ -123,24 +134,21 @@ export async function bookingsRoutes(app: FastifyInstance) {
       });
     }
 
-    // 預約金邏輯：新客需付預約金
-    const depositEnabled = await app.prisma.systemSetting.findUnique({ where: { key: 'depositEnabled' } });
+    // 預約金邏輯：新客需付預約金（並行查詢設定 + 歷史預約數）
+    const [depositEnabled, pastBookings, amountSetting] = await Promise.all([
+      app.prisma.systemSetting.findUnique({ where: { key: 'depositEnabled' } }),
+      app.prisma.booking.count({ where: { phone: input.phone, status: { not: '已取消' } } }),
+      app.prisma.systemSetting.findUnique({ where: { key: 'depositAmount' } }),
+    ]);
     let depositData: { depositAmount?: number; depositStatus?: string } = {};
     let needsDeposit = false;
 
-    if (depositEnabled?.value === 'true') {
-      // 檢查是否為新客（沒有任何非取消的預約紀錄）
-      const pastBookings = await app.prisma.booking.count({
-        where: { phone: input.phone, status: { not: '已取消' } },
-      });
-      if (pastBookings === 0) {
-        const amountSetting = await app.prisma.systemSetting.findUnique({ where: { key: 'depositAmount' } });
-        depositData = {
-          depositAmount: Number(amountSetting?.value ?? '500'),
-          depositStatus: '待付訂金',
-        };
-        needsDeposit = true;
-      }
+    if (depositEnabled?.value === 'true' && pastBookings === 0) {
+      depositData = {
+        depositAmount: Number(amountSetting?.value ?? '500'),
+        depositStatus: '待付訂金',
+      };
+      needsDeposit = true;
     }
 
     const booking = await app.prisma.booking.create({

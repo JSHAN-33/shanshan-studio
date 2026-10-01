@@ -63,27 +63,32 @@ export async function getBookingMonthStatuses(
   count = 12,
 ): Promise<BookingMonthStatus[]> {
   const { year, month, day } = getTaipeiDate();
-  const result: BookingMonthStatus[] = [];
 
+  // 先產生所有 yearMonth 字串
+  const yearMonths: string[] = [];
   for (let i = 0; i < count; i++) {
     let m = month + i;
     let y = year;
     while (m > 12) { m -= 12; y += 1; }
-    const ym = `${y}-${String(m).padStart(2, '0')}`;
-
-    const record = await prisma.bookingMonth.findUnique({ where: { yearMonth: ym } });
-    if (record) {
-      result.push({ yearMonth: ym, isOpen: record.isOpen, source: 'manual' });
-    } else {
-      const autoOpen = isMonthAutoOpen(ym);
-      const status: BookingMonthStatus = { yearMonth: ym, isOpen: autoOpen, source: 'auto' };
-      // 如果是下個月且尚未自動開放，告知將於何時開放
-      if (!autoOpen && i === 1) {
-        status.autoOpenDate = `${year}-${String(month).padStart(2, '0')}-15`;
-      }
-      result.push(status);
-    }
+    yearMonths.push(`${y}-${String(m).padStart(2, '0')}`);
   }
 
-  return result;
+  // 一次查詢所有月份紀錄（取代迴圈中 12 次個別查詢）
+  const records = await prisma.bookingMonth.findMany({
+    where: { yearMonth: { in: yearMonths } },
+  });
+  const recordMap = new Map(records.map((r) => [r.yearMonth, r]));
+
+  return yearMonths.map((ym, i) => {
+    const record = recordMap.get(ym);
+    if (record) {
+      return { yearMonth: ym, isOpen: record.isOpen, source: 'manual' as const };
+    }
+    const autoOpen = isMonthAutoOpen(ym);
+    const status: BookingMonthStatus = { yearMonth: ym, isOpen: autoOpen, source: 'auto' };
+    if (!autoOpen && i === 1) {
+      status.autoOpenDate = `${year}-${String(month).padStart(2, '0')}-15`;
+    }
+    return status;
+  });
 }

@@ -30,7 +30,11 @@ export function useLiff() {
     }
 
     try {
-      await liff.init({ liffId });
+      // 加入 5 秒超時，避免 LINE 伺服器慢時整個 App 卡住
+      await Promise.race([
+        liff.init({ liffId }),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('LIFF init timeout (5s)')), 5000)),
+      ]);
       liffInited.value = true;
       inLineClient.value = liff.isInClient();
 

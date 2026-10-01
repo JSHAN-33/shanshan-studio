@@ -40,16 +40,25 @@ async function sendDailyReminder(prisma: PrismaClient): Promise<number> {
 
   console.log(`[Reminder] Found ${bookings.length} bookings for ${tomorrowStr}`);
 
+  // 批量查詢所有相關會員，避免 N+1
+  const phones = [...new Set(bookings.map((b) => b.phone))];
+  const members = await prisma.member.findMany({ where: { phone: { in: phones } } });
+  const memberMap = new Map(members.map((m) => [m.phone, m]));
+
   let sent = 0;
+  const pushPromises: Promise<void>[] = [];
   for (const b of bookings) {
-    const member = await prisma.member.findUnique({ where: { phone: b.phone } });
+    const member = memberMap.get(b.phone);
     const pushUserId = member?.lineOaUserId ?? member?.lineUserId;
     if (!pushUserId) continue;
 
-    await pushToUser(pushUserId, buildBookingReminderMessage(b));
-    console.log(`[Reminder] Sent to ${b.name} (${b.phone})`);
-    sent++;
+    pushPromises.push(
+      pushToUser(pushUserId, buildBookingReminderMessage(b))
+        .then(() => { console.log(`[Reminder] Sent to ${b.name} (${b.phone})`); sent++; })
+        .catch((err) => console.error(`[Reminder] Failed for ${b.name}:`, err))
+    );
   }
+  await Promise.all(pushPromises);
 
   // 標記今天已發送
   await prisma.systemSetting.upsert({
@@ -117,48 +126,78 @@ export function startReminderScheduler(prisma: PrismaClient) {
         },
       });
 
-      for (const b of bookings) {
+      // 過濾出已到達發送時間的預約
+      const readyBookings = bookings.filter((b) => {
         const [h, m] = b.time.split(':').map(Number);
-        const startMinutes = h * 60 + m;
-        const duration = b.duration ?? 60;
-        const endMinutes = startMinutes + duration;
-        const sendAfterMinutes = endMinutes + 60;
+        const endMinutes = h * 60 + m + (b.duration ?? 60);
+        return nowMinutes >= endMinutes + 60;
+      });
 
-        if (nowMinutes < sendAfterMinutes) continue;
+      if (readyBookings.length === 0) return;
 
-        const alreadySent = await prisma.booking.findFirst({
-          where: { phone: b.phone, aftercareSentAt: { not: null } },
-          select: { id: true },
-        });
+      // 批量查詢：會員、已發送過的紀錄、Google 評論連結
+      const phones = [...new Set(readyBookings.map((b) => b.phone))];
+      const [members, alreadySentBookings, reviewSetting] = await Promise.all([
+        prisma.member.findMany({ where: { phone: { in: phones } } }),
+        prisma.booking.findMany({
+          where: { phone: { in: phones }, aftercareSentAt: { not: null } },
+          select: { phone: true },
+          distinct: ['phone'],
+        }),
+        prisma.systemSetting.findUnique({ where: { key: 'googleReviewUrl' } }),
+      ]);
 
-        if (alreadySent) {
-          await prisma.booking.update({
-            where: { id: b.id },
-            data: { aftercareSentAt: new Date() },
-          });
+      const memberMap = new Map(members.map((m) => [m.phone, m]));
+      const alreadySentPhones = new Set(alreadySentBookings.map((b) => b.phone));
+
+      // 需要標記已發送但不推播的 IDs
+      const skipIds: string[] = [];
+      // 需要推播的預約
+      const toSend: { booking: typeof readyBookings[0]; pushUserId: string }[] = [];
+
+      for (const b of readyBookings) {
+        if (alreadySentPhones.has(b.phone)) {
+          skipIds.push(b.id);
           continue;
         }
 
-        const member = await prisma.member.findUnique({ where: { phone: b.phone } });
+        const member = memberMap.get(b.phone);
         const pushUserId = member?.lineOaUserId ?? member?.lineUserId;
         if (!pushUserId) {
-          await prisma.booking.update({
-            where: { id: b.id },
-            data: { aftercareSentAt: new Date() },
-          });
+          skipIds.push(b.id);
           continue;
         }
 
-        const reviewSetting = await prisma.systemSetting.findUnique({ where: { key: 'googleReviewUrl' } });
+        toSend.push({ booking: b, pushUserId });
+      }
 
-        await pushToUser(pushUserId, buildAftercareMessage());
-        await pushToUser(pushUserId, buildFeedbackMessage(b.name, reviewSetting?.value));
-
-        await prisma.booking.update({
-          where: { id: b.id },
+      // 批量更新跳過的預約
+      if (skipIds.length > 0) {
+        await prisma.booking.updateMany({
+          where: { id: { in: skipIds } },
           data: { aftercareSentAt: new Date() },
         });
-        console.log(`[Aftercare] Sent to ${b.name} (${b.phone})`);
+      }
+
+      // 發送推播並更新
+      const sentIds: string[] = [];
+      for (const { booking: b, pushUserId } of toSend) {
+        try {
+          await pushToUser(pushUserId, buildAftercareMessage());
+          await pushToUser(pushUserId, buildFeedbackMessage(b.name, reviewSetting?.value));
+          sentIds.push(b.id);
+          console.log(`[Aftercare] Sent to ${b.name} (${b.phone})`);
+        } catch (err) {
+          console.error(`[Aftercare] Failed for ${b.name}:`, err);
+          sentIds.push(b.id); // 仍標記為已處理，避免重複嘗試
+        }
+      }
+
+      if (sentIds.length > 0) {
+        await prisma.booking.updateMany({
+          where: { id: { in: sentIds } },
+          data: { aftercareSentAt: new Date() },
+        });
       }
     } catch (err) {
       console.error('[Aftercare] Error:', err);
