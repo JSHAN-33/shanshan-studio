@@ -1,6 +1,6 @@
 import cron from 'node-cron';
 import type { PrismaClient } from '@prisma/client';
-import { buildBookingReminderMessage, buildAftercareMessage, buildFeedbackMessage, pushToUser } from './lineNotifyService.js';
+import { buildBookingReminderMessage, buildAftercareMessage, buildFeedbackMessage, buildOwnerDailySummary, pushToUser, pushToOa } from './lineNotifyService.js';
 
 /** 台灣時間 helper */
 function getTaiwanNow(): Date {
@@ -59,6 +59,17 @@ async function sendDailyReminder(prisma: PrismaClient): Promise<number> {
     );
   }
   await Promise.all(pushPromises);
+
+  // 推送明日預約總覽給店家
+  try {
+    const summaryMsg = buildOwnerDailySummary(tomorrowStr, bookings.map((b) => ({
+      name: b.name, time: b.time, items: b.items, total: b.total,
+    })));
+    await pushToOa(summaryMsg);
+    console.log(`[Reminder] Owner summary sent for ${tomorrowStr} (${bookings.length} bookings)`);
+  } catch (err) {
+    console.error('[Reminder] Owner summary failed:', err);
+  }
 
   // 標記今天已發送
   await prisma.systemSetting.upsert({
