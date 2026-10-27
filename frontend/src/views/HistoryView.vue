@@ -14,7 +14,7 @@ const bookings = ref<Booking[]>([]);
 const serviceHistory = ref<ServiceHistory[]>([]);
 const member = ref<Member | null>(null);
 const walletTransactions = ref<WalletTransaction[]>([]);
-const showWalletHistory = ref(false);
+const expandedBookingId = ref<string | null>(null);
 const loading = ref(true);
 const showTopup = ref(false);
 const hasConsultation = ref(false);
@@ -47,6 +47,15 @@ async function load() {
       .then((txs) => { walletTransactions.value = txs; })
       .catch(() => {});
   }
+}
+
+function bookingWalletTxs(bookingId: string) {
+  return walletTransactions.value.filter((tx) => tx.bookingId === bookingId);
+}
+
+function toggleBooking(b: Booking) {
+  if (b.status !== '已完成' || !(b.walletUsed && b.walletUsed > 0)) return;
+  expandedBookingId.value = expandedBookingId.value === b.id ? null : b.id;
 }
 
 onMounted(load);
@@ -104,42 +113,10 @@ onMounted(load);
           </div>
           <!-- 儲值金 -->
           <div v-if="member && member.wallet > 0" style="margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,0.1);">
-            <button class="w-full flex items-center justify-between" @click="showWalletHistory = !showWalletHistory">
+            <div class="flex items-center justify-between">
               <p style="font-size:8px;font-weight:700;letter-spacing:0.18em;color:rgba(255,255,255,0.28);margin:0;text-transform:uppercase;">Wallet / 儲值金</p>
-              <div class="flex items-center gap-2">
-                <p style="font-size:18px;font-weight:900;color:rgba(255,255,255,0.88);margin:0;">NT$ {{ member.wallet.toLocaleString() }}</p>
-                <svg class="transition-transform duration-200" :class="{ 'rotate-180': showWalletHistory }" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
-              </div>
-            </button>
-            <!-- 交易紀錄展開 -->
-            <div v-if="showWalletHistory && walletTransactions.length > 0" style="margin-top:12px;" class="space-y-1.5">
-              <div
-                v-for="tx in walletTransactions.slice(0, 10)"
-                :key="tx.id"
-                class="flex items-center justify-between"
-                style="background:rgba(255,255,255,0.06);border-radius:10px;padding:8px 12px;"
-              >
-                <div class="flex items-center gap-2 min-w-0">
-                  <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full shrink-0" :style="{
-                    background: tx.type === 'deposit' ? 'rgba(34,197,94,0.15)' : tx.type === 'deduct' ? 'rgba(239,68,68,0.15)' : tx.type === 'refund' ? 'rgba(59,130,246,0.15)' : 'rgba(255,255,255,0.1)',
-                    color: tx.type === 'deposit' ? '#4ade80' : tx.type === 'deduct' ? '#f87171' : tx.type === 'refund' ? '#60a5fa' : 'rgba(255,255,255,0.5)',
-                  }">{{ ({ deposit: '加值', deduct: '消費', refund: '退款', adjust: '調整' })[tx.type] }}</span>
-                  <span style="font-size:10px;color:rgba(255,255,255,0.4);">{{ new Date(tx.createdAt).toLocaleDateString('zh-TW') }}</span>
-                </div>
-                <div class="text-right shrink-0 ml-2">
-                  <span style="font-size:12px;font-weight:800;" :style="{ color: tx.type === 'deduct' ? '#f87171' : '#4ade80' }">
-                    {{ tx.type === 'deduct' ? '-' : '+' }}NT$ {{ tx.amount.toLocaleString() }}
-                  </span>
-                  <p style="font-size:9px;color:rgba(255,255,255,0.3);margin:0;">餘額 {{ tx.balanceAfter.toLocaleString() }}</p>
-                </div>
-              </div>
-              <p v-if="walletTransactions.length > 10" style="font-size:9px;color:rgba(255,255,255,0.25);text-align:center;margin-top:4px;">
-                顯示最近 10 筆
-              </p>
+              <p style="font-size:18px;font-weight:900;color:rgba(255,255,255,0.88);margin:0;">NT$ {{ member.wallet.toLocaleString() }}</p>
             </div>
-            <p v-else-if="showWalletHistory" style="font-size:10px;color:rgba(255,255,255,0.25);text-align:center;margin-top:8px;">
-              尚無交易紀錄
-            </p>
           </div>
         </div>
       </div>
@@ -255,17 +232,44 @@ onMounted(load);
         <p v-if="loading" class="text-center text-brand-400 py-6 text-xs">載入中…</p>
         <p v-else-if="!bookings.length" class="text-center text-brand-400 py-6 text-xs">尚無預約紀錄</p>
         <ul v-else class="space-y-3">
-          <li v-for="b in bookings" :key="b.id" class="card">
+          <li v-for="b in bookings" :key="b.id" class="card" :class="{ 'cursor-pointer': b.status === '已完成' && b.walletUsed && b.walletUsed > 0 }" @click="toggleBooking(b)">
             <div class="flex justify-between items-center">
               <div class="min-w-0 flex-1">
                 <div class="font-bold text-[13px] text-brand-700 truncate">{{ b.items }}</div>
                 <div class="flex items-center gap-2 mt-0.5">
                   <span class="text-[10px] text-brand-400">{{ b.date }} {{ b.time }}</span>
                   <span class="badge" :class="badgeClass[b.status]">{{ b.status }}</span>
+                  <span v-if="b.walletUsed && b.walletUsed > 0 && b.status === '已完成'" class="text-[9px] font-bold text-green-600 bg-green-50 px-1.5 py-0.5 rounded-full">儲值金 -NT$ {{ b.walletUsed.toLocaleString() }}</span>
                 </div>
                 <div v-if="b.remarks" class="text-[10px] text-brand-400 mt-0.5">備註：{{ b.remarks }}</div>
               </div>
-              <div class="font-extrabold text-[13px] text-brand-600 shrink-0">NT$ {{ b.total }}</div>
+              <div class="flex items-center gap-1.5 shrink-0">
+                <div class="font-extrabold text-[13px] text-brand-600">NT$ {{ b.total }}</div>
+                <svg v-if="b.walletUsed && b.walletUsed > 0 && b.status === '已完成'" class="w-3 h-3 text-brand-300 transition-transform duration-200" :class="{ 'rotate-180': expandedBookingId === b.id }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+              </div>
+            </div>
+            <!-- 儲值交易明細（展開） -->
+            <div v-if="expandedBookingId === b.id" class="mt-3 pt-3" style="border-top: 1px solid #f0eeec;">
+              <p class="text-[10px] text-brand-400 font-bold mb-2">儲值金交易明細</p>
+              <div v-if="bookingWalletTxs(b.id).length" class="space-y-1.5">
+                <div v-for="tx in bookingWalletTxs(b.id)" :key="tx.id" class="flex items-center justify-between" style="background:#f8f7f5;border-radius:10px;padding:8px 12px;">
+                  <div class="flex items-center gap-2 min-w-0">
+                    <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full shrink-0" :class="{
+                      'text-green-700 bg-green-100': tx.type === 'deposit' || tx.type === 'refund',
+                      'text-red-700 bg-red-100': tx.type === 'deduct',
+                      'text-brand-500 bg-brand-100': tx.type === 'adjust',
+                    }">{{ ({ deposit: '加值', deduct: '扣款', refund: '退款', adjust: '調整' })[tx.type] }}</span>
+                    <span class="text-[10px] text-brand-400">{{ new Date(tx.createdAt).toLocaleDateString('zh-TW') }}</span>
+                  </div>
+                  <div class="text-right shrink-0 ml-2">
+                    <span class="text-[11px] font-extrabold" :class="tx.type === 'deduct' ? 'text-red-600' : 'text-green-600'">
+                      {{ tx.type === 'deduct' ? '-' : '+' }}NT$ {{ tx.amount.toLocaleString() }}
+                    </span>
+                    <p class="text-[9px] text-brand-400 m-0">餘額 NT$ {{ tx.balanceAfter.toLocaleString() }}</p>
+                  </div>
+                </div>
+              </div>
+              <p v-else class="text-[10px] text-brand-300 text-center py-2">無相關紀錄</p>
             </div>
           </li>
         </ul>
