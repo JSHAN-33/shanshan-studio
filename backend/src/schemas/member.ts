@@ -17,6 +17,7 @@ export const walletAdjustSchema = z.object({
   reason: z.string().optional(),
   type: z.enum(['deposit', 'deduct', 'refund', 'adjust']).optional(),
   bookingId: z.string().optional(),
+  bonus: z.number().int().optional(), // 贈送金額（儲值收據用）
 });
 
 export type UpsertMemberInput = z.infer<typeof upsertMemberSchema>;

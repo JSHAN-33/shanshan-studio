@@ -94,7 +94,7 @@ export async function membersRoutes(app: FastifyInstance) {
     { preHandler: adminAuth },
     async (req, reply) => {
       const { phone } = req.params;
-      const { delta, reason, type: txType, bookingId } = walletAdjustSchema.parse(req.body);
+      const { delta, reason, type: txType, bookingId, bonus } = walletAdjustSchema.parse(req.body);
       const existing = await app.prisma.member.findUnique({ where: { phone } });
       if (!existing) return reply.status(404).send({ error: 'NotFound' });
 
@@ -125,8 +125,9 @@ export async function membersRoutes(app: FastifyInstance) {
         if (walletType === 'deposit' && delta > 0) {
           pushToUser(pushUid, buildWalletDepositMessage({
             name: existing.name,
-            amount: delta,
+            amount: bonus ? delta - bonus : delta,
             balance: newBalance,
+            bonus: bonus ?? undefined,
           })).catch((err) => console.error('[LINE] wallet deposit push failed', err));
         } else if (walletType === 'deduct') {
           // 取得 booking items 用於通知

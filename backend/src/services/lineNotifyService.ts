@@ -489,46 +489,116 @@ export function buildDepositInfoMessage(booking: {
   };
 }
 
-/** 儲值成功通知（推給客人） */
+/** 儲值收據（推給客人） */
 export function buildWalletDepositMessage(data: {
   name: string;
   amount: number;
   balance: number;
+  bonus?: number;
 }): object {
+  const now = new Date();
+  const dateStr = `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getDate()).padStart(2, '0')}`;
+  const receiptNo = `WR-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}-${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`;
+  const totalCredit = data.amount + (data.bonus ?? 0);
+
+  const bodyContents: object[] = [
+    // 姓名
+    {
+      type: 'box', layout: 'horizontal',
+      contents: [
+        { type: 'text', text: '姓名', size: 'sm', color: '#b0aba7', flex: 2 },
+        { type: 'text', text: data.name, size: 'sm', weight: 'bold', color: '#4a423d', flex: 3, align: 'end' },
+      ],
+    },
+    // 日期
+    {
+      type: 'box', layout: 'horizontal',
+      contents: [
+        { type: 'text', text: '日期', size: 'sm', color: '#b0aba7', flex: 2 },
+        { type: 'text', text: dateStr, size: 'sm', weight: 'bold', color: '#4a423d', flex: 3, align: 'end' },
+      ],
+    },
+    { type: 'separator', margin: 'lg' },
+    // 儲值金額
+    {
+      type: 'box', layout: 'horizontal', margin: 'lg',
+      contents: [
+        { type: 'text', text: '儲值金額', size: 'sm', color: '#b0aba7', flex: 2 },
+        { type: 'text', text: `NT$ ${data.amount.toLocaleString()}`, size: 'sm', weight: 'bold', color: '#4a423d', flex: 3, align: 'end' },
+      ],
+    },
+  ];
+
+  // 贈送金額（如有）
+  if (data.bonus && data.bonus > 0) {
+    bodyContents.push({
+      type: 'box', layout: 'horizontal', backgroundColor: '#f8f7f5',
+      cornerRadius: '10px', paddingAll: '10px', margin: 'md',
+      contents: [
+        { type: 'text', text: '贈送金額', size: 'sm', color: '#b0aba7', weight: 'bold', flex: 2 },
+        { type: 'text', text: `+ NT$ ${data.bonus.toLocaleString()}`, size: 'sm', weight: 'bold', color: '#c8a96e', flex: 3, align: 'end' },
+      ],
+    });
+  }
+
+  // 實得金額
+  bodyContents.push({ type: 'separator', margin: 'lg' });
+  bodyContents.push({
+    type: 'box', layout: 'horizontal', margin: 'lg',
+    contents: [
+      { type: 'text', text: data.bonus ? '實得金額' : '儲值金額', size: 'md', weight: 'bold', color: '#655b55', flex: 2 },
+      { type: 'text', text: `NT$ ${totalCredit.toLocaleString()}`, size: 'lg', weight: 'bold', color: '#3b3530', flex: 3, align: 'end' },
+    ],
+  });
+
+  // 目前總餘額（深色區塊）
+  bodyContents.push({
+    type: 'box', layout: 'horizontal', backgroundColor: '#3b3530',
+    cornerRadius: '12px', paddingAll: '14px', margin: 'lg',
+    contents: [
+      { type: 'text', text: '目前總餘額', size: 'xs', weight: 'bold', color: '#ffffff60' },
+      { type: 'text', text: `NT$ ${data.balance.toLocaleString()}`, size: 'md', weight: 'bold', color: '#ffffffee', align: 'end' },
+    ],
+  });
+
   return {
     type: 'flex',
-    altText: '儲值成功通知',
+    altText: '儲值收據',
     contents: {
       type: 'bubble',
       size: 'kilo',
       header: {
-        type: 'box', layout: 'vertical', backgroundColor: '#655b55', paddingAll: '20px',
+        type: 'box', layout: 'vertical', backgroundColor: '#3b3530', paddingAll: '20px',
         contents: [
-          { type: 'text', text: 'SHANSHAN.STUDIO', color: '#ffffff80', size: 'xxs', weight: 'bold' },
-          { type: 'text', text: '儲值成功', color: '#ffffff', size: 'xl', weight: 'bold', margin: 'md' },
+          { type: 'text', text: 'SHANSHAN.STUDIO', color: '#ffffff40', size: 'xxs', weight: 'bold' },
+          { type: 'text', text: '儲值收據', color: '#ffffff', size: 'xl', weight: 'bold', margin: 'md' },
+          { type: 'text', text: 'TOP-UP RECEIPT', color: '#ffffff50', size: 'xxs', weight: 'bold', margin: 'sm' },
         ],
       },
       body: {
         type: 'box', layout: 'vertical', paddingAll: '20px', spacing: 'md',
+        contents: bodyContents,
+      },
+      footer: {
+        type: 'box', layout: 'vertical', paddingAll: '0px', spacing: 'none',
         contents: [
-          { type: 'text', text: `${data.name} 您的儲值已經入帳囉！`, size: 'sm', weight: 'bold', color: '#4a423d', wrap: true },
-          { type: 'separator', margin: 'lg' },
+          // 醒目提醒區塊
           {
-            type: 'box', layout: 'horizontal', margin: 'lg',
+            type: 'box', layout: 'vertical', backgroundColor: '#fff8f0',
+            paddingAll: '12px',
             contents: [
-              { type: 'text', text: '本次儲值', size: 'sm', color: '#b0aba7', flex: 2 },
-              { type: 'text', text: `NT$ ${data.amount.toLocaleString()}`, size: 'sm', weight: 'bold', color: '#4a423d', flex: 3, align: 'end' },
+              { type: 'text', text: '⚠ 不可與套餐或其他優惠合併使用', size: 'xs', weight: 'bold', color: '#c47a20', align: 'center' },
             ],
           },
+          // 備註
           {
-            type: 'box', layout: 'horizontal',
+            type: 'box', layout: 'vertical', paddingAll: '14px', spacing: 'sm',
             contents: [
-              { type: 'text', text: '目前儲值餘額', size: 'sm', color: '#b0aba7', flex: 2 },
-              { type: 'text', text: `NT$ ${data.balance.toLocaleString()}`, size: 'md', weight: 'bold', color: '#655b55', flex: 3, align: 'end' },
+              { type: 'text', text: '儲值金無使用期限，限本人使用', size: 'xxs', color: '#b0aba7', align: 'center' },
+              { type: 'text', text: '如有疑問請透過 LINE 聯繫小編 ♡', size: 'xxs', color: '#b0aba7', align: 'center' },
+              { type: 'text', text: `NO. ${receiptNo}`, size: 'xxs', color: '#d0cbc7', align: 'center', margin: 'sm' },
             ],
           },
-          { type: 'separator', margin: 'lg' },
-          { type: 'text', text: '可以隨時進入會員頁面查看餘額，謝謝妳對 SHANSHAN.STUDIO 的支持 ♡', size: 'xs', color: '#7a726d', wrap: true, margin: 'lg' },
         ],
       },
     },

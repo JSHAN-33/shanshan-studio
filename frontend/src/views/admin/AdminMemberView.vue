@@ -224,6 +224,7 @@ const walletTarget = ref<Member | null>(null);
 const walletDelta = ref(0);
 const walletMode = ref<'deposit' | 'adjust' | 'set'>('deposit');
 const walletSetValue = ref(0);
+const walletBonus = ref(0);
 const walletTransactions = ref<WalletTransaction[]>([]);
 
 function daysSinceVisit(m: Member): number | null {
@@ -329,6 +330,7 @@ async function save() {
 async function openWallet(m: Member) {
   walletTarget.value = m;
   walletDelta.value = 0;
+  walletBonus.value = 0;
   walletMode.value = 'deposit';
   walletSetValue.value = m.wallet;
   walletTransactions.value = [];
@@ -343,14 +345,19 @@ async function saveWallet() {
     const delta = Number(walletSetValue.value) - walletTarget.value.wallet;
     if (delta === 0) { showWalletModal.value = false; return; }
     await membersApi.adjustWallet(walletTarget.value.phone, delta, undefined, { type: 'adjust' });
+  } else if (walletMode.value === 'deposit') {
+    if (!walletDelta.value) { showWalletModal.value = false; return; }
+    // 加值金額 = 儲值金額 + 贈送金額
+    const totalDelta = Number(walletDelta.value) + Number(walletBonus.value || 0);
+    const bonus = walletBonus.value > 0 ? Number(walletBonus.value) : undefined;
+    await membersApi.adjustWallet(walletTarget.value.phone, totalDelta, undefined, { type: 'deposit', bonus });
   } else {
     if (!walletDelta.value) { showWalletModal.value = false; return; }
-    const txType = walletMode.value === 'deposit' ? 'deposit' : 'adjust';
-    await membersApi.adjustWallet(walletTarget.value.phone, Number(walletDelta.value), undefined, { type: txType });
+    await membersApi.adjustWallet(walletTarget.value.phone, Number(walletDelta.value), undefined, { type: 'adjust' });
   }
 
   showWalletModal.value = false;
-  toast.show(walletMode.value === 'deposit' ? '加值成功' : '儲值金已更新');
+  toast.show(walletMode.value === 'deposit' ? '加值成功，已發送收據' : '儲值金已更新');
   await load();
 }
 
@@ -923,16 +930,26 @@ const { refreshing } = usePullRefresh(load);
           <!-- 加值 -->
           <div v-if="walletMode === 'deposit'" class="space-y-2">
             <div class="member-field flex items-center justify-between">
-              <span class="text-brand-400 text-xs font-bold">加值金額</span>
+              <span class="text-brand-400 text-xs font-bold">儲值金額</span>
               <input v-model.number="walletDelta" type="number" class="bg-transparent outline-none text-right text-lg font-extrabold text-brand-700" style="border:none; width: 120px;" placeholder="0" />
             </div>
-            <p class="text-[10px] text-green-600 ml-1">加值後會自動發 LINE 通知給客人</p>
-            <div v-if="walletDelta && walletTarget" class="member-field flex items-center justify-between">
-              <span class="text-brand-400 text-xs font-bold">加值後餘額</span>
-              <span class="text-sm font-extrabold text-green-600">
-                NT$ {{ walletTarget.wallet + walletDelta }}
-              </span>
+            <div class="member-field flex items-center justify-between">
+              <span class="text-brand-400 text-xs font-bold">贈送金額</span>
+              <input v-model.number="walletBonus" type="number" class="bg-transparent outline-none text-right text-lg font-extrabold" style="border:none; width: 120px; color: #c8a96e;" placeholder="0" />
             </div>
+            <div v-if="(walletDelta || walletBonus) && walletTarget" class="space-y-2">
+              <div v-if="walletBonus > 0" class="member-field flex items-center justify-between">
+                <span class="text-brand-400 text-xs font-bold">實得金額</span>
+                <span class="text-sm font-extrabold text-brand-700">NT$ {{ (walletDelta + walletBonus).toLocaleString() }}</span>
+              </div>
+              <div class="member-field flex items-center justify-between">
+                <span class="text-brand-400 text-xs font-bold">加值後餘額</span>
+                <span class="text-sm font-extrabold text-green-600">
+                  NT$ {{ (walletTarget.wallet + walletDelta + walletBonus).toLocaleString() }}
+                </span>
+              </div>
+            </div>
+            <p class="text-[10px] text-green-600 ml-1">加值後會自動發 LINE 儲值收據給客人</p>
           </div>
 
           <!-- 調整 -->

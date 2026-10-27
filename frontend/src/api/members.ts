@@ -27,7 +27,7 @@ export const membersApi = {
     const res = await http.post<{ member: Member }>('/members', data);
     return res.data.member;
   },
-  async adjustWallet(phone: string, delta: number, reason?: string, opts?: { type?: string; bookingId?: string }): Promise<Member> {
+  async adjustWallet(phone: string, delta: number, reason?: string, opts?: { type?: string; bookingId?: string; bonus?: number }): Promise<Member> {
     const res = await http.patch<{ member: Member }>(`/members/${phone}/wallet`, { delta, reason, ...opts });
     return res.data.member;
   },
