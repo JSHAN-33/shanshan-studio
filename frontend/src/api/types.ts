@@ -48,6 +48,19 @@ export interface Member {
   lastVisitAt?: string | null;
 }
 
+export type WalletTransactionType = 'deposit' | 'deduct' | 'refund' | 'adjust';
+
+export interface WalletTransaction {
+  id: string;
+  memberId: string;
+  type: WalletTransactionType;
+  amount: number;
+  balanceAfter: number;
+  bookingId?: string | null;
+  reason?: string | null;
+  createdAt: string;
+}
+
 export interface Service {
   id: string;
   name: string;

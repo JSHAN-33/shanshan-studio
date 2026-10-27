@@ -140,6 +140,20 @@ model ConsultationForm {
   updatedAt       DateTime @updatedAt
 }
 
+model WalletTransaction {
+  id           String   @id @default(cuid())
+  memberId     String
+  type         String   // deposit | deduct | refund | adjust
+  amount       Int      // 正數
+  balanceAfter Int
+  bookingId    String?
+  reason       String?
+  createdAt    DateTime @default(now())
+
+  @@index([memberId])
+  @@index([bookingId])
+}
+
 model ServiceHistory {
   id        String   @id @default(cuid())
   phone     String

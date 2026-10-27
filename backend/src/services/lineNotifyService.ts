@@ -489,6 +489,90 @@ export function buildDepositInfoMessage(booking: {
   };
 }
 
+/** 儲值成功通知（推給客人） */
+export function buildWalletDepositMessage(data: {
+  name: string;
+  amount: number;
+  balance: number;
+}): object {
+  return {
+    type: 'flex',
+    altText: '儲值成功通知',
+    contents: {
+      type: 'bubble',
+      size: 'kilo',
+      header: {
+        type: 'box', layout: 'vertical', backgroundColor: '#655b55', paddingAll: '20px',
+        contents: [
+          { type: 'text', text: 'SHANSHAN.STUDIO', color: '#ffffff80', size: 'xxs', weight: 'bold' },
+          { type: 'text', text: '儲值成功', color: '#ffffff', size: 'xl', weight: 'bold', margin: 'md' },
+        ],
+      },
+      body: {
+        type: 'box', layout: 'vertical', paddingAll: '20px', spacing: 'md',
+        contents: [
+          { type: 'text', text: `${data.name} 您的儲值已經入帳囉！`, size: 'sm', weight: 'bold', color: '#4a423d', wrap: true },
+          { type: 'separator', margin: 'lg' },
+          {
+            type: 'box', layout: 'horizontal', margin: 'lg',
+            contents: [
+              { type: 'text', text: '本次儲值', size: 'sm', color: '#b0aba7', flex: 2 },
+              { type: 'text', text: `NT$ ${data.amount.toLocaleString()}`, size: 'sm', weight: 'bold', color: '#4a423d', flex: 3, align: 'end' },
+            ],
+          },
+          {
+            type: 'box', layout: 'horizontal',
+            contents: [
+              { type: 'text', text: '目前儲值餘額', size: 'sm', color: '#b0aba7', flex: 2 },
+              { type: 'text', text: `NT$ ${data.balance.toLocaleString()}`, size: 'md', weight: 'bold', color: '#655b55', flex: 3, align: 'end' },
+            ],
+          },
+          { type: 'separator', margin: 'lg' },
+          { type: 'text', text: '可以隨時進入會員頁面查看餘額，謝謝妳對 SHANSHAN.STUDIO 的支持 ♡', size: 'xs', color: '#7a726d', wrap: true, margin: 'lg' },
+        ],
+      },
+    },
+  };
+}
+
+/** 消費扣款通知（推給客人） */
+export function buildWalletDeductMessage(data: {
+  amount: number;
+  balance: number;
+  items: string;
+}): object {
+  return flexCard({
+    headerBg: '#655b55',
+    headerTitle: '儲值金消費通知',
+    rows: [
+      { label: '扣款金額', value: `NT$ ${data.amount.toLocaleString()}` },
+      { label: '剩餘餘額', value: `NT$ ${data.balance.toLocaleString()}` },
+      ...(data.items ? [{ label: '消費項目', value: data.items }] : []),
+    ],
+    footer: '可至會員頁面查看完整交易紀錄',
+  });
+}
+
+/** 取消退款通知（推給客人） */
+export function buildWalletRefundMessage(data: {
+  amount: number;
+  balance: number;
+  items: string;
+  date: string;
+  time: string;
+}): object {
+  return flexCard({
+    headerBg: '#655b55',
+    headerTitle: '儲值金退款通知',
+    rows: [
+      { label: '退回金額', value: `NT$ ${data.amount.toLocaleString()}` },
+      { label: '目前餘額', value: `NT$ ${data.balance.toLocaleString()}` },
+      { label: '原預約', value: `${data.date} ${data.time} ${data.items}` },
+    ],
+    footer: '儲值金已退回您的帳戶',
+  });
+}
+
 /** 熱蠟後保養注意事項（推給客人，預約結束後 1 小時） */
 export function buildAftercareMessage(): object {
   return {

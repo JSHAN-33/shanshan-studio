@@ -6,13 +6,15 @@ import { membersApi } from '@/api/members';
 import { serviceHistoryApi } from '@/api/serviceHistory';
 import { consultationFormsApi } from '@/api/consultationForms';
 import { useAuthStore } from '@/stores/auth';
-import type { Booking, BookingStatus, Member, ServiceHistory } from '@/api/types';
+import type { Booking, BookingStatus, Member, ServiceHistory, WalletTransaction } from '@/api/types';
 
 const auth = useAuthStore();
 const router = useRouter();
 const bookings = ref<Booking[]>([]);
 const serviceHistory = ref<ServiceHistory[]>([]);
 const member = ref<Member | null>(null);
+const walletTransactions = ref<WalletTransaction[]>([]);
+const showWalletHistory = ref(false);
 const loading = ref(true);
 const showTopup = ref(false);
 const hasConsultation = ref(false);
@@ -39,6 +41,12 @@ async function load() {
   serviceHistory.value = hList;
   hasConsultation.value = !!cfForm;
   loading.value = false;
+  // 載入儲值交易紀錄
+  if (auth.customer?.phone) {
+    membersApi.getWalletTransactions(auth.customer.phone)
+      .then((txs) => { walletTransactions.value = txs; })
+      .catch(() => {});
+  }
 }
 
 onMounted(load);
@@ -96,10 +104,42 @@ onMounted(load);
           </div>
           <!-- 儲值金 -->
           <div v-if="member && member.wallet > 0" style="margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,0.1);">
-            <div class="flex items-center justify-between">
+            <button class="w-full flex items-center justify-between" @click="showWalletHistory = !showWalletHistory">
               <p style="font-size:8px;font-weight:700;letter-spacing:0.18em;color:rgba(255,255,255,0.28);margin:0;text-transform:uppercase;">Wallet / 儲值金</p>
-              <p style="font-size:18px;font-weight:900;color:rgba(255,255,255,0.88);margin:0;">NT$ {{ member.wallet.toLocaleString() }}</p>
+              <div class="flex items-center gap-2">
+                <p style="font-size:18px;font-weight:900;color:rgba(255,255,255,0.88);margin:0;">NT$ {{ member.wallet.toLocaleString() }}</p>
+                <svg class="transition-transform duration-200" :class="{ 'rotate-180': showWalletHistory }" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+              </div>
+            </button>
+            <!-- 交易紀錄展開 -->
+            <div v-if="showWalletHistory && walletTransactions.length > 0" style="margin-top:12px;" class="space-y-1.5">
+              <div
+                v-for="tx in walletTransactions.slice(0, 10)"
+                :key="tx.id"
+                class="flex items-center justify-between"
+                style="background:rgba(255,255,255,0.06);border-radius:10px;padding:8px 12px;"
+              >
+                <div class="flex items-center gap-2 min-w-0">
+                  <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full shrink-0" :style="{
+                    background: tx.type === 'deposit' ? 'rgba(34,197,94,0.15)' : tx.type === 'deduct' ? 'rgba(239,68,68,0.15)' : tx.type === 'refund' ? 'rgba(59,130,246,0.15)' : 'rgba(255,255,255,0.1)',
+                    color: tx.type === 'deposit' ? '#4ade80' : tx.type === 'deduct' ? '#f87171' : tx.type === 'refund' ? '#60a5fa' : 'rgba(255,255,255,0.5)',
+                  }">{{ ({ deposit: '加值', deduct: '消費', refund: '退款', adjust: '調整' })[tx.type] }}</span>
+                  <span style="font-size:10px;color:rgba(255,255,255,0.4);">{{ new Date(tx.createdAt).toLocaleDateString('zh-TW') }}</span>
+                </div>
+                <div class="text-right shrink-0 ml-2">
+                  <span style="font-size:12px;font-weight:800;" :style="{ color: tx.type === 'deduct' ? '#f87171' : '#4ade80' }">
+                    {{ tx.type === 'deduct' ? '-' : '+' }}NT$ {{ tx.amount.toLocaleString() }}
+                  </span>
+                  <p style="font-size:9px;color:rgba(255,255,255,0.3);margin:0;">餘額 {{ tx.balanceAfter.toLocaleString() }}</p>
+                </div>
+              </div>
+              <p v-if="walletTransactions.length > 10" style="font-size:9px;color:rgba(255,255,255,0.25);text-align:center;margin-top:4px;">
+                顯示最近 10 筆
+              </p>
             </div>
+            <p v-else-if="showWalletHistory" style="font-size:10px;color:rgba(255,255,255,0.25);text-align:center;margin-top:8px;">
+              尚無交易紀錄
+            </p>
           </div>
         </div>
       </div>

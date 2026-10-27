@@ -1,6 +1,13 @@
 import type { FastifyInstance } from 'fastify';
 import { adminAuth } from '../middleware/adminAuth.js';
 import { upsertMemberSchema, walletAdjustSchema } from '../schemas/member.js';
+import {
+  buildWalletDepositMessage,
+  buildWalletDeductMessage,
+  buildWalletRefundMessage,
+  pushToUser,
+} from '../services/lineNotifyService.js';
+import { buildPhoneOwnerAuth } from '../middleware/phoneOwnerAuth.js';
 
 export async function membersRoutes(app: FastifyInstance) {
   // GET /members  —— admin only
@@ -87,15 +94,76 @@ export async function membersRoutes(app: FastifyInstance) {
     { preHandler: adminAuth },
     async (req, reply) => {
       const { phone } = req.params;
-      const { delta } = walletAdjustSchema.parse(req.body);
+      const { delta, reason, type: txType, bookingId } = walletAdjustSchema.parse(req.body);
       const existing = await app.prisma.member.findUnique({ where: { phone } });
       if (!existing) return reply.status(404).send({ error: 'NotFound' });
 
-      const member = await app.prisma.member.update({
-        where: { phone },
-        data: { wallet: existing.wallet + delta },
-      });
+      const newBalance = existing.wallet + delta;
+      // 自動推斷 type：正數預設 deposit，負數預設 adjust
+      const walletType = txType ?? (delta > 0 ? 'deposit' : 'adjust');
+
+      const [member] = await app.prisma.$transaction([
+        app.prisma.member.update({
+          where: { phone },
+          data: { wallet: newBalance },
+        }),
+        app.prisma.walletTransaction.create({
+          data: {
+            memberId: existing.id,
+            type: walletType,
+            amount: Math.abs(delta),
+            balanceAfter: newBalance,
+            bookingId: bookingId ?? undefined,
+            reason: reason ?? undefined,
+          },
+        }),
+      ]);
+
+      // LINE 通知：deposit / deduct 發通知，adjust 不發
+      const pushUid = existing.lineOaUserId ?? existing.lineUserId;
+      if (pushUid) {
+        if (walletType === 'deposit' && delta > 0) {
+          pushToUser(pushUid, buildWalletDepositMessage({
+            name: existing.name,
+            amount: delta,
+            balance: newBalance,
+          })).catch((err) => console.error('[LINE] wallet deposit push failed', err));
+        } else if (walletType === 'deduct') {
+          // 取得 booking items 用於通知
+          let items = '';
+          if (bookingId) {
+            const bk = await app.prisma.booking.findUnique({ where: { id: bookingId } });
+            if (bk) items = bk.items;
+          }
+          pushToUser(pushUid, buildWalletDeductMessage({
+            amount: Math.abs(delta),
+            balance: newBalance,
+            items,
+          })).catch((err) => console.error('[LINE] wallet deduct push failed', err));
+        }
+      }
+
       return { member };
+    }
+  );
+
+  // GET /members/:phone/wallet-transactions  —— 公開（顧客可查自己的）
+  const phoneOwnerAuth = buildPhoneOwnerAuth(app);
+  app.get<{ Params: { phone: string } }>(
+    '/:phone/wallet-transactions',
+    async (req, reply) => {
+      await phoneOwnerAuth(req, reply);
+      if (reply.sent) return;
+
+      const { phone } = req.params;
+      const member = await app.prisma.member.findUnique({ where: { phone } });
+      if (!member) return reply.status(404).send({ error: 'NotFound' });
+
+      const transactions = await app.prisma.walletTransaction.findMany({
+        where: { memberId: member.id },
+        orderBy: { createdAt: 'desc' },
+      });
+      return { transactions };
     }
   );
 }

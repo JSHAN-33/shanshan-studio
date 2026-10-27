@@ -1,5 +1,5 @@
 import { http } from './axios';
-import type { Member } from './types';
+import type { Member, WalletTransaction } from './types';
 
 export const membersApi = {
   async list(): Promise<Member[]> {
@@ -27,9 +27,13 @@ export const membersApi = {
     const res = await http.post<{ member: Member }>('/members', data);
     return res.data.member;
   },
-  async adjustWallet(phone: string, delta: number, reason?: string): Promise<Member> {
-    const res = await http.patch<{ member: Member }>(`/members/${phone}/wallet`, { delta, reason });
+  async adjustWallet(phone: string, delta: number, reason?: string, opts?: { type?: string; bookingId?: string }): Promise<Member> {
+    const res = await http.patch<{ member: Member }>(`/members/${phone}/wallet`, { delta, reason, ...opts });
     return res.data.member;
+  },
+  async getWalletTransactions(phone: string): Promise<WalletTransaction[]> {
+    const res = await http.get<{ transactions: WalletTransaction[] }>(`/members/${phone}/wallet-transactions`);
+    return res.data.transactions;
   },
   async remove(phone: string): Promise<void> {
     await http.delete(`/members/${phone}`);

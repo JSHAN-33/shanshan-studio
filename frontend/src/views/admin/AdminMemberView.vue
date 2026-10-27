@@ -9,7 +9,7 @@ import { bookingsApi } from '@/api/bookings';
 import { slotsApi } from '@/api/slots';
 import { serviceHistoryApi } from '@/api/serviceHistory';
 import { consultationFormsApi } from '@/api/consultationForms';
-import type { Member, Service, ServiceCat, AvailableSlot, BlockedSlot, Booking, ServiceHistory, ConsultationForm } from '@/api/types';
+import type { Member, Service, ServiceCat, AvailableSlot, BlockedSlot, Booking, ServiceHistory, ConsultationForm, WalletTransaction } from '@/api/types';
 
 const toast = useToast();
 const members = ref<Member[]>([]);
@@ -222,8 +222,9 @@ function selectSlot(time: string) {
 const showWalletModal = ref(false);
 const walletTarget = ref<Member | null>(null);
 const walletDelta = ref(0);
-const walletMode = ref<'adjust' | 'set'>('adjust');
+const walletMode = ref<'deposit' | 'adjust' | 'set'>('deposit');
 const walletSetValue = ref(0);
+const walletTransactions = ref<WalletTransaction[]>([]);
 
 function daysSinceVisit(m: Member): number | null {
   if (!m.lastVisitAt) return null;
@@ -325,12 +326,14 @@ async function save() {
   await load();
 }
 
-function openWallet(m: Member) {
+async function openWallet(m: Member) {
   walletTarget.value = m;
   walletDelta.value = 0;
-  walletMode.value = 'adjust';
+  walletMode.value = 'deposit';
   walletSetValue.value = m.wallet;
+  walletTransactions.value = [];
   showWalletModal.value = true;
+  walletTransactions.value = await membersApi.getWalletTransactions(m.phone);
 }
 
 async function saveWallet() {
@@ -339,14 +342,15 @@ async function saveWallet() {
   if (walletMode.value === 'set') {
     const delta = Number(walletSetValue.value) - walletTarget.value.wallet;
     if (delta === 0) { showWalletModal.value = false; return; }
-    await membersApi.adjustWallet(walletTarget.value.phone, delta);
+    await membersApi.adjustWallet(walletTarget.value.phone, delta, undefined, { type: 'adjust' });
   } else {
     if (!walletDelta.value) { showWalletModal.value = false; return; }
-    await membersApi.adjustWallet(walletTarget.value.phone, Number(walletDelta.value));
+    const txType = walletMode.value === 'deposit' ? 'deposit' : 'adjust';
+    await membersApi.adjustWallet(walletTarget.value.phone, Number(walletDelta.value), undefined, { type: txType });
   }
 
   showWalletModal.value = false;
-  toast.show('儲值金已更新');
+  toast.show(walletMode.value === 'deposit' ? '加值成功' : '儲值金已更新');
   await load();
 }
 
@@ -899,24 +903,45 @@ const { refreshing } = usePullRefresh(load);
             <button
               type="button"
               class="flex-1 py-2.5 text-xs font-bold text-center rounded-xl border-[1.5px] transition-all"
+              :class="walletMode === 'deposit' ? 'bg-brand-600 text-white border-brand-600' : 'bg-white text-brand-500 border-brand-200'"
+              @click="walletMode = 'deposit'"
+            >加值</button>
+            <button
+              type="button"
+              class="flex-1 py-2.5 text-xs font-bold text-center rounded-xl border-[1.5px] transition-all"
               :class="walletMode === 'adjust' ? 'bg-brand-600 text-white border-brand-600' : 'bg-white text-brand-500 border-brand-200'"
               @click="walletMode = 'adjust'"
-            >加值 / 扣款</button>
+            >調整</button>
             <button
               type="button"
               class="flex-1 py-2.5 text-xs font-bold text-center rounded-xl border-[1.5px] transition-all"
               :class="walletMode === 'set' ? 'bg-brand-600 text-white border-brand-600' : 'bg-white text-brand-500 border-brand-200'"
               @click="walletMode = 'set'"
-            >直接設定金額</button>
+            >直接設定</button>
           </div>
 
-          <!-- 加值/扣款 -->
+          <!-- 加值 -->
+          <div v-if="walletMode === 'deposit'" class="space-y-2">
+            <div class="member-field flex items-center justify-between">
+              <span class="text-brand-400 text-xs font-bold">加值金額</span>
+              <input v-model.number="walletDelta" type="number" class="bg-transparent outline-none text-right text-lg font-extrabold text-brand-700" style="border:none; width: 120px;" placeholder="0" />
+            </div>
+            <p class="text-[10px] text-green-600 ml-1">加值後會自動發 LINE 通知給客人</p>
+            <div v-if="walletDelta && walletTarget" class="member-field flex items-center justify-between">
+              <span class="text-brand-400 text-xs font-bold">加值後餘額</span>
+              <span class="text-sm font-extrabold text-green-600">
+                NT$ {{ walletTarget.wallet + walletDelta }}
+              </span>
+            </div>
+          </div>
+
+          <!-- 調整 -->
           <div v-if="walletMode === 'adjust'" class="space-y-2">
             <div class="member-field flex items-center justify-between">
               <span class="text-brand-400 text-xs font-bold">變動金額</span>
               <input v-model.number="walletDelta" type="number" class="bg-transparent outline-none text-right text-lg font-extrabold text-brand-700" style="border:none; width: 120px;" placeholder="0" />
             </div>
-            <p class="text-[10px] text-brand-400 ml-1">正數 = 加值，負數 = 扣款</p>
+            <p class="text-[10px] text-brand-400 ml-1">正數 = 加值，負數 = 扣款（不會通知客人）</p>
             <div v-if="walletDelta && walletTarget" class="member-field flex items-center justify-between">
               <span class="text-brand-400 text-xs font-bold">變動後餘額</span>
               <span class="text-sm font-extrabold" :class="(walletTarget.wallet + walletDelta) >= 0 ? 'text-green-600' : 'text-red-600'">
@@ -926,7 +951,7 @@ const { refreshing } = usePullRefresh(load);
           </div>
 
           <!-- 直接設定 -->
-          <div v-else class="space-y-2">
+          <div v-if="walletMode === 'set'" class="space-y-2">
             <div class="member-field flex items-center justify-between">
               <span class="text-brand-400 text-xs font-bold">設定金額</span>
               <div class="flex items-center gap-1">
@@ -934,6 +959,34 @@ const { refreshing } = usePullRefresh(load);
                 <input v-model.number="walletSetValue" type="number" class="bg-transparent outline-none text-right text-lg font-extrabold text-brand-700" style="border:none; width: 120px;" />
               </div>
             </div>
+          </div>
+
+          <!-- 交易紀錄 -->
+          <div class="mt-6">
+            <p class="text-xs text-brand-400 font-bold mb-2">交易紀錄</p>
+            <p v-if="walletTransactions.length === 0" class="text-[10px] text-brand-300 text-center py-3">尚無紀錄</p>
+            <ul v-else class="space-y-1.5 max-h-[200px] overflow-y-auto no-scrollbar">
+              <li v-for="tx in walletTransactions" :key="tx.id" class="member-field !py-2 !px-3 flex items-center justify-between">
+                <div class="min-w-0 flex-1">
+                  <div class="flex items-center gap-1.5">
+                    <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-full" :class="{
+                      'text-green-700 bg-green-50': tx.type === 'deposit',
+                      'text-red-700 bg-red-50': tx.type === 'deduct',
+                      'text-blue-700 bg-blue-50': tx.type === 'refund',
+                      'text-brand-500 bg-brand-50': tx.type === 'adjust',
+                    }">{{ ({ deposit: '加值', deduct: '消費', refund: '退款', adjust: '調整' })[tx.type] }}</span>
+                    <span class="text-[10px] text-brand-400">{{ new Date(tx.createdAt).toLocaleDateString('zh-TW') }}</span>
+                  </div>
+                  <p v-if="tx.reason" class="text-[9px] text-brand-400 mt-0.5 truncate">{{ tx.reason }}</p>
+                </div>
+                <div class="text-right shrink-0 ml-2">
+                  <span class="text-xs font-extrabold" :class="tx.type === 'deduct' ? 'text-red-600' : tx.type === 'deposit' || tx.type === 'refund' ? 'text-green-600' : 'text-brand-600'">
+                    {{ tx.type === 'deduct' ? '-' : '+' }}NT$ {{ tx.amount.toLocaleString() }}
+                  </span>
+                  <p class="text-[9px] text-brand-400">餘額 {{ tx.balanceAfter.toLocaleString() }}</p>
+                </div>
+              </li>
+            </ul>
           </div>
 
         </div>

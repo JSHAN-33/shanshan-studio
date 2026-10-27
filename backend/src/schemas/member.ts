@@ -15,6 +15,8 @@ export const upsertMemberSchema = z.object({
 export const walletAdjustSchema = z.object({
   delta: z.number().int(),
   reason: z.string().optional(),
+  type: z.enum(['deposit', 'deduct', 'refund', 'adjust']).optional(),
+  bookingId: z.string().optional(),
 });
 
 export type UpsertMemberInput = z.infer<typeof upsertMemberSchema>;

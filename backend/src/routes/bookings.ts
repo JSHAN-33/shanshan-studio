@@ -17,6 +17,8 @@ import {
   buildBookingConfirmedMessage,
   buildDepositInfoMessage,
   buildNewBookingMessage,
+  buildWalletDeductMessage,
+  buildWalletRefundMessage,
   pushToOa,
   pushToUser,
 } from '../services/lineNotifyService.js';
@@ -322,6 +324,40 @@ export async function bookingsRoutes(app: FastifyInstance) {
         } else if (input.status === '已取消') {
           console.log('[LINE] Sending cancelled message...');
           await pushToUser(pushUserId, buildBookingCancelledMessage(booking));
+
+          // 取消預約 → 自動退回儲值金
+          const walletUsed = existing.walletUsed ?? 0;
+          if (walletUsed > 0 && mem) {
+            const newBalance = mem.wallet + walletUsed;
+            await app.prisma.$transaction([
+              app.prisma.member.update({
+                where: { phone: booking.phone },
+                data: { wallet: newBalance },
+              }),
+              app.prisma.walletTransaction.create({
+                data: {
+                  memberId: mem.id,
+                  type: 'refund',
+                  amount: walletUsed,
+                  balanceAfter: newBalance,
+                  bookingId: booking.id,
+                  reason: `取消預約退款 - ${existing.items}`,
+                },
+              }),
+              app.prisma.booking.update({
+                where: { id },
+                data: { walletUsed: 0 },
+              }),
+            ]);
+            // LINE 退款通知
+            pushToUser(pushUserId, buildWalletRefundMessage({
+              amount: walletUsed,
+              balance: newBalance,
+              items: existing.items,
+              date: existing.date,
+              time: existing.time,
+            })).catch((err) => console.error('[LINE] wallet refund push failed', err));
+          }
         }
       }
     }

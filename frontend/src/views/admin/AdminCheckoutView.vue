@@ -287,8 +287,10 @@ async function confirmCheckout() {
 
   // 調整儲值金（新結帳：扣款；編輯：補差額）
   if (walletDelta !== 0 && checkoutMember.value) {
+    const txType = walletDelta > 0 ? 'deduct' : 'refund';
     await membersApi.adjustWallet(checkoutMember.value.phone, -walletDelta,
-      isEditingPaid.value ? '結帳修正' : '結帳扣款');
+      isEditingPaid.value ? '結帳修正' : '結帳扣款',
+      { type: txType, bookingId: target.value.id });
   }
 
   // payMethod = 剩餘金額的付款方式；若全額儲值金則設 '儲值金'
