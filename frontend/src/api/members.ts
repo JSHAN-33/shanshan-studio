@@ -35,6 +35,9 @@ export const membersApi = {
     const res = await http.get<{ transactions: WalletTransaction[] }>(`/members/${phone}/wallet-transactions`);
     return res.data.transactions;
   },
+  async deleteWalletTransaction(phone: string, txId: string): Promise<void> {
+    await http.delete(`/members/${phone}/wallet-transactions/${txId}`);
+  },
   async remove(phone: string): Promise<void> {
     await http.delete(`/members/${phone}`);
   },

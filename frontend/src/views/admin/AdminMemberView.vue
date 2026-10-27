@@ -361,6 +361,14 @@ async function saveWallet() {
   await load();
 }
 
+async function deleteWalletTx(txId: string) {
+  if (!walletTarget.value) return;
+  if (!window.confirm('確定刪除此筆交易紀錄？')) return;
+  await membersApi.deleteWalletTransaction(walletTarget.value.phone, txId);
+  walletTransactions.value = walletTransactions.value.filter((tx) => tx.id !== txId);
+  toast.show('交易紀錄已刪除');
+}
+
 async function removeMember(m: Member) {
   if (!window.confirm(`確定要刪除會員「${m.name}」嗎？此操作無法復原。`)) return;
   await membersApi.remove(m.phone);
@@ -996,11 +1004,20 @@ const { refreshing } = usePullRefresh(load);
                   </div>
                   <p v-if="tx.reason" class="text-[9px] text-brand-400 mt-0.5 truncate">{{ tx.reason }}</p>
                 </div>
-                <div class="text-right shrink-0 ml-2">
-                  <span class="text-xs font-extrabold" :class="tx.type === 'deduct' ? 'text-red-600' : tx.type === 'deposit' || tx.type === 'refund' ? 'text-green-600' : 'text-brand-600'">
-                    {{ tx.type === 'deduct' ? '-' : '+' }}NT$ {{ tx.amount.toLocaleString() }}
-                  </span>
-                  <p class="text-[9px] text-brand-400">餘額 {{ tx.balanceAfter.toLocaleString() }}</p>
+                <div class="flex items-center gap-1.5 shrink-0 ml-2">
+                  <div class="text-right">
+                    <span class="text-xs font-extrabold" :class="tx.type === 'deduct' ? 'text-red-600' : tx.type === 'deposit' || tx.type === 'refund' ? 'text-green-600' : 'text-brand-600'">
+                      {{ tx.type === 'deduct' ? '-' : '+' }}NT$ {{ tx.amount.toLocaleString() }}
+                    </span>
+                    <p class="text-[9px] text-brand-400">餘額 {{ tx.balanceAfter.toLocaleString() }}</p>
+                  </div>
+                  <button
+                    class="w-5 h-5 rounded-full bg-red-50 flex items-center justify-center text-red-400 hover:bg-red-100 transition shrink-0"
+                    title="刪除此筆紀錄"
+                    @click="deleteWalletTx(tx.id)"
+                  >
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                  </button>
                 </div>
               </li>
             </ul>

@@ -148,6 +148,19 @@ export async function membersRoutes(app: FastifyInstance) {
     }
   );
 
+  // DELETE /members/:phone/wallet-transactions/:txId  —— admin only
+  app.delete<{ Params: { phone: string; txId: string } }>(
+    '/:phone/wallet-transactions/:txId',
+    { preHandler: adminAuth },
+    async (req, reply) => {
+      const { txId } = req.params;
+      const tx = await app.prisma.walletTransaction.findUnique({ where: { id: txId } });
+      if (!tx) return reply.status(404).send({ error: 'NotFound' });
+      await app.prisma.walletTransaction.delete({ where: { id: txId } });
+      return reply.status(204).send();
+    }
+  );
+
   // GET /members/:phone/wallet-transactions  —— 公開（顧客可查自己的）
   const phoneOwnerAuth = buildPhoneOwnerAuth(app);
   app.get<{ Params: { phone: string } }>(
