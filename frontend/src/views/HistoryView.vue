@@ -3,10 +3,11 @@ import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { bookingsApi } from '@/api/bookings';
 import { membersApi } from '@/api/members';
+import { servicesApi } from '@/api/services';
 import { serviceHistoryApi } from '@/api/serviceHistory';
 import { consultationFormsApi } from '@/api/consultationForms';
 import { useAuthStore } from '@/stores/auth';
-import type { Booking, BookingStatus, Member, ServiceHistory, WalletTransaction } from '@/api/types';
+import type { Booking, BookingStatus, Member, Service, ServiceHistory, WalletTransaction } from '@/api/types';
 
 const auth = useAuthStore();
 const router = useRouter();
@@ -14,6 +15,7 @@ const bookings = ref<Booking[]>([]);
 const serviceHistory = ref<ServiceHistory[]>([]);
 const member = ref<Member | null>(null);
 const walletTransactions = ref<WalletTransaction[]>([]);
+const services = ref<Service[]>([]);
 const expandedBookingId = ref<string | null>(null);
 const loading = ref(true);
 const showTopup = ref(false);
@@ -41,16 +43,47 @@ async function load() {
   serviceHistory.value = hList;
   hasConsultation.value = !!cfForm;
   loading.value = false;
-  // 載入儲值交易紀錄
+  // 並行載入儲值交易紀錄 + 服務項目（用於判斷套餐）
   if (auth.customer?.phone) {
-    membersApi.getWalletTransactions(auth.customer.phone)
-      .then((txs) => { walletTransactions.value = txs; })
-      .catch(() => {});
+    Promise.all([
+      membersApi.getWalletTransactions(auth.customer.phone).catch(() => []),
+      servicesApi.list(true).catch(() => []),
+    ]).then(([txs, svcs]) => {
+      walletTransactions.value = txs;
+      services.value = svcs;
+    });
   }
 }
 
-function bookingWalletTxs(bookingId: string) {
-  return walletTransactions.value.filter((tx) => tx.bookingId === bookingId);
+function bookingPaymentBreakdown(b: Booking) {
+  const names = b.items.split('、').map((n) => n.trim()).filter(Boolean);
+  const walletUsed = b.walletUsed ?? 0;
+  const payMethod = b.payMethod ?? '現金';
+
+  // 找出每個項目是否為套餐 + 價格
+  const items = names.map((name) => {
+    const svc = services.value.find((s) => s.name === name);
+    return { name, price: svc?.price ?? 0, isCombo: svc?.isCombo ?? false };
+  });
+
+  // 非套餐項目用儲值金，套餐項目用現金/轉帳
+  // 如果儲值金不夠付所有非套餐項目，剩餘部分也用 payMethod
+  let walletRemaining = walletUsed;
+  return items.map((item) => {
+    if (item.isCombo) {
+      return { ...item, method: payMethod === '儲值金' ? '現金' : payMethod };
+    }
+    if (walletRemaining >= item.price) {
+      walletRemaining -= item.price;
+      return { ...item, method: '儲值金' };
+    } else if (walletRemaining > 0) {
+      const walletPart = walletRemaining;
+      walletRemaining = 0;
+      return { ...item, method: '儲值金', walletPart, cashPart: item.price - walletPart, cashMethod: payMethod === '儲值金' ? '現金' : payMethod };
+    } else {
+      return { ...item, method: payMethod === '儲值金' ? '現金' : payMethod };
+    }
+  });
 }
 
 function toggleBooking(b: Booking) {
@@ -250,28 +283,28 @@ onMounted(load);
                 <svg v-if="b.walletUsed && b.walletUsed > 0 && b.status === '已完成'" class="w-3 h-3 text-brand-300 transition-transform duration-200" :class="{ 'rotate-180': expandedBookingId === b.id }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
               </div>
             </div>
-            <!-- 儲值交易明細（展開） -->
+            <!-- 付款明細（展開） -->
             <div v-if="expandedBookingId === b.id" class="mt-3 pt-3" style="border-top: 1px solid #f0eeec;">
-              <p class="text-[10px] text-brand-400 font-bold mb-2">儲值金交易明細</p>
-              <div v-if="bookingWalletTxs(b.id).length" class="space-y-1.5">
-                <div v-for="tx in bookingWalletTxs(b.id)" :key="tx.id" class="flex items-center justify-between" style="background:#f8f7f5;border-radius:10px;padding:8px 12px;">
-                  <div class="flex items-center gap-2 min-w-0">
-                    <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full shrink-0" :class="{
-                      'text-green-700 bg-green-100': tx.type === 'deposit' || tx.type === 'refund',
-                      'text-red-700 bg-red-100': tx.type === 'deduct',
-                      'text-brand-500 bg-brand-100': tx.type === 'adjust',
-                    }">{{ ({ deposit: '加值', deduct: '扣款', refund: '退款', adjust: '調整' })[tx.type] }}</span>
-                    <span class="text-[10px] text-brand-400">{{ new Date(tx.createdAt).toLocaleDateString('zh-TW') }}</span>
+              <p class="text-[10px] text-brand-400 font-bold mb-2">付款明細</p>
+              <div class="space-y-1.5">
+                <div v-for="(item, idx) in bookingPaymentBreakdown(b)" :key="idx" class="flex items-center justify-between" style="background:#f8f7f5;border-radius:10px;padding:8px 12px;">
+                  <div class="min-w-0 flex-1">
+                    <div class="flex items-center gap-1.5">
+                      <span class="text-[11px] font-bold text-brand-700 truncate">{{ item.name }}</span>
+                      <span v-if="item.isCombo" class="text-[8px] font-bold text-amber-600 bg-amber-50 px-1 py-0.5 rounded-full shrink-0">套餐</span>
+                    </div>
                   </div>
                   <div class="text-right shrink-0 ml-2">
-                    <span class="text-[11px] font-extrabold" :class="tx.type === 'deduct' ? 'text-red-600' : 'text-green-600'">
-                      {{ tx.type === 'deduct' ? '-' : '+' }}NT$ {{ tx.amount.toLocaleString() }}
-                    </span>
-                    <p class="text-[9px] text-brand-400 m-0">餘額 NT$ {{ tx.balanceAfter.toLocaleString() }}</p>
+                    <template v-if="'walletPart' in item">
+                      <div class="text-[10px]"><span class="font-bold text-green-600">儲值金 NT$ {{ item.walletPart.toLocaleString() }}</span></div>
+                      <div class="text-[10px]"><span class="font-bold text-brand-600">{{ item.cashMethod }} NT$ {{ item.cashPart.toLocaleString() }}</span></div>
+                    </template>
+                    <template v-else>
+                      <span class="text-[10px] font-bold" :class="item.method === '儲值金' ? 'text-green-600' : 'text-brand-600'">{{ item.method }} NT$ {{ item.price.toLocaleString() }}</span>
+                    </template>
                   </div>
                 </div>
               </div>
-              <p v-else class="text-[10px] text-brand-300 text-center py-2">無相關紀錄</p>
             </div>
           </li>
         </ul>
