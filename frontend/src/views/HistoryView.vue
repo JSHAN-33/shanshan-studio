@@ -233,18 +233,20 @@ onMounted(load);
         <p v-else-if="!bookings.length" class="text-center text-brand-400 py-6 text-xs">尚無預約紀錄</p>
         <ul v-else class="space-y-3">
           <li v-for="b in bookings" :key="b.id" class="card" :class="{ 'cursor-pointer': b.status === '已完成' && b.walletUsed && b.walletUsed > 0 }" @click="toggleBooking(b)">
-            <div class="flex justify-between items-center">
+            <div class="flex justify-between items-start">
               <div class="min-w-0 flex-1">
                 <div class="font-bold text-[13px] text-brand-700 truncate">{{ b.items }}</div>
                 <div class="flex items-center gap-2 mt-0.5">
                   <span class="text-[10px] text-brand-400">{{ b.date }} {{ b.time }}</span>
                   <span class="badge" :class="badgeClass[b.status]">{{ b.status }}</span>
-                  <span v-if="b.walletUsed && b.walletUsed > 0 && b.status === '已完成'" class="text-[9px] font-bold text-green-600 bg-green-50 px-1.5 py-0.5 rounded-full">儲值金 -NT$ {{ b.walletUsed.toLocaleString() }}</span>
+                </div>
+                <div v-if="b.walletUsed && b.walletUsed > 0 && b.status === '已完成'" class="mt-1.5">
+                  <span class="text-[9px] font-bold text-green-600 bg-green-50 px-1.5 py-0.5 rounded-full">儲值金折抵 -NT$ {{ b.walletUsed.toLocaleString() }}</span>
                 </div>
                 <div v-if="b.remarks" class="text-[10px] text-brand-400 mt-0.5">備註：{{ b.remarks }}</div>
               </div>
-              <div class="flex items-center gap-1.5 shrink-0">
-                <div class="font-extrabold text-[13px] text-brand-600">NT$ {{ b.total }}</div>
+              <div class="flex items-center gap-1.5 shrink-0 ml-3">
+                <div class="font-extrabold text-[13px] text-brand-600">NT$ {{ b.total.toLocaleString() }}</div>
                 <svg v-if="b.walletUsed && b.walletUsed > 0 && b.status === '已完成'" class="w-3 h-3 text-brand-300 transition-transform duration-200" :class="{ 'rotate-180': expandedBookingId === b.id }" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
               </div>
             </div>
