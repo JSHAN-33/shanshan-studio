@@ -595,8 +595,7 @@ export function buildWalletDepositMessage(data: {
             type: 'box', layout: 'vertical', paddingAll: '14px', spacing: 'sm',
             contents: [
               { type: 'text', text: '儲值金無使用期限，限本人使用', size: 'xxs', color: '#b0aba7', align: 'center' },
-              { type: 'text', text: '如有疑問請透過 LINE 聯繫小編 ♡', size: 'xxs', color: '#b0aba7', align: 'center' },
-              { type: 'text', text: `NO. ${receiptNo}`, size: 'xxs', color: '#d0cbc7', align: 'center', margin: 'sm' },
+              { type: 'text', text: '可以隨時進入會員頁面查看餘額，謝謝妳對 SHANSHAN.STUDIO 的支持 ♡', size: 'xxs', color: '#b0aba7', align: 'center', wrap: true },
             ],
           },
         ],
