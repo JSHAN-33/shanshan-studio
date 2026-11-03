@@ -695,6 +695,50 @@ export function buildAftercareMessage(): object {
   };
 }
 
+/** 除毛回除提醒（結帳後 4 週自動發送） */
+export function buildWaxReminderMessage(name: string, bookingUrl: string): object {
+  return {
+    type: 'flex',
+    altText: `${name}～定期保養的時間到囉 ✨`,
+    contents: {
+      type: 'bubble',
+      size: 'kilo',
+      header: {
+        type: 'box', layout: 'vertical', backgroundColor: '#655b55', paddingAll: '20px',
+        contents: [
+          { type: 'text', text: 'SHANSHAN.STUDIO', color: '#ffffff80', size: 'xxs', weight: 'bold' },
+          { type: 'text', text: '定期保養提醒', color: '#ffffff', size: 'xl', weight: 'bold', margin: 'md' },
+          { type: 'text', text: 'WAX CARE REMINDER ✨', color: '#ffffffaa', size: 'xs', margin: 'sm' },
+        ],
+      },
+      body: {
+        type: 'box', layout: 'vertical', paddingAll: '20px', spacing: 'md',
+        contents: [
+          { type: 'text', text: `嗨 ${name}～叮咚！`, size: 'md', weight: 'bold', color: '#4a423d' },
+          { type: 'text', text: '定期保養的時間到囉 ✨', size: 'sm', color: '#4a423d', margin: 'sm' },
+          { type: 'separator', margin: 'lg' },
+          { type: 'text', text: '上次除毛已經過了 4 週，毛髮長度差不多準備好下一次的保養了～', size: 'sm', color: '#7a726d', wrap: true, margin: 'lg' },
+          { type: 'text', text: '趁著毛髮還軟軟的時候處理最輕鬆！', size: 'sm', color: '#7a726d', wrap: true, margin: 'md' },
+          { type: 'text', text: '點這裡看看這週空檔 ⤵️', size: 'sm', weight: 'bold', color: '#655b55', margin: 'lg' },
+        ],
+      },
+      footer: {
+        type: 'box', layout: 'vertical', paddingAll: '16px',
+        contents: [
+          {
+            type: 'button',
+            style: 'primary',
+            color: '#655b55',
+            height: 'sm',
+            action: { type: 'uri', label: '快速預約 →', uri: bookingUrl },
+          },
+          { type: 'text', text: '如需異動請透過 LINE 私訊小編', size: 'xxs', color: '#b0aba7', align: 'center', margin: 'md' },
+        ],
+      },
+    },
+  };
+}
+
 /** 感謝回饋訊息（推給客人，預約結束後 1 小時） */
 export function buildFeedbackMessage(name: string, googleReviewUrl?: string): object {
   const bodyContents: object[] = [

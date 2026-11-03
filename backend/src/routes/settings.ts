@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { adminAuth } from '../middleware/adminAuth.js';
-import { buildDepositInfoMessage, buildBookingReminderMessage, pushToUser } from '../services/lineNotifyService.js';
+import { buildDepositInfoMessage, buildBookingReminderMessage, buildWaxReminderMessage, pushToUser } from '../services/lineNotifyService.js';
 
 export async function settingsRoutes(app: FastifyInstance) {
   // GET /settings/deposit — 公開（前台需要知道是否啟用）
@@ -135,5 +135,16 @@ export async function settingsRoutes(app: FastifyInstance) {
       sendMode: !!send,
       results,
     };
+  });
+
+  // POST /settings/wax-reminder/test — admin only：試發除毛回除提醒給店家
+  app.post('/wax-reminder/test', { preHandler: adminAuth }, async () => {
+    const ownerUserId = process.env.LINE_OWNER_USER_ID;
+    if (!ownerUserId) return { ok: false, error: 'LINE_OWNER_USER_ID not set' };
+
+    const bookingUrl = 'https://liff.line.me/' + (process.env.VITE_LIFF_ID || '2009682315-3j8aqE0E');
+    const msg = buildWaxReminderMessage('小珊', bookingUrl);
+    await pushToUser(ownerUserId, msg);
+    return { ok: true, sentTo: 'owner' };
   });
 }
