@@ -575,6 +575,30 @@ function formatDateLabel(date: string) {
   return `${d.getFullYear()} 年 ${d.getMonth() + 1}月 ${d.getDate()} 日`;
 }
 
+// --- 本月新客 ---
+const newCustomersThisMonth = computed(() => {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = now.getMonth(); // 0-based
+  return members.value.filter((mb) => {
+    const d = new Date(mb.createdAt);
+    return d.getFullYear() === y && d.getMonth() === m;
+  }).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+});
+
+const newCustomersLastMonth = computed(() => {
+  const now = new Date();
+  const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const y = lastMonth.getFullYear();
+  const m = lastMonth.getMonth();
+  return members.value.filter((mb) => {
+    const d = new Date(mb.createdAt);
+    return d.getFullYear() === y && d.getMonth() === m;
+  });
+});
+
+const showNewCustomerCard = ref(true);
+
 const { refreshing } = usePullRefresh(load);
 </script>
 
@@ -608,6 +632,33 @@ const { refreshing } = usePullRefresh(load);
       >
         {{ t.label }}
       </button>
+    </div>
+
+    <!-- 本月新客 -->
+    <div v-if="showNewCustomerCard" class="card !py-2.5 !px-3 !rounded-xl">
+      <div class="flex items-center justify-between mb-1.5">
+        <h3 class="font-bold text-xs">本月新客</h3>
+        <div class="flex items-center gap-2">
+          <span class="text-lg font-extrabold text-brand-600">{{ newCustomersThisMonth.length }}</span>
+          <span class="text-[10px] text-brand-400 font-bold">位</span>
+        </div>
+      </div>
+      <div class="text-[10px] text-brand-400 mb-2">
+        上月 {{ newCustomersLastMonth.length }} 位
+        <span v-if="newCustomersLastMonth.length > 0" class="ml-1 font-bold" :class="newCustomersThisMonth.length >= newCustomersLastMonth.length ? 'text-green-500' : 'text-red-400'">
+          {{ newCustomersThisMonth.length >= newCustomersLastMonth.length ? '+' : '' }}{{ Math.round(((newCustomersThisMonth.length - newCustomersLastMonth.length) / newCustomersLastMonth.length) * 100) }}%
+        </span>
+      </div>
+      <ul v-if="newCustomersThisMonth.length" class="border-t border-brand-50 pt-1.5 space-y-1">
+        <li v-for="nc in newCustomersThisMonth" :key="nc.id" class="flex items-center justify-between py-1">
+          <div class="flex items-center gap-1.5">
+            <span class="text-xs font-bold text-brand-700">{{ nc.name }}</span>
+            <span class="text-[10px] text-brand-400">{{ nc.phone.slice(0, 4) }}-***-{{ nc.phone.slice(-3) }}</span>
+          </div>
+          <span class="text-[10px] text-brand-400">{{ new Date(nc.createdAt).toLocaleDateString('zh-TW', { month: 'numeric', day: 'numeric' }).replace('/', '/') }}</span>
+        </li>
+      </ul>
+      <p v-else class="text-[10px] text-brand-300 text-center py-2">本月尚無新客</p>
     </div>
 
     <p v-if="loading" class="text-center text-brand-400 py-6">載入中…</p>
