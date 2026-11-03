@@ -45,7 +45,7 @@ const services = [
   { id: 'p-rica-argan', name: 'RICA堅果保濕乳液', nameEn: 'Argan Oil After Wax Emulsion', cat: 'products', price: 1800, sortOrder: 13 },
   { id: 'p-rica-avocado', name: 'RICA酪梨奶油卸毛精華', nameEn: 'Avocado After Wax Serum', cat: 'products', price: 1700, sortOrder: 14 },
   { id: 'p-rica-rose', name: 'RICA玫瑰精華噴霧', nameEn: 'Rose After Wax Lotion', cat: 'products', price: 1680, sortOrder: 15 },
-  { id: 'p-rica-sicily', name: '西西里果酸角質霜', nameEn: 'Body Exfoliant', cat: 'products', price: 1800, sortOrder: 16 },
+  { id: 'p-rica-sicily', name: 'RICA西西里果酸角質霜', nameEn: 'Body Exfoliant', cat: 'products', price: 1800, sortOrder: 16 },
 ];
 
 const defaultSlots = ['10:00', '10:30', '11:00', '11:30', '12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00', '17:30', '18:00', '18:30', '19:00', '19:30', '20:00'];
