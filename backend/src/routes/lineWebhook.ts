@@ -99,9 +99,24 @@ export async function lineWebhookRoutes(app: FastifyInstance) {
       if (event.type === 'message' && event.message?.type === 'text') {
         const text = (event.message.text ?? '').trim();
 
-        // 已綁定 OA → 不處理，讓店家自己回覆
+        // 已綁定 OA → 處理關閉/開啟提醒，其他讓店家自己回覆
         const alreadyLinked = await app.prisma.member.findFirst({ where: { lineOaUserId: userId } });
-        if (alreadyLinked) continue;
+        if (alreadyLinked) {
+          if (text === '關閉提醒') {
+            await app.prisma.member.update({ where: { id: alreadyLinked.id }, data: { waxReminderOff: true } });
+            await replyMessage(event.replyToken!, [
+              { type: 'text', text: `${alreadyLinked.name} 已為您關閉回除提醒 ✅\n如需重新開啟，請傳送「開啟提醒」` },
+            ]);
+            console.log(`[Webhook] Wax reminder OFF for ${alreadyLinked.name}`);
+          } else if (text === '開啟提醒') {
+            await app.prisma.member.update({ where: { id: alreadyLinked.id }, data: { waxReminderOff: false } });
+            await replyMessage(event.replyToken!, [
+              { type: 'text', text: `${alreadyLinked.name} 已為您重新開啟回除提醒 ✨\n我們會在適當時間提醒您喔！` },
+            ]);
+            console.log(`[Webhook] Wax reminder ON for ${alreadyLinked.name}`);
+          }
+          continue;
+        }
 
         // 嘗試用 LIFF lineUserId 自動綁定
         const liffMember = await app.prisma.member.findUnique({ where: { lineUserId: userId } });

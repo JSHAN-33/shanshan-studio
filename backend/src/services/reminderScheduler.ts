@@ -250,8 +250,8 @@ export function startReminderScheduler(prisma: PrismaClient) {
           const member = await prisma.member.findUnique({ where: { phone: reminder.phone } });
           const pushUserId = member?.lineOaUserId ?? member?.lineUserId;
 
-          if (!pushUserId) {
-            console.log(`[WaxReminder] ${reminder.name} has no LINE ID, skipping.`);
+          if (!pushUserId || member?.waxReminderOff) {
+            console.log(`[WaxReminder] ${reminder.name} ${member?.waxReminderOff ? 'opted out' : 'has no LINE ID'}, skipping.`);
             await prisma.waxReminder.update({
               where: { id: reminder.id },
               data: { sentAt: new Date() },

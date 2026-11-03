@@ -46,6 +46,7 @@ model Member {
   lineUserId  String?  @unique
   lineOaUserId String? @unique
   pictureUrl  String?
+  waxReminderOff Boolean @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }

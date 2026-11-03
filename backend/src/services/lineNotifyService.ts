@@ -732,7 +732,7 @@ export function buildWaxReminderMessage(name: string, bookingUrl: string): objec
             height: 'sm',
             action: { type: 'uri', label: '快速預約 →', uri: bookingUrl },
           },
-          { type: 'text', text: '如需異動請透過 LINE 私訊小編', size: 'xxs', color: '#b0aba7', align: 'center', margin: 'md' },
+          { type: 'text', text: '如不需要此提醒，回覆「關閉提醒」即可', size: 'xxs', color: '#b0aba7', align: 'center', margin: 'md' },
         ],
       },
     },
