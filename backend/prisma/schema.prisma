@@ -159,6 +159,19 @@ model WalletTransaction {
   @@index([bookingId])
 }
 
+model WaxReminder {
+  id        String    @id @default(cuid())
+  bookingId String
+  phone     String
+  name      String
+  dueDate   String    // "YYYY-MM-DD" = paidAt + 28 days
+  sentAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([dueDate])
+  @@index([phone])
+}
+
 model ServiceHistory {
   id        String   @id @default(cuid())
   phone     String

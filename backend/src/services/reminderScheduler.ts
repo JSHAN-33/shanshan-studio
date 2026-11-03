@@ -1,6 +1,6 @@
 import cron from 'node-cron';
 import type { PrismaClient } from '@prisma/client';
-import { buildBookingReminderMessage, buildAftercareMessage, buildFeedbackMessage, pushToUser } from './lineNotifyService.js';
+import { buildBookingReminderMessage, buildAftercareMessage, buildFeedbackMessage, buildWaxReminderMessage, pushToUser } from './lineNotifyService.js';
 
 /** 台灣時間 helper */
 function getTaiwanNow(): Date {
@@ -207,4 +207,75 @@ export function startReminderScheduler(prisma: PrismaClient) {
   });
 
   console.log('[Aftercare] Scheduler started — every 10 minutes');
+
+  // === 每天 10:00 檢查：除毛回除提醒（結帳後 28 天） ===
+  cron.schedule('0 10 * * *', async () => {
+    try {
+      const todayStr = getTodayTw();
+      console.log(`[WaxReminder] Cron triggered, checking due date <= ${todayStr}`);
+
+      const dueReminders = await prisma.waxReminder.findMany({
+        where: { dueDate: { lte: todayStr }, sentAt: null },
+      });
+
+      if (dueReminders.length === 0) {
+        console.log('[WaxReminder] No due reminders found.');
+        return;
+      }
+
+      const bookingUrl = 'https://liff.line.me/' + (process.env.VITE_LIFF_ID || '2009682315-3j8aqE0E');
+
+      for (const reminder of dueReminders) {
+        try {
+          // 檢查客人是否已有未來預約（未取消的）
+          const futureBooking = await prisma.booking.findFirst({
+            where: {
+              phone: reminder.phone,
+              date: { gte: todayStr },
+              status: { not: '已取消' },
+            },
+          });
+
+          if (futureBooking) {
+            // 已有預約 → 標記已處理，不發送
+            await prisma.waxReminder.update({
+              where: { id: reminder.id },
+              data: { sentAt: new Date() },
+            });
+            console.log(`[WaxReminder] ${reminder.name} already has future booking, skipping.`);
+            continue;
+          }
+
+          // 找到客人的 LINE ID
+          const member = await prisma.member.findUnique({ where: { phone: reminder.phone } });
+          const pushUserId = member?.lineOaUserId ?? member?.lineUserId;
+
+          if (!pushUserId) {
+            console.log(`[WaxReminder] ${reminder.name} has no LINE ID, skipping.`);
+            await prisma.waxReminder.update({
+              where: { id: reminder.id },
+              data: { sentAt: new Date() },
+            });
+            continue;
+          }
+
+          // 發送提醒
+          await pushToUser(pushUserId, buildWaxReminderMessage(reminder.name, bookingUrl));
+          await prisma.waxReminder.update({
+            where: { id: reminder.id },
+            data: { sentAt: new Date() },
+          });
+          console.log(`[WaxReminder] Sent to ${reminder.name} (${reminder.phone})`);
+        } catch (err) {
+          console.error(`[WaxReminder] Failed for ${reminder.name}:`, err);
+        }
+      }
+    } catch (err) {
+      console.error('[WaxReminder] Cron error:', err);
+    }
+  }, {
+    timezone: 'Asia/Taipei',
+  });
+
+  console.log('[WaxReminder] Scheduler started — daily at 10:00 (Asia/Taipei)');
 }

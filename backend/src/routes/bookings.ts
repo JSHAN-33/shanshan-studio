@@ -362,6 +362,33 @@ export async function bookingsRoutes(app: FastifyInstance) {
       }
     }
 
+    // 結帳完成 → 檢查是否為除毛服務，建立 4 週回除提醒
+    if (input.status === '已完成' && booking.paidAt) {
+      try {
+        const itemNames = booking.items.split('、').map((s: string) => s.trim()).filter(Boolean);
+        const services = await app.prisma.service.findMany({
+          where: { name: { in: itemNames }, cat: { in: ['women', 'men'] } },
+          select: { id: true },
+        });
+        if (services.length > 0) {
+          // 計算 28 天後的日期
+          const paidDate = new Date(booking.paidAt as unknown as string);
+          const dueDate = new Date(paidDate.getTime() + 28 * 24 * 60 * 60 * 1000);
+          const dueDateStr = dueDate.toISOString().slice(0, 10);
+          // 避免重複建立
+          const exists = await app.prisma.waxReminder.findFirst({ where: { bookingId: booking.id } });
+          if (!exists) {
+            await app.prisma.waxReminder.create({
+              data: { bookingId: booking.id, phone: booking.phone, name: booking.name, dueDate: dueDateStr },
+            });
+            console.log(`[WaxReminder] Created for ${booking.name}, due ${dueDateStr}`);
+          }
+        }
+      } catch (err) {
+        console.error('[WaxReminder] Error creating reminder:', err);
+      }
+    }
+
     return { booking };
   });
 
