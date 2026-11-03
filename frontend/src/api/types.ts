@@ -206,6 +206,11 @@ export interface DailySummary {
   totalBookings: number;
 }
 
+export interface DayStatus {
+  date: string;
+  status: 'full' | 'off';
+}
+
 export interface BookingMonthStatus {
   yearMonth: string;
   isOpen: boolean;

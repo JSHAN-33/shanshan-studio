@@ -1,5 +1,5 @@
 import { http } from './axios';
-import type { BlockedSlot, BookingMonthStatus } from './types';
+import type { BlockedSlot, BookingMonthStatus, DayStatus } from './types';
 
 export const slotsApi = {
   async getConfig(): Promise<string[]> {
@@ -43,5 +43,17 @@ export const slotsApi = {
   },
   async resetBookingMonth(yearMonth: string): Promise<void> {
     await http.delete(`/slots/booking-months/${yearMonth}`);
+  },
+  async listDayStatuses(month?: string): Promise<DayStatus[]> {
+    const res = await http.get<{ dayStatuses: DayStatus[] }>('/slots/day-status', {
+      params: month ? { month } : {},
+    });
+    return res.data.dayStatuses;
+  },
+  async setDayStatus(date: string, status: 'full' | 'off'): Promise<void> {
+    await http.put(`/slots/day-status/${date}`, { status });
+  },
+  async clearDayStatus(date: string): Promise<void> {
+    await http.delete(`/slots/day-status/${date}`);
   },
 };

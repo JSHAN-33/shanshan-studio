@@ -9,7 +9,7 @@ import { slotsApi } from '@/api/slots';
 import { servicesApi } from '@/api/services';
 import { membersApi } from '@/api/members';
 import { settingsApi } from '@/api/settings';
-import type { Booking, BookingStatus, BookingMonthStatus, DepositSetting, FinanceSummary, BlockedSlot, Service, ServiceCat, Member } from '@/api/types';
+import type { Booking, BookingStatus, BookingMonthStatus, DepositSetting, FinanceSummary, BlockedSlot, Service, ServiceCat, Member, DayStatus } from '@/api/types';
 
 const selectedDate = ref<string | null>(new Date().toISOString().slice(0, 10));
 const month = ref<string>(new Date().toISOString().slice(0, 7));
@@ -142,6 +142,33 @@ async function toggleSlot(time: string) {
 }
 
 const bulkSlotLoading = ref(false);
+
+// --- 日期狀態（滿/休）---
+const dayStatuses = ref<DayStatus[]>([]);
+const fullDates = computed(() => dayStatuses.value.filter(d => d.status === 'full').map(d => d.date));
+const offDates = computed(() => dayStatuses.value.filter(d => d.status === 'off').map(d => d.date));
+
+function getDayStatus(date: string): 'full' | 'off' | null {
+  const ds = dayStatuses.value.find(d => d.date === date);
+  return ds ? ds.status as 'full' | 'off' : null;
+}
+
+async function setDayStatus(date: string, status: 'full' | 'off') {
+  const current = getDayStatus(date);
+  if (current === status) {
+    // 再點一次 = 取消
+    await slotsApi.clearDayStatus(date);
+    dayStatuses.value = dayStatuses.value.filter(d => d.date !== date);
+  } else {
+    await slotsApi.setDayStatus(date, status);
+    const existing = dayStatuses.value.find(d => d.date === date);
+    if (existing) {
+      existing.status = status;
+    } else {
+      dayStatuses.value.push({ date, status });
+    }
+  }
+}
 
 async function blockEntireDay() {
   const bookedCount = allSlots.value.filter((t) => getSlotStatus(t) === 'booked').length;
@@ -390,16 +417,18 @@ async function loadMonth(m: string) {
   month.value = m;
   loading.value = true;
   try {
-    const [list, sum, config, blocked] = await Promise.all([
+    const [list, sum, config, blocked, ds] = await Promise.all([
       bookingsApi.listAll({ month: m }),
       financeApi.summary(),
       slotsApi.getConfig(),
       slotsApi.listBlocked(m),
+      slotsApi.listDayStatuses(m),
     ]);
     monthBookings.value = list;
     summary.value = sum;
     allSlots.value = defaultSlots;
     blockedSlots.value = blocked;
+    dayStatuses.value = ds;
   } finally {
     loading.value = false;
   }
@@ -834,6 +863,8 @@ const { refreshing } = usePullRefresh(() => loadMonth(month.value));
       v-model="selectedDate"
       :marked-dates="markedDates"
       :grayed-dates="fullyUnavailableDates"
+      :full-dates="fullDates"
+      :off-dates="offDates"
       @update:model-value="onDateSelect"
       @month-change="loadMonth"
     />
@@ -947,6 +978,30 @@ const { refreshing } = usePullRefresh(() => loadMonth(month.value));
           <span class="flex items-center gap-1.5">
             <span class="w-3 h-3 rounded-sm bg-white border border-brand-100"></span> 空檔
           </span>
+        </div>
+
+        <!-- 日期狀態標記（滿/休） -->
+        <div class="flex gap-2 mb-3">
+          <button
+            type="button"
+            class="flex-1 py-2 rounded-xl text-xs font-bold border transition active:scale-95"
+            :class="getDayStatus(slotDate) === 'full'
+              ? 'bg-red-50 text-red-500 border-red-200'
+              : 'bg-white text-brand-500 border-brand-200 hover:bg-brand-50'"
+            @click="setDayStatus(slotDate, 'full')"
+          >
+            {{ getDayStatus(slotDate) === 'full' ? '✓ 已標滿' : '標記為 滿' }}
+          </button>
+          <button
+            type="button"
+            class="flex-1 py-2 rounded-xl text-xs font-bold border transition active:scale-95"
+            :class="getDayStatus(slotDate) === 'off'
+              ? 'bg-brand-100 text-brand-500 border-brand-300'
+              : 'bg-white text-brand-500 border-brand-200 hover:bg-brand-50'"
+            @click="setDayStatus(slotDate, 'off')"
+          >
+            {{ getDayStatus(slotDate) === 'off' ? '✓ 已標休' : '標記為 休' }}
+          </button>
         </div>
 
         <!-- 整日快速操作 -->

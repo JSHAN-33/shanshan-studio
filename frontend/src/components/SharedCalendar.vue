@@ -7,6 +7,8 @@ const props = defineProps<{
   markedDates?: string[];
   grayedDates?: string[];
   grayedDisabled?: boolean;
+  fullDates?: string[];
+  offDates?: string[];
 }>();
 const emit = defineEmits<{
   (e: 'update:modelValue', value: string): void;
@@ -72,9 +74,13 @@ const daysInMonth = computed(() => {
 
 const minDateStr = computed(() => props.minDate ?? '');
 
+function isFull(date: string) { return props.fullDates?.includes(date) ?? false; }
+function isOff(date: string) { return props.offDates?.includes(date) ?? false; }
+
 function isDisabled(date: string) {
   if (minDateStr.value && date < minDateStr.value) return true;
   if (props.grayedDisabled && (props.grayedDates?.includes(date) ?? false)) return true;
+  if (isFull(date) || isOff(date)) return true;
   return false;
 }
 
@@ -171,11 +177,15 @@ function select(date: string) {
             'cal-day--disabled': isDisabled(cell.date),
             'cal-day--today': isToday(cell.date),
             'cal-day--grayed': isGrayed(cell.date) && modelValue !== cell.date,
+            'cal-day--full': isFull(cell.date),
+            'cal-day--off': isOff(cell.date),
           }"
           @click="select(cell.date)"
         >
           {{ cell.day }}
-          <span v-if="isMarked(cell.date)" class="cal-dot-mark"
+          <span v-if="isFull(cell.date)" class="cal-status-label cal-status-full">滿</span>
+          <span v-else-if="isOff(cell.date)" class="cal-status-label cal-status-off">休</span>
+          <span v-else-if="isMarked(cell.date)" class="cal-dot-mark"
             :class="modelValue === cell.date ? 'bg-white' : 'bg-amber-500'" />
         </button>
       </div>
@@ -324,7 +334,7 @@ function select(date: string) {
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 42px;
+  height: 48px;
 }
 
 .cal-day {
@@ -366,13 +376,42 @@ function select(date: string) {
 }
 .cal-day--grayed:hover { background: #f5f3f1; }
 
+.cal-day--full {
+  color: #ccc;
+  pointer-events: none;
+}
+
+.cal-day--off {
+  color: #ccc;
+  pointer-events: none;
+}
+
 .cal-dot-mark {
   position: absolute;
   width: 4px;
   height: 4px;
   border-radius: 50%;
-  bottom: 3px;
+  bottom: -2px;
   left: 50%;
   transform: translateX(-50%);
+}
+
+.cal-status-label {
+  position: absolute;
+  bottom: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  line-height: 1;
+}
+
+.cal-status-full {
+  color: #e04040;
+}
+
+.cal-status-off {
+  color: #b0aba7;
 }
 </style>

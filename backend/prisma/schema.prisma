@@ -118,6 +118,11 @@ model BookingMonth {
   isOpen    Boolean @default(false)
 }
 
+model DayStatus {
+  date   String @id // "2026-11-05"
+  status String // "full" | "off"
+}
+
 model ConsultationForm {
   id              String   @id @default(cuid())
   phone           String   @unique

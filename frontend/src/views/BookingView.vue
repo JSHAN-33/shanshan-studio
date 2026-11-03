@@ -85,6 +85,10 @@ const fullyUnavailableDates = ref<string[]>([]);
 const viewMonth = ref(today.slice(0, 7));
 const monthClosed = ref(false); // 此月份尚未開放預約
 
+// 「滿」/「休」手動標記日期
+const fullDates = ref<string[]>([]);
+const offDates = ref<string[]>([]);
+
 // 月份開放狀態快取
 const monthOpenCache = ref<Record<string, boolean | undefined>>({});
 
@@ -120,15 +124,25 @@ async function loadMonthAvailability(month: string) {
   const startDate = `${y}-${pad(mon)}-01`;
   const endDate = `${y}-${pad(mon)}-${pad(lastDay)}`;
   try {
-    const slotsByDate = await bookingsApi.bulkAvailableSlots(
-      startDate,
-      endDate,
-      booking.totalDuration || undefined
-    );
+    const [slotsByDate, dayStatuses] = await Promise.all([
+      bookingsApi.bulkAvailableSlots(startDate, endDate, booking.totalDuration || undefined),
+      slotsApi.listDayStatuses(month),
+    ]);
+    // 處理手動標記的「滿」/「休」
+    const fDates: string[] = [];
+    const oDates: string[] = [];
+    for (const ds of dayStatuses) {
+      if (ds.status === 'full') fDates.push(ds.date);
+      else if (ds.status === 'off') oDates.push(ds.date);
+    }
+    fullDates.value = fDates;
+    offDates.value = oDates;
+
     const result: string[] = [];
     for (let d = 1; d <= lastDay; d++) {
       const date = `${y}-${pad(mon)}-${pad(d)}`;
       if (date < today) continue; // 過去日期已由 min-date 反灰
+      if (fDates.includes(date) || oDates.includes(date)) continue; // 已由滿/休標籤處理
       if ((slotsByDate[date] ?? []).length === 0) result.push(date);
     }
     fullyUnavailableDates.value = result;
@@ -453,6 +467,8 @@ function goHistory() {
               v-model="selectedDate"
               :min-date="today"
               :grayed-dates="fullyUnavailableDates"
+              :full-dates="fullDates"
+              :off-dates="offDates"
               grayed-disabled
               @month-change="loadMonthAvailability"
             />

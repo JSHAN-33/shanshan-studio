@@ -104,4 +104,39 @@ export async function slotsRoutes(app: FastifyInstance) {
       return reply.status(204).send();
     },
   );
+
+  // GET /slots/day-status?month=YYYY-MM  —— 公開（前端日曆顯示滿/休）
+  app.get('/day-status', async (req) => {
+    const { month } = req.query as { month?: string };
+    const where = month ? { date: { startsWith: month } } : {};
+    const items = await app.prisma.dayStatus.findMany({ where });
+    return { dayStatuses: items };
+  });
+
+  // PUT /slots/day-status/:date  —— admin only（設定日期狀態：滿/休）
+  app.put<{ Params: { date: string } }>(
+    '/day-status/:date',
+    { preHandler: adminAuth },
+    async (req) => {
+      const { date } = req.params;
+      const { status } = req.body as { status: 'full' | 'off' };
+      const result = await app.prisma.dayStatus.upsert({
+        where: { date },
+        update: { status },
+        create: { date, status },
+      });
+      return { dayStatus: result };
+    },
+  );
+
+  // DELETE /slots/day-status/:date  —— admin only（移除日期狀態）
+  app.delete<{ Params: { date: string } }>(
+    '/day-status/:date',
+    { preHandler: adminAuth },
+    async (req, reply) => {
+      const { date } = req.params;
+      await app.prisma.dayStatus.deleteMany({ where: { date } });
+      return reply.status(204).send();
+    },
+  );
 }
