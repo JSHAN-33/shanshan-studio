@@ -130,7 +130,7 @@ onMounted(load);
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.55)" stroke-width="1.8"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
             </div>
             <div>
-              <p style="font-size:9px;font-weight:700;letter-spacing:0.16em;color:rgba(255,255,255,0.28);margin:0 0 4px;text-transform:uppercase;">Member</p>
+              <p style="font-size:9px;font-weight:700;letter-spacing:0.16em;color:rgba(255,255,255,0.28);margin:0 0 4px;text-transform:uppercase;">Name</p>
               <h2 style="font-size:22px;font-weight:900;color:white;margin:0;line-height:1.1;">{{ auth.customer?.name ?? '--' }}</h2>
             </div>
           </div>
