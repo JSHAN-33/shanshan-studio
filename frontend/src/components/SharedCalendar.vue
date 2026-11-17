@@ -9,6 +9,7 @@ const props = defineProps<{
   grayedDisabled?: boolean;
   fullDates?: string[];
   offDates?: string[];
+  adminMode?: boolean;
 }>();
 const emit = defineEmits<{
   (e: 'update:modelValue', value: string): void;
@@ -80,7 +81,7 @@ function isOff(date: string) { return props.offDates?.includes(date) ?? false; }
 function isDisabled(date: string) {
   if (minDateStr.value && date < minDateStr.value) return true;
   if (props.grayedDisabled && (props.grayedDates?.includes(date) ?? false)) return true;
-  if (isFull(date) || isOff(date)) return true;
+  if (!props.adminMode && (isFull(date) || isOff(date))) return true;
   return false;
 }
 
@@ -109,7 +110,7 @@ function select(date: string) {
 </script>
 
 <template>
-  <div class="cal-container">
+  <div class="cal-container" :class="{ 'cal-admin': adminMode }">
     <!-- Nav -->
     <div class="cal-nav">
       <button type="button" class="cal-arrow" @click="prev">&lt;</button>
@@ -384,6 +385,13 @@ function select(date: string) {
 .cal-day--off {
   color: #ccc;
   pointer-events: none;
+}
+
+.cal-admin .cal-day--full,
+.cal-admin .cal-day--off {
+  color: inherit;
+  pointer-events: auto;
+  cursor: pointer;
 }
 
 .cal-dot-mark {

@@ -865,6 +865,7 @@ const { refreshing } = usePullRefresh(() => loadMonth(month.value));
       :grayed-dates="fullyUnavailableDates"
       :full-dates="fullDates"
       :off-dates="offDates"
+      admin-mode
       @update:model-value="onDateSelect"
       @month-change="loadMonth"
     />
