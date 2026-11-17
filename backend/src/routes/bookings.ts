@@ -175,18 +175,9 @@ export async function bookingsRoutes(app: FastifyInstance) {
       lineUserId: input.lineUserId,
     });
 
-    // 在 LIFF 內由前端 liff.sendMessages() 以客人身份發送（右邊）；
-    // 非 LIFF 環境才由後端 pushToOa 作為備案（左邊，bot 發的）
-    if (!inLiff) {
-      pushToOa(buildNewBookingMessage({
-        name: input.name,
-        phone: input.phone,
-        date: input.date,
-        time: input.time,
-        items: input.items,
-        total: input.total,
-      })).catch((err) => console.error('[LINE] pushToOa failed', err));
-    }
+    // 通知一律由前端處理：LIFF 內用 liff.sendMessages()（客人身份，右邊）；
+    // 失敗時前端呼叫 /notify-oa 由後端 pushToOa 補發（官方帳號，左邊）。
+    // 不在此處推播，避免非 LIFF 環境下與前端 fallback 重複發送。
 
     // 若客人尚未綁定 OA，推播綁定提醒
     const mem = await app.prisma.member.findUnique({ where: { phone: input.phone } });
