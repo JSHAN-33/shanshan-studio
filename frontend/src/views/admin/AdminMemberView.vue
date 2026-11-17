@@ -576,6 +576,7 @@ function formatDateLabel(date: string) {
 }
 
 // --- 本月新客 ---
+const newCustomerExpanded = ref(false);
 const newCustomersThisMonth = computed(() => {
   const now = new Date();
   const y = now.getFullYear();
@@ -609,33 +610,40 @@ const { refreshing } = usePullRefresh(load);
 
     <!-- 本月新客 -->
     <div v-if="showNewCustomerCard" class="card !py-2.5 !px-3 !rounded-xl">
-      <div class="flex items-center justify-between mb-1.5">
+      <div class="flex items-center justify-between mb-1.5 cursor-pointer" @click="newCustomerExpanded = !newCustomerExpanded">
         <h3 class="font-bold text-xs">本月新客</h3>
         <div class="flex items-center gap-2">
           <span class="text-lg font-extrabold text-brand-600">{{ newCustomersThisMonth.length }}</span>
           <span class="text-[10px] text-brand-400 font-bold">位</span>
+          <svg
+            class="w-4 h-4 text-brand-400 transition-transform duration-200"
+            :class="{ 'rotate-180': newCustomerExpanded }"
+            viewBox="0 0 20 20" fill="currentColor"
+          ><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd"/></svg>
         </div>
       </div>
-      <div class="text-[10px] text-brand-400 mb-2">
+      <div class="text-[10px] text-brand-400" :class="newCustomerExpanded ? 'mb-2' : ''">
         上月 {{ newCustomersLastMonth.length }} 位
         <span v-if="newCustomersLastMonth.length > 0" class="ml-1 font-bold" :class="newCustomersThisMonth.length >= newCustomersLastMonth.length ? 'text-green-500' : 'text-red-400'">
           {{ newCustomersThisMonth.length >= newCustomersLastMonth.length ? '+' : '' }}{{ Math.round(((newCustomersThisMonth.length - newCustomersLastMonth.length) / newCustomersLastMonth.length) * 100) }}%
         </span>
       </div>
-      <ul v-if="newCustomersThisMonth.length" class="border-t border-brand-50 pt-1.5 space-y-1">
-        <li v-for="nc in newCustomersThisMonth" :key="nc.id" class="flex items-center justify-between py-1">
-          <div class="flex items-center gap-1.5">
-            <span class="text-xs font-bold text-brand-700">{{ nc.name }}</span>
-            <span class="text-[10px] text-brand-400">{{ nc.phone.slice(0, 4) }}-***-{{ nc.phone.slice(-3) }}</span>
-            <span
-              class="text-[8px] font-bold px-1.5 py-0.5 rounded-full"
-              :class="(nc.bookingCount ?? 0) > 0 ? 'text-green-600 bg-green-50' : 'text-red-400 bg-red-50'"
-            >{{ (nc.bookingCount ?? 0) > 0 ? '已預約' : '未預約' }}</span>
-          </div>
-          <span class="text-[10px] text-brand-400">{{ new Date(nc.createdAt).toLocaleDateString('zh-TW', { month: 'numeric', day: 'numeric' }).replace('/', '/') }}</span>
-        </li>
-      </ul>
-      <p v-else class="text-[10px] text-brand-300 text-center py-2">本月尚無新客</p>
+      <template v-if="newCustomerExpanded">
+        <ul v-if="newCustomersThisMonth.length" class="border-t border-brand-50 pt-1.5 space-y-1">
+          <li v-for="nc in newCustomersThisMonth" :key="nc.id" class="flex items-center justify-between py-1">
+            <div class="flex items-center gap-1.5">
+              <span class="text-xs font-bold text-brand-700">{{ nc.name }}</span>
+              <span class="text-[10px] text-brand-400">{{ nc.phone.slice(0, 4) }}-***-{{ nc.phone.slice(-3) }}</span>
+              <span
+                class="text-[8px] font-bold px-1.5 py-0.5 rounded-full"
+                :class="(nc.bookingCount ?? 0) > 0 ? 'text-green-600 bg-green-50' : 'text-red-400 bg-red-50'"
+              >{{ (nc.bookingCount ?? 0) > 0 ? '已預約' : '未預約' }}</span>
+            </div>
+            <span class="text-[10px] text-brand-400">{{ new Date(nc.createdAt).toLocaleDateString('zh-TW', { month: 'numeric', day: 'numeric' }).replace('/', '/') }}</span>
+          </li>
+        </ul>
+        <p v-else class="text-[10px] text-brand-300 text-center py-2">本月尚無新客</p>
+      </template>
     </div>
 
     <div class="flex gap-2">
