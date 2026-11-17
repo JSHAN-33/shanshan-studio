@@ -389,7 +389,6 @@ function select(date: string) {
 
 .cal-admin .cal-day--full,
 .cal-admin .cal-day--off {
-  color: inherit;
   pointer-events: auto;
   cursor: pointer;
 }
