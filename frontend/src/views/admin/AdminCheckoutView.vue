@@ -451,7 +451,7 @@ const payMethodOptions: { value: PayMethod; icon: string; label: string }[] = [
             </div>
             <div class="text-right shrink-0">
               <div class="text-brand-600 font-bold text-xs">${{ b.total }}</div>
-              <div class="text-[11px] text-brand-500">{{ b.payMethod }}</div>
+              <div class="text-[11px] text-brand-500">{{ b.walletUsed ? '儲值金 + ' + (b.payMethod ?? '現金') : b.payMethod }}</div>
               <div class="flex items-center gap-1 mt-0.5 justify-end">
                 <button
                   class="w-5 h-5 rounded-full bg-brand-50 flex items-center justify-center text-brand-400 hover:bg-brand-100 transition"
@@ -469,6 +469,10 @@ const payMethodOptions: { value: PayMethod; icon: string; label: string }[] = [
                 </button>
               </div>
             </div>
+          </div>
+          <div class="flex gap-1.5 flex-wrap mt-1 pt-1 border-t border-dashed border-brand-100">
+            <span v-if="b.walletUsed" class="inline-flex items-center gap-0.5 text-[10px] font-semibold text-brand-600 bg-brand-50 px-2 py-0.5 rounded-full">儲值金 ${{ b.walletUsed }}</span>
+            <span v-if="!b.walletUsed || b.total - b.walletUsed > 0" class="inline-flex items-center gap-0.5 text-[10px] font-semibold text-brand-600 bg-brand-50 px-2 py-0.5 rounded-full">{{ b.payMethod === '儲值金' ? '現金' : (b.payMethod ?? '現金') }} ${{ b.walletUsed ? b.total - b.walletUsed : b.total }}</span>
           </div>
         </li>
       </ul>
