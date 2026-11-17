@@ -1232,6 +1232,10 @@ const { refreshing } = usePullRefresh(load);
                     </div>
                   </div>
                 </div>
+                <div v-if="b.paidAt && b.payMethod" class="flex gap-1.5 flex-wrap mt-1.5 pt-1.5 border-t border-dashed border-brand-100">
+                  <span v-if="b.walletUsed" class="text-[10px] font-semibold text-brand-600 bg-brand-50 px-2 py-0.5 rounded-full">儲值金 ${{ b.walletUsed }}</span>
+                  <span v-if="!b.walletUsed || b.total - (b.walletUsed ?? 0) > 0" class="text-[10px] font-semibold text-brand-600 bg-brand-50 px-2 py-0.5 rounded-full">{{ b.payMethod === '儲值金' && !b.walletUsed ? '儲值金' : b.payMethod === '儲值金' ? '現金' : b.payMethod }} ${{ b.walletUsed ? b.total - (b.walletUsed ?? 0) : b.total }}</span>
+                </div>
               </li>
             </ul>
           </div>
